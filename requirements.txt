@@ -1,0 +1,5 @@
+flask==1.1.2
+Flask-WTF==0.14.3
+WTForms==2.3.3
+passlib==1.7.4
+email_validator==1.1.1
