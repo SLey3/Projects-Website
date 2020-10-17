@@ -1,5 +1,7 @@
 flask==1.1.2
 Flask-WTF==0.14.3
+flask-sqlalchemy==2.4.4
 WTForms==2.3.3
 passlib==1.7.4
 email_validator==1.1.1
+pylint-flask==0.6 # For SQLAlchemy and other code that may need this for developement in vscode
