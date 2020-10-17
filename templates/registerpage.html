@@ -1,0 +1,22 @@
+{% extends "layout.html" %} {% from "public/render/_render_form.html" import render_field %} {% block title %} Registration {% endblock %} {% block content %}
+
+<div class="container">
+    <form action="{{ url_for( 'registerPage' ) }}" method="POST" class="form-group">
+        {{ form.csrf_token }}
+        <div class="form-text">
+            <h2 id="form-title"> Registration </h2>
+        </div>
+        <div class="form-inline">
+            <p>Register</p>
+        </div>
+        {{ render_field(form.name) }} {{ render_field(form.email) }} {{ render_field(form.password) }} {{ render_field(form.confirm_pass )}} {{ form.recaptcha }}
+        <ul>
+            {% for error in form.recaptcha.errors %}
+            <li style="color: red;">{{ error }}</li>
+            {% endfor %}
+        </ul>
+        <p><input type="submit" name="submit" class="btn btn-primary" \></p>
+    </form>
+</div>
+
+{% endblock %}
