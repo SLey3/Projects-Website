@@ -5,7 +5,21 @@
         <div class="form-text" id="form-title">
             <h2>Login</h2>
         </div>
-        {{ render_field(form.username) }} {{ render_field(form.password) }}
+        {% if error %}
+        <div class="error-box">
+            <style>
+                .error-msg {
+                    color: rgb(127, 0, 53);
+                    background: rgb(255, 0, 0);
+                }
+            </style>
+            <div class="error-msg">
+                <p>
+                    <strong>{{ error }}</strong>
+                </p>
+            </div>
+        </div>
+        {% endif %} {{ render_field(form.username) }} {{ render_field(form.password) }}
         <p><input type="submit" name="submit" class="btn btn-primary" \></p>
     </form>
 </div>

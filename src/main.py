@@ -6,9 +6,8 @@ from flask import (
     flash
 )
 from flask_wtf import FlaskForm, RecaptchaField
-from wtforms import (
-    StringField, PasswordField
-)
+from wtforms import StringField, PasswordField
+
 from wtforms.validators import (
     InputRequired, Length,
     Email, DataRequired,
@@ -17,6 +16,11 @@ from wtforms.validators import (
 from flask_sqlalchemy import SQLAlchemy
 from passlib.hash import sha256_crypt
 from datetime import timedelta
+from flask_login import (
+    LoginManager, login_required,
+    UserMixin, login_user, logout_user,
+    current_user
+)
 
 # app Config
 app = Flask(__name__, template_folder='../templates')
@@ -26,9 +30,16 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
 app.permanent_session_lifetime = timedelta(days=5)
+
+# ------------------ app Config: SQLAlchemy Config ------------------
 db = SQLAlchemy(app)
 
-# Forms
+# ------------------ app Config: Flask_login Config ------------------
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+# ------------------ Forms ------------------
 class loginForm(FlaskForm):
     """
     website login Form for loginpage.html
@@ -52,23 +63,26 @@ class registerForm(FlaskForm):
                                                                         "Confirmation password must equal to the created password")])
     recaptcha = RecaptchaField()
 
-# User class
-class userData(db.Model):
+# ------------------ User class ------------------
+class User(db.Model, UserMixin):
     """
     User Model
     """
-    ID = db.Column("id", db.Integer, primary_key=True)
+    id = db.Column("id", db.Integer, primary_key=True)
     name = db.Column("name", db.String(100))
-    email = db.Column("email", db.String(100), unique=True)
-    # password = db.Column("password", db.String(100))
-    
-    def __init__(self, name, email, password=None):
-        self.name = name
-        self.email = email
-        # self.password = password
-    
+    username = db.Column("email", db.String(100), unique=True)
+    password = db.Column("password", db.String(255))
 
-# web pages
+# ------------------ External Resources
+
+@login_manager.user_loader
+def load_user(user_id):
+    """
+    Gets the User
+    """
+    return User.query.get(int(user_id))
+
+# ------------------ web pages ------------------
 
 @app.route('/', methods=["GET", "POST"])
 def loginPage():
@@ -77,12 +91,15 @@ def loginPage():
     """
     form = loginForm()
     if request.method == "POST" and form.validate_on_submit():
-        session.permanent = True
-        username = request.form["username"]
-        session['user'] = username
-        return redirect(url_for("usr", usr=username))
+        user = User.query.filter_by(username=form.username.data).first()
+        if user:
+            if sha256_crypt.verify(form.password.data, user.password):
+                login_user(user)
+                return redirect(url_for("homePage", msg="Hello There"))
+        error = "Invalid Email or Password"
+        return render_template("loginpage.html", msg= "Login Page", form=form, error=error)
     else:
-        if "user" in session:
+        if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
             return render_template("loginpage.html", msg="Login Page", form=form)
@@ -91,6 +108,14 @@ def loginPage():
 def registerPage():
     form = registerForm()
     if request.method == "POST" and form.validate_on_submit():
+        new_user = User(
+            name=request.form.get("name"),
+            username=request.form.get("email"),
+            password=sha256_crypt.encrypt(request.form.get("password"))
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash("Registration Succesful", 'success')
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
@@ -100,33 +125,24 @@ def signOut():
     """
     Signs out of the site
     """
-    session.pop("user", None)
+    logout_user()
+    flash("Succesfully signed out", 'success')
     return redirect(url_for("loginPage"))
     
-@app.route('/<usr>')
-def usr(usr):
-    """
-    Automatically redirects user to homePage
-    """
-    return redirect(url_for("homePage"))
-    
 @app.route('/home')
+@login_required
 def homePage():
     """
     website homepage
     """
-    if "user" in session:
-        return render_template("homepage.html", msg="Hello World")
-    else:
-        return redirect(url_for("loginPage"))
+    return redirect(url_for("loginPage"))
     
 @app.route('/about')
+@login_required
 def aboutPage():
-    if "user" in session:
-        return render_template("aboutpage.html")
-    else:
-        return redirect(url_for("loginPage"))
+    return redirect(url_for("loginPage"))
     
+# ------------------ Website Starter ------------------
 if __name__ == '__main__':
     print("[PRE-CONNECTING] Creating database if not exists")
     db.create_all()
