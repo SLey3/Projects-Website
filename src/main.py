@@ -2,8 +2,7 @@
 from flask import (
     Flask, render_template,
     redirect, request,
-    url_for, session,
-    flash
+    url_for, flash
 )
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import StringField, PasswordField
@@ -23,7 +22,7 @@ from flask_login import (
 )
 
 # app Config
-app = Flask(__name__, template_folder='../templates')
+app = Flask(__name__)
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -74,7 +73,6 @@ class User(db.Model, UserMixin):
     password = db.Column("password", db.String(255))
 
 # ------------------ External Resources
-
 @login_manager.user_loader
 def load_user(user_id):
     """
@@ -95,14 +93,14 @@ def loginPage():
         if user:
             if sha256_crypt.verify(form.password.data, user.password):
                 login_user(user)
-                return redirect(url_for("homePage", msg="Hello There"))
+                return redirect(url_for("homePage"))
         error = "Invalid Email or Password"
-        return render_template("loginpage.html", msg= "Login Page", form=form, error=error)
+        return render_template("loginpage.html", form=form, error=error)
     else:
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
-            return render_template("loginpage.html", msg="Login Page", form=form)
+            return render_template("loginpage.html", form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def registerPage():
@@ -126,6 +124,7 @@ def signOut():
     Signs out of the site
     """
     logout_user()
+    form = loginForm()
     flash("Succesfully signed out", 'success')
     return redirect(url_for("loginPage"))
     
