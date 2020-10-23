@@ -1,4 +1,4 @@
-# Imports 
+# ------------------ Imports ------------------
 from flask import (
     Flask, render_template,
     redirect, request,
@@ -20,14 +20,23 @@ from flask_login import (
     UserMixin, login_user, logout_user,
     current_user
 )
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
-# app Config
+# ------------------ app Config ------------------
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
+app.config["MAIL_DEFAULT_SENDER"] = "norepymyprojectsweb@gmail.com"
+app.config["MAIL_USERNAME"] = "noreplymyprojectsweb@gmail.com"
+app.config["MAIL_PASSWORD"] = "hFb5b4UcwovqTshinAv6exVHY2pUT4N5lY77XRVEfmPFaY98nA9NOsQULJY2IVR66YFIMH6dgtdx9o1VoLLBW4YYrjcjRC10a3v"
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 465
+app.config["MAIL_USE_SSL"] = True
+app.config["MAIL_USE_TLS "] = False
 app.permanent_session_lifetime = timedelta(days=5)
 
 # ------------------ app Config: SQLAlchemy Config ------------------
@@ -37,6 +46,11 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# ------------------ app Config: Flask_mail Config
+mail = Mail()
+mail.init_app(app)
+
+s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -72,13 +86,19 @@ class User(db.Model, UserMixin):
     username = db.Column("email", db.String(100), unique=True)
     password = db.Column("password", db.String(255))
 
-# ------------------ External Resources
+# ------------------ External Resources ------------------
 @login_manager.user_loader
 def load_user(user_id):
     """
     Gets the User
     """
     return User.query.get(int(user_id))
+
+
+# ------------------ External Resources: Global Constants ------------------
+
+EMAILS = []
+
 
 # ------------------ web pages ------------------
 
@@ -104,19 +124,47 @@ def loginPage():
 
 @app.route('/register', methods=['GET', 'POST'])
 def registerPage():
+    """
+    Registration Page
+    """
     form = registerForm()
     if request.method == "POST" and form.validate_on_submit():
         new_user = User(
             name=request.form.get("name"),
             username=request.form.get("email"),
-            password=sha256_crypt.encrypt(request.form.get("password"))
+            password=sha256_crypt.hash(request.form.get("password"))
         )
         db.session.add(new_user)
         db.session.commit()
-        flash("Registration Succesful", 'success')
+        EMAILS.append(form.email.data)
+        token = s.dumps(form.email.data, salt='email-confirm')
+        verify_msg = Message('Confirm Account', recipients=[form.email.data])
+        confirm_link = 'http://127.0.0.1:5000' + url_for("confirmation_recieved", token=token, external=True)
+        verify_msg.body = f'''Thank you for registering, {form.name.data}! In order to complete the registration you must click on the link below.
+        Link will expire in 30 minutes after this email has been sent.
+        Link: {confirm_link}'''
+        mail.send(verify_msg)
+        flash("Registration Succesful. Verification required, check your email for confirmation link.", 'success')
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
+  
+@app.route('/confirm_recieved/<token>')  
+def confirmation_recieved(token):
+    """
+    Confirmation and account creation page
+    :param token: Email token
+    """
+    try:
+        email = s.loads(token, salt="email-confirm", max_age=3600/2)
+        flash("Email Verified", 'success')
+        return redirect(url_for("loginPage"))
+    except SignatureExpired:
+        email_string = EMAILS.pop(0)
+        User.query.filter_by(username=email_string).delete()
+        db.session.commit()
+        flash(u"Confirmation link expired. You must Register again", 'error')
+        return redirect(url_for("loginPage"))
     
 @app.route('/signout')
 def signOut():
@@ -134,7 +182,7 @@ def homePage():
     """
     website homepage
     """
-    return redirect(url_for("loginPage"))
+    return render_template("homepage.html")
     
 @app.route('/about')
 @login_required
