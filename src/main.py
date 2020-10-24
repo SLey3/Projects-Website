@@ -22,6 +22,11 @@ from flask_login import (
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from pathlib import PureWindowsPath
+from os.path import (
+    abspath, join, 
+    isdir, normpath
+    )
 
 # ------------------ app Config ------------------
 app = Flask(__name__)
@@ -46,12 +51,33 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# ------------------ app Config: Flask_mail Config
+# ------------------ app Config: Flask_mail Config ------------------
 mail = Mail()
 mail.init_app(app)
 
 s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
+# ------------------ app Config: Pure Windows Path ------------------
+
+
+absolute_path = abspath('.')
+projected_path = join(absolute_path, 'templates')
+if not isdir(projected_path):
+    current_path = join(absolute_path, 'src')
+    PATH = PureWindowsPath(current_path)
+    in_src = True
+else:
+    current_path = projected_path
+    PATH = PureWindowsPath(current_path)
+    in_src = False
+
+del absolute_path
+del projected_path
+del current_path
+del join
+del abspath
+del isdir
+    
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
     """
@@ -101,7 +127,7 @@ def get_alert_type():
     Gets alert type
     
     Returns:
-        alert_type
+        ALERTS[Type]
     """
     if alert_method['method'] != '':
         Type = alert_method['method']
@@ -123,6 +149,10 @@ ALERTS = {
 }
 
 alert_method = {'method': ''}
+
+parent_dir = PATH.joinpath('templates') if in_src else PATH.joinpath('src', 'templates')
+parent_dir = str(parent_dir).replace('\\', '/')
+print(parent_dir)
 
 # ------------------ web pages ------------------
 
@@ -193,7 +223,7 @@ def confirmation_recieved(token):
         email_string = EMAILS.pop(0)
         User.query.filter_by(username=email_string).delete()
         db.session.commit()
-        flash(u"Confirmation link expired. You must Register again")
+        flash("Confirmation link expired. You must Register again")
         alert_method.update(method='error')
         return redirect(url_for("loginPage"))
     
@@ -214,7 +244,7 @@ def homePage():
     """
     website homepage
     """
-    return render_template("homepage.html")
+    return render_template("homepage.html", parent=parent_dir)
     
 @app.route('/about')
 @login_required

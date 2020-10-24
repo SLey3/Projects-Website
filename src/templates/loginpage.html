@@ -16,17 +16,18 @@
             </div>
             {% endif %}
         </div>
+        {% with messages = get_flashed_messages() %} {% if messages %}
         <div id="flash-msg">
             <div id="msg">
                 <div class="alert {{ alert_type }} alert-dismissible fade show">
-                    {% for msg in get_flashed_messages() %} <strong> {{ msg }} </strong> {% endfor %}
+                    {% for msg in messages %} <strong> {{ msg }} </strong> {% endfor %}
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">x</span>
                       </button>
                 </div>
             </div>
         </div>
-        {{ render_field(form.username) }} {{ render_field(form.password) }}
+        {% endif %} {% endwith %} {{ render_field(form.username) }} {{ render_field(form.password) }}
         <div class=" container ">
             <div id="log-in ">
                 <p><button type="submit " class="login-btn btn-primary ">Log In</button></p>

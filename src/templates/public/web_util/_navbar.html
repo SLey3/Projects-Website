@@ -4,7 +4,7 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
+        <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
                 <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
             </li>
@@ -14,11 +14,18 @@
             <li class="nav-item">
                 <a class="nav-link" href="/about">About</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Contact Me</a>
+        </ul>
+        <ul class="navbar-nav justify-content-center ml-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link justify-content-end ml-auto dropdown-toggle" href="#" id="navDropDown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
+                <div class="dropdown-menu" aria-labelledby="navDropDown">
+                    <a class="dropdown-item" href="#">My Account</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/signout">Sign Out</a>
+                </div>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/signout">signout</a>
+                <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Contact Me</a>
             </li>
         </ul>
     </div>
