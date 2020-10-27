@@ -7,3 +7,5 @@ email_validator==1.1.1
 pylint-flask==0.6 # For SQLAlchemy and other code that may need this for developement in vscode
 itsdangerous==1.1.0
 Flask-mail==0.9.1
+tqdm==2.2.3
+pandas==1.1.3

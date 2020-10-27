@@ -1,12 +1,12 @@
-# Imports
+# ------------------ Imports ------------------
 import socket
+import tqdm
+import os
+from threading import Thread, Lock
 
-class Client:
+# ------------------ Client code ------------------
+def web_updater():
     """
-    Client class
+    My Projects website Updater
     """
-    HOST = ""
-    PORT = 0
-    def __init__(self, name):
-        self.name = name
-    
+    pass

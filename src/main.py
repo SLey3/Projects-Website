@@ -22,11 +22,8 @@ from flask_login import (
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from pathlib import PureWindowsPath
-from os.path import (
-    abspath, join, 
-    isdir, normpath
-    )
+from pathlib import Path
+from os.path import abspath, basename
 
 # ------------------ app Config ------------------
 app = Flask(__name__)
@@ -35,7 +32,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
-app.config["MAIL_DEFAULT_SENDER"] = "norepymyprojectsweb@gmail.com"
+app.config["MAIL_DEFAULT_SENDER"] = "noreplymyprojectsweb@gmail.com"
 app.config["MAIL_USERNAME"] = "noreplymyprojectsweb@gmail.com"
 app.config["MAIL_PASSWORD"] = "hFb5b4UcwovqTshinAv6exVHY2pUT4N5lY77XRVEfmPFaY98nA9NOsQULJY2IVR66YFIMH6dgtdx9o1VoLLBW4YYrjcjRC10a3v"
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -57,26 +54,18 @@ mail.init_app(app)
 
 s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
-# ------------------ app Config: Pure Windows Path ------------------
+# ------------------ app Config: Checks filepath location ------------------
 
 
 absolute_path = abspath('.')
-projected_path = join(absolute_path, 'templates')
-if not isdir(projected_path):
-    current_path = join(absolute_path, 'src')
-    PATH = PureWindowsPath(current_path)
+try:
+    assert basename(absolute_path) == 'src'
     in_src = True
-else:
-    current_path = projected_path
-    PATH = PureWindowsPath(current_path)
+except AssertionError:
     in_src = False
 
-del absolute_path
-del projected_path
-del current_path
-del join
 del abspath
-del isdir
+del basename
     
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -140,7 +129,8 @@ def get_alert_type():
 
 EMAILS = []
 
-
+PATH = Path(absolute_path)
+del absolute_path
 
 ALERTS = {
     'success' : 'alert-success',
@@ -150,9 +140,8 @@ ALERTS = {
 
 alert_method = {'method': ''}
 
-parent_dir = PATH.joinpath('templates') if in_src else PATH.joinpath('src', 'templates')
-parent_dir = str(parent_dir).replace('\\', '/')
-print(parent_dir)
+parent_dir = PATH / "templates" if in_src else PATH / "src" / "templates"
+html_parent_dir = str(parent_dir).replace('\\', '/')
 
 # ------------------ web pages ------------------
 
@@ -244,7 +233,7 @@ def homePage():
     """
     website homepage
     """
-    return render_template("homepage.html", parent=parent_dir)
+    return render_template("homepage.html", parent=html_parent_dir)
     
 @app.route('/about')
 @login_required
