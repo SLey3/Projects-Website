@@ -1,19 +1,7 @@
 # ------------------ Import ------------------
 import pandas as pd
 import os
-
-# ------------------ Path Config ------------------
-current_path = os.path.abspath('.')
-try:
-    assert os.path.basename(current_path) == 'mod_history'
-except AssertionError:
-    if os.path.basename(current_path) == 'Projects_Website':
-        os.chdir('./src/mod_history')
-    elif os.path.basename(current_path) == 'src':
-        os.chdir('./mod_history')
-
-del current_path
-
+import datetime
 
 # ------------------ ModHistory Source code ------------------
 class ModHistory:
@@ -21,6 +9,16 @@ class ModHistory:
     Modification History class
     """
     def __init__(self, filename: str = None, timestamp: str = None):
+        current_path = os.path.abspath('.')
+        try:
+            assert os.path.basename(current_path) == 'mod_history'
+        except AssertionError:
+            if os.path.basename(current_path) == 'Projects_Website':
+                os.chdir('./src/mod_history')
+            elif os.path.basename(current_path) == 'src':
+                os.chdir('./mod_history')
+
+        del current_path
         self.file = filename
         self.timestamp = timestamp
     
@@ -32,13 +30,14 @@ class ModHistory:
         df.to_csv("modifications.csv", encoding="utf-8", mode='a', header=False)
     
     @staticmethod
-    def history():
+    def history(path):
         """
         Gets file modfication history
         
         Returns:
             history
         """
+        os.chdir(path)
         history = {}
         csv_data = pd.read_csv("modifications.csv", dtype="category", encoding="utf-8", engine="python", cache_dates=False)
         for i in range(len(csv_data)):
