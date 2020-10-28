@@ -1,6 +1,18 @@
-{% extends "layout.html" %} {% block title %} HomePage {% endblock %} {% block content %} {% include "public/web_util/_navbar.html" %}
+{% extends "layout.html" %} {% block title %} HomePage {% endblock %} {% block content %} {% include "web_util/_navbar.html" %}
 <!-- Carousel not working atm -->
 <h1>Welcome User!</h1>
+{% with messages = get_flashed_messages() %} {% if messages %}
+<div id="flash-msg">
+    <div id="msg">
+        <div class="alert {{ alert_type }} alert-dismissible fade show">
+            {% for msg in messages %} <strong> {{ msg }} </strong> {% endfor %}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">x</span>
+              </button>
+        </div>
+    </div>
+</div>
+{% endif %} {% endwith %}
 <div id="carouselExampleCaptions" class="carousel slide" data-ride="carousel">
     <ol class="carousel-indicators">
         <li data-target="#carouselExampleCaptions" data-slide-to="0" class="active"></li>

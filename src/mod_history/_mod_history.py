@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import datetime
+from typing import Optional
 
 # ------------------ ModHistory Source code ------------------
 class ModHistory:
@@ -27,6 +28,39 @@ class ModHistory:
         Inserts file history data to csv file
         """
         df = pd.DataFrame({"filename": [self.file], "timestamp": [self.timestamp]}, dtype='category')
+        df.to_csv("modifications.csv", encoding="utf-8", mode='a')
+    
+    def update_history(self, new_file_name: Optional[str] = None, new_timestamp: Optional[str] = None):
+        """
+        Updates file history
+        """
+        file_history_log = []
+        time_history_log = []
+        csv_data = pd.read_csv("modifications.csv", dtype="category", encoding="utf-8", engine="c", cache_dates=False)
+        for i in range(len(csv_data)):
+            file_history_log.append(csv_data.values[i][1])
+            time_history_log.append(csv_data.values[i][2])
+        file_index = 0
+        for file_name in file_history_log:
+            if self.file == file_name:
+                file_history_log.insert(file_index, new_file_name)
+            file_index += 1
+        del file_index
+        time_index = 0
+        for timestamp_name in time_history_log:
+            if self.timestamp == timestamp_name:
+                time_history_log.insert(time_index, new_timestamp)
+            time_index +=1
+           
+        del time_index 
+        
+        def temp_delete(file_log):
+            data = pd.read_csv("modifications.csv", index_col="filename", dtype="category", encoding="utf-8", engine="c", cache_dates=False)
+            data.drop(file_log, inplace=True)
+            
+        temp_delete(file_history_log)
+        
+        df = pd.DataFrame({"filename": file_history_log, "timestamp": time_history_log}, dtype='category')
         df.to_csv("modifications.csv", encoding="utf-8", mode='a', header=False)
     
     @staticmethod
@@ -46,3 +80,6 @@ class ModHistory:
             history.setdefault("file", []).append(fileData)
             history.setdefault("timestamp", []).append(timeData)
         return history
+    
+hist = ModHistory("__init__.py", "2020-10-26 19:01:10")
+hist.update_history()

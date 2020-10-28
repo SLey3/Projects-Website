@@ -8,7 +8,7 @@ from mod_history import ModHistory
 
 MOD_FILES = []
 
-BLACKLISTED_FOLDERS = ["src", ".vscode", ".git", "__pycache__", "templates", "public", "assets", "render", "web_util"]
+FOLDERS = ["src", ".vscode", ".git", "__pycache__", "templates", "public", "assets", "render", "web_util"]
     
 # ------------------ Modified() Source ------------------
 def Modified():
@@ -47,7 +47,7 @@ def Modified():
                     MOD_FILES.append(file)
                     # Code for updating csv file here
                 elif file != file_name:
-                    if file in BLACKLISTED_FOLDERS:
+                    if file in FOLDERS:
                         continue
                     else:
                         history_manager.__init__(filename=file, timestamp=current)

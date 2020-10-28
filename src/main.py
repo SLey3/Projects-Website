@@ -17,16 +17,24 @@ from passlib.hash import sha256_crypt
 from datetime import timedelta
 from flask_login import (
     LoginManager, login_required,
-    UserMixin, login_user, logout_user,
+    login_user, logout_user,
     current_user
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from pathlib import Path
 from os.path import abspath, basename
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+from flask_principal import Principal, Permission, RoleNeed
+from flask_security import (
+    Security, SQLAlchemyUserDatastore,
+    UserMixin, RoleMixin
+)
+from dashboard import dash
 
 # ------------------ app Config ------------------
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates/public")
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -40,6 +48,7 @@ app.config["MAIL_PORT"] = 465
 app.config["MAIL_USE_SSL"] = True
 app.config["MAIL_USE_TLS "] = False
 app.permanent_session_lifetime = timedelta(days=5)
+app.register_blueprint(dash)
 
 # ------------------ app Config: SQLAlchemy Config ------------------
 db = SQLAlchemy(app)
@@ -67,6 +76,12 @@ except AssertionError:
 del abspath
 del basename
     
+# ------------------ app Config: Admin Config ------------------
+admin = Admin(app, template_mode="bootstrap4")
+
+# ------------------ app Config: Principal Config ------------------
+principal = Principal(app)
+
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
     """
@@ -91,15 +106,50 @@ class registerForm(FlaskForm):
                                                                         "Confirmation password must equal to the created password")])
     recaptcha = RecaptchaField()
 
-# ------------------ User class ------------------
+# ------------------ SQL classes ------------------
+roles_users = db.Table('roles_users',
+        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+    
+class Person(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30))
+    account = db.relationship("User", primaryjoin="and_(Person.id==User.person_id)")
+    
+    def __repr__(self):
+        return f"Person({name})"
+    
 class User(db.Model, UserMixin):
     """
     User Model
     """
     id = db.Column("id", db.Integer, primary_key=True)
+    person_id = db.Column(db.Integer, db.ForeignKey("person.id"))
     name = db.Column("name", db.String(100))
     username = db.Column("email", db.String(100), unique=True)
     password = db.Column("password", db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f"Name: {self.name}"
+
+
+admin.add_view(ModelView(Person, db.session))
+
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+# ------------------ Permisions ------------------
+admin_perm = Permission(RoleNeed('admin'))
+member_perm = Permission(RoleNeed('member'))
 
 # ------------------ External Resources ------------------
 @login_manager.user_loader
@@ -152,8 +202,6 @@ def loginPage():
     """
     form = loginForm()
     
-    alert_type = get_alert_type()
-    
     if request.method == "POST" and form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user:
@@ -166,7 +214,7 @@ def loginPage():
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
-            return render_template("loginpage.html", form=form, alert_type=alert_type)
+            return render_template("loginpage.html", form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def registerPage():
@@ -175,12 +223,11 @@ def registerPage():
     """
     form = registerForm()
     if request.method == "POST" and form.validate_on_submit():
-        new_user = User(
+        user_datastore.create_user(
             name=request.form.get("name"),
             username=request.form.get("email"),
             password=sha256_crypt.hash(request.form.get("password"))
         )
-        db.session.add(new_user)
         db.session.commit()
         EMAILS.append(form.email.data)
         token = s.dumps(form.email.data, salt='email-confirm')
@@ -233,7 +280,8 @@ def homePage():
     """
     website homepage
     """
-    return render_template("homepage.html", parent=html_parent_dir)
+    alert_type = get_alert_type()
+    return render_template("homepage.html", parent=html_parent_dir, alert_type=alert_type)
     
 @app.route('/about')
 @login_required

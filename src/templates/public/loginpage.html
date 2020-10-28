@@ -1,4 +1,4 @@
-{% extends "layout.html" %} {% from "public/render/_render_form.html" import render_field %} {% block title %} Login | Private Website {% endblock %} {% block content %}
+{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} Login | Private Website {% endblock %} {% block content %}
 <div class="container">
     <form action="{{ url_for( 'loginPage' ) }}" method="POST" class="form-group">
         {{ form.csrf_token }}
@@ -16,18 +16,7 @@
             </div>
             {% endif %}
         </div>
-        {% with messages = get_flashed_messages() %} {% if messages %}
-        <div id="flash-msg">
-            <div id="msg">
-                <div class="alert {{ alert_type }} alert-dismissible fade show">
-                    {% for msg in messages %} <strong> {{ msg }} </strong> {% endfor %}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">x</span>
-                      </button>
-                </div>
-            </div>
-        </div>
-        {% endif %} {% endwith %} {{ render_field(form.username) }} {{ render_field(form.password) }}
+        {{ render_field(form.username) }} {{ render_field(form.password) }}
         <div class=" container ">
             <div id="log-in ">
                 <p><button type="submit " class="login-btn btn-primary ">Log In</button></p>
