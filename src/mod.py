@@ -37,7 +37,6 @@ def Modified():
         print(file)
         modTime = os.path.getmtime(file)
         current = datetime.datetime.fromtimestamp(modTime).strftime('%Y-%m-%d %H:%M:%S')
-        history_manager = ModHistory(file, current)
         history = _history
         for file_name, timestamp in history.items():
             if current == timestamp and file == file_name:
@@ -50,7 +49,7 @@ def Modified():
                     if file in FOLDERS:
                         continue
                     else:
-                        history_manager.__init__(filename=file, timestamp=current)
+                        history_manager = ModHistory(file, current)
                         history_manager.insert_history()
                         os.chdir('../..')
     subfolders = [f.path for f in os.scandir(PARENT_DIR) if f.is_dir()]

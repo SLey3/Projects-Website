@@ -13,6 +13,10 @@ from wtforms.validators import (
     EqualTo
 )
 from flask_sqlalchemy import SQLAlchemy
+try:
+    from flask_sqlalchemy.orm.session import Session
+except ModuleNotFoundError:
+    from sqlalchemy.orm.session import Session
 from passlib.hash import sha256_crypt
 from datetime import timedelta
 from flask_login import (
@@ -24,20 +28,21 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from pathlib import Path
 from os.path import abspath, basename
-from flask_admin import Admin
+from flask_admin import Admin, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
-from flask_principal import Principal, Permission, RoleNeed
 from flask_security import (
     Security, SQLAlchemyUserDatastore,
     UserMixin, RoleMixin
 )
-from dashboard import dash
+from dashboard import dash, dashboardHome
+# from flask_pymongo import PyMongo
 
 # ------------------ app Config ------------------
 app = Flask(__name__, template_folder="templates/public")
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# app.config["MONGO_URI"] = "mongodb+srv://SergioLey:admin123456@project-mikeyankeepapar.hddfz.mongodb.net/users.sqlite?retryWrites=true&w=majority"
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
 app.config["MAIL_DEFAULT_SENDER"] = "noreplymyprojectsweb@gmail.com"
@@ -50,8 +55,14 @@ app.config["MAIL_USE_TLS "] = False
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 
-# ------------------ app Config: SQLAlchemy Config ------------------
+# ------------------ app Config: SQLAlchemy / PyMongo Config ------------------
 db = SQLAlchemy(app)
+
+sql_sess = Session(autoflush=False)
+
+# --------- Currently disabled for if sqlalchemy needs to be replaced
+
+# mongo = PyMongo(app)
 
 # ------------------ app Config: Flask_login Config ------------------
 login_manager = LoginManager()
@@ -78,9 +89,6 @@ del basename
     
 # ------------------ app Config: Admin Config ------------------
 admin = Admin(app, template_mode="bootstrap4")
-
-# ------------------ app Config: Principal Config ------------------
-principal = Principal(app)
 
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -113,13 +121,17 @@ roles_users = db.Table('roles_users',
 
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
+    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
     
+    def __repr__(self):
+        return f"Permission: {self.name}"
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30))
     account = db.relationship("User", primaryjoin="and_(Person.id==User.person_id)")
+    role = db.relationship("Role", backref='roles', primaryjoin="and_(Person.id==Role.person_id)")
     
     def __repr__(self):
         return f"Person({name})"
@@ -129,7 +141,7 @@ class User(db.Model, UserMixin):
     User Model
     """
     id = db.Column("id", db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey("person.id"))
+    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
     name = db.Column("name", db.String(100))
     username = db.Column("email", db.String(100), unique=True)
     password = db.Column("password", db.String(255))
@@ -137,7 +149,7 @@ class User(db.Model, UserMixin):
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
-    
+        
     def __repr__(self):
         return f"Name: {self.name}"
 
@@ -147,9 +159,16 @@ admin.add_view(ModelView(Person, db.session))
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
-# ------------------ Permisions ------------------
-admin_perm = Permission(RoleNeed('admin'))
-member_perm = Permission(RoleNeed('member'))
+# ------------------ Admin pages ------------------
+class BacktoDashboard(BaseView):
+    @expose('/')
+    def index(self):
+        """
+        Returns to the dashboard
+        """
+        return redirect(url_for("dashboard.dashboardHome"))
+    
+admin.add_view(BacktoDashboard(name="back", endpoint="redirect"))
 
 # ------------------ External Resources ------------------
 @login_manager.user_loader
@@ -190,7 +209,7 @@ ALERTS = {
 
 alert_method = {'method': ''}
 
-parent_dir = PATH / "templates" if in_src else PATH / "src" / "templates"
+parent_dir = PATH / "templates" / "public" if in_src else PATH / "src" / "templates" / "public"
 html_parent_dir = str(parent_dir).replace('\\', '/')
 
 # ------------------ web pages ------------------
@@ -223,10 +242,16 @@ def registerPage():
     """
     form = registerForm()
     if request.method == "POST" and form.validate_on_submit():
+        with sql_sess.no_autoflush:
+            user_datastore.find_or_create_role('admin')
+            user_datastore.find_or_create_role('member')
+            user_datastore.find_or_create_role('unverified')
+            user_datastore.find_or_create_role('verified')
         user_datastore.create_user(
             name=request.form.get("name"),
             username=request.form.get("email"),
-            password=sha256_crypt.hash(request.form.get("password"))
+            password=sha256_crypt.hash(request.form.get("password")),
+            roles=['admin', 'verified']
         )
         db.session.commit()
         EMAILS.append(form.email.data)
@@ -274,7 +299,7 @@ def signOut():
     alert_method.update(method='success')
     return redirect(url_for("loginPage"))
     
-@app.route('/home')
+@app.route('/home', methods=['GET', 'POST'])
 @login_required
 def homePage():
     """

@@ -28,7 +28,7 @@ class ModHistory:
         Inserts file history data to csv file
         """
         df = pd.DataFrame({"filename": [self.file], "timestamp": [self.timestamp]}, dtype='category')
-        df.to_csv("modifications.csv", encoding="utf-8", mode='a')
+        df.to_csv("modifications.csv", encoding="utf-8", mode='a', header=False)
     
     def update_history(self, new_file_name: Optional[str] = None, new_timestamp: Optional[str] = None):
         """
@@ -81,5 +81,5 @@ class ModHistory:
             history.setdefault("timestamp", []).append(timeData)
         return history
     
-hist = ModHistory("__init__.py", "2020-10-26 19:01:10")
-hist.update_history()
+# hist = ModHistory("__init__.py", "2020-10-26 19:01:10")
+# hist.update_history()
