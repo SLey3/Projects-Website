@@ -251,7 +251,7 @@ def registerPage():
             name=request.form.get("name"),
             username=request.form.get("email"),
             password=sha256_crypt.hash(request.form.get("password")),
-            roles=['admin', 'verified']
+            roles=['member', 'unverified']
         )
         db.session.commit()
         EMAILS.append(form.email.data)

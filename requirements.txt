@@ -10,4 +10,3 @@ Flask-mail==0.9.1
 tqdm==2.2.3
 pandas==1.1.3
 Flask-Admin==1.5.7
-# flask-pymongo==2.3.0 (Currently Not used)

@@ -1,14 +1,13 @@
-{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} Login | Private Website {% endblock %} {% block content %}
-<div class="container">
-    <form action="{{ url_for( 'loginPage' ) }}" method="POST" class="form-group">
+{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} Login | Private Website {% endblock %} {% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css')}}"> {% endblock %} {% block content %}
+<div class="center-container">
+    <form action="{{ url_for( 'loginPage' ) }}" method="POST">
         {{ form.csrf_token }}
-        <div class="form-text" id="form-title">
-            <h2>Login</h2>
-        </div>
-        <div class="form-text">
+        <h1>Login</h1>
+        <div>
             {% if error %}
-            <div class="error-box">
-                <div id="error-msg" class="alert alert-danger">
+            <div>
+                <div id="error-msg">
                     <p>
                         <strong>{{ error }}</strong>
                     </p>
@@ -16,22 +15,22 @@
             </div>
             {% endif %}
         </div>
-        {{ render_field(form.username) }} {{ render_field(form.password) }}
-        <div class=" container ">
-            <div id="log-in ">
-                <p><button type="submit " class="login-btn btn-primary ">Log In</button></p>
-            </div>
-            <div id="register ">
-                <p>
-                    <button type="button " class="register-btn btn-secondary ">
-                        <span id="register-wrapper " class="btn-link ">
-                            <a href="{{ url_for( 'registerPage') }} " style="color:rgb(255,255,255) ">
-                                Register
-                            </a>
-                        </span>
-                    </button>
-                </p>
-            </div>
+        <div class="txt-field">
+            <input type="email" required>
+            <label>Username</label>
+            <span></span>
+        </div>
+        <div class="txt-field">
+            <input type="password" required>
+            <label> Password </label>
+            <span></span>
+        </div>
+        <div class="forgot-pass">
+            <a>Forgot password?</a>
+        </div>
+        <input type="submit" value="Login">
+        <div class="sign-up">
+            Not a member? <a href="#">Register</a>
         </div>
     </form>
 </div>

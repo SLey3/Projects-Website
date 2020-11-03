@@ -1,5 +1,6 @@
 # ------------------ Imports ------------------
 import socket
+from mod import Modified
 
 # ------------------ Socket Config ------------------
 socket_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
