@@ -7,7 +7,7 @@
         <div>
             {% if error %}
             <div>
-                <div id="error-msg">
+                <div id="error-msg" class="error-box">
                     <p>
                         <strong>{{ error }}</strong>
                     </p>
@@ -16,21 +16,21 @@
             {% endif %}
         </div>
         <div class="txt-field">
-            <input type="email" required>
-            <label>Username</label>
+            {{ render_field(form.username) }}
+            <label> Username </label>
             <span></span>
         </div>
         <div class="txt-field">
-            <input type="password" required>
+            {{ render_field(form.password) }}
             <label> Password </label>
             <span></span>
         </div>
         <div class="forgot-pass">
-            <a>Forgot password?</a>
+            Forgot password?
         </div>
         <input type="submit" value="Login">
         <div class="sign-up">
-            Not a member? <a href="#">Register</a>
+            Not a member? <a href="/register">Register</a>
         </div>
     </form>
 </div>
