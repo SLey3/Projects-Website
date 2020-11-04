@@ -105,13 +105,17 @@ class registerForm(FlaskForm):
     """
     registration form for website
     """
-    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, message="minimum length must be 3 characters")])
+    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, message="minimum length must be 3 characters")], 
+                       render_kw={'placeholder':'Name'})
     email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
-                                             Length(min=3, max=50, message="Email length must be at most 50 characters")])
+                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], 
+                                            render_kw={'placeholder':'Email'})
     password = PasswordField("password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
-                                                                                         message="length should be between 8-99 characters")])
+                                                                                         message="length should be between 8-99 characters")],
+                                                                                        render_kw={'placeholder':'Password'})
     confirm_pass = PasswordField("confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
-                                                                        "Confirmation password must equal to the created password")])
+                                                                        "Confirmation password must equal to the created password")],
+                                                                        render_kw={'placeholder':'confirm_pass'})
     recaptcha = RecaptchaField()
 
 # ------------------ SQL classes ------------------
@@ -190,7 +194,11 @@ def get_alert_type():
     if alert_method['method'] != '':
         Type = alert_method['method']
         alert_method.update(method='')
-        return ALERTS[Type]
+        check_list = list(ALERTS.items())
+        if Type not in check_list:
+            return Type
+        else:
+            return ALERTS[Type]
     return ""
 
 
@@ -221,6 +229,8 @@ def loginPage():
     """
     form = loginForm()
     
+    alert_type = get_alert_type()
+    
     if request.method == "POST" and form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user:
@@ -233,7 +243,7 @@ def loginPage():
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
-            return render_template("loginpage.html", form=form)
+            return render_template("loginpage.html", form=form, alert_type=alert_type)
 
 @app.route('/register', methods=['GET', 'POST'])
 def registerPage():
@@ -251,7 +261,7 @@ def registerPage():
             name=request.form.get("name"),
             username=request.form.get("email"),
             password=sha256_crypt.hash(request.form.get("password")),
-            roles=['member', 'unverified']
+            roles=['admin', 'verified']
         )
         db.session.commit()
         EMAILS.append(form.email.data)
@@ -262,8 +272,7 @@ def registerPage():
         Link will expire in 30 minutes after this email has been sent.
         Link: {confirm_link}'''
         mail.send(verify_msg)
-        flash("Registration Succesful. Verification required, check your email for confirmation link.")
-        alert_method.update(method='success')
+        alert_method.update(method='Registration Succesful. Verification required, check your email for confirmation link.')
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
@@ -276,16 +285,14 @@ def confirmation_recieved(token):
     """
     try:
         email = s.loads(token, salt="email-confirm", max_age=3600/2)
-        flash("Email Verified", 'success')
         EMAILS.clear()
-        alert_method.update(method='success')
+        alert_method.update(method='Email Verified')
         return redirect(url_for("loginPage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
         User.query.filter_by(username=email_string).delete()
         db.session.commit()
-        flash("Confirmation link expired. You must Register again")
-        alert_method.update(method='error')
+        alert_method.update(method='Confirmation link expired. You must Register again')
         return redirect(url_for("loginPage"))
     
 @app.route('/signout')
@@ -295,8 +302,7 @@ def signOut():
     """
     logout_user()
     form = loginForm()
-    flash("Succesfully signed out")
-    alert_method.update(method='success')
+    alert_method.update(method='Succesfully signed out')
     return redirect(url_for("loginPage"))
     
 @app.route('/home', methods=['GET', 'POST'])

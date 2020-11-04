@@ -1,4 +1,85 @@
 body {
-    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    font-family: Baskerville, Baskerville Old Face, Hoefler Text, Garamond, Times New Roman, serif;
     background: linear-gradient(120deg, #5b5c85, #7cc29a);
+    height: 100vh;
+    overflow: scroll;
+}
+
+.center {
+    width: 430px;
+    margin: 130px auto;
+    position: relative;
+}
+
+.center .header {
+    font-size: 28px;
+    font-weight: bold;
+    color: rgb(255, 255, 255);
+    padding: 25px 0 30px 25px;
+    background: #5c1769;
+    border-bottom: 1px solid #370e3f;
+    border-radius: 5px 5px 0 0;
+}
+
+.center form {
+    position: absolute;
+    background: linear-gradient(120deg, #5b5c85, #7cc29a);
+    width: 100%;
+    padding: 50px 10px 0 30px;
+    box-sizing: border-box;
+    border-radius: 0 0 5px 5px;
+}
+
+form input {
+    height: 50px;
+    width: 90%;
+    padding: 0 10px;
+    border-radius: 3px;
+    border: 1px solid #c0c0c0;
+    font-size: 18px;
+    outline: none;
+}
+
+input[placeholder="Name"] {
+    margin-top: 20px;
+}
+
+form i {
+    position: absolute;
+    font-size: 25px;
+    color: grey;
+    transform: translate(1210%, -220%);
+}
+
+i.fa-user,
+i.fa-lock {
+    position: absolute;
+    transform: translate(1380%, -220%);
+}
+
+form input[type="submit"] {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    width: 130px;
+    height: 45px;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    line-height: 45px;
+    border-radius: 45px;
+    border-radius: 5px;
+    background: #5c1769;
+}
+
+form input[type="submit"]:hover {
+    background: linear-gradient(120deg, #2980b9, #8e44ad);
+    transition: .5s;
+}
+
+form a {
+    text-decoration: none;
+    font-size: 18px;
+    color: #7f2092;
+    padding: 0 0 0 20px;
 }

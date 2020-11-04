@@ -4,12 +4,20 @@
     <form action="{{ url_for( 'loginPage' ) }}" method="POST">
         {{ form.csrf_token }}
         <h1>Login</h1>
-        <div>
+        <div id="message_boxes">
             {% if error %}
-            <div>
+            <div id="error">
                 <div id="error-msg" class="error-box">
                     <p>
                         <strong>{{ error }}</strong>
+                    </p>
+                </div>
+            </div>
+            {% endif %} {% if alert_type %}
+            <div id="success">
+                <div id="success_msg" class="success-box">
+                    <p>
+                        <strong>{{ alert_type }}</strong>
                     </p>
                 </div>
             </div>
