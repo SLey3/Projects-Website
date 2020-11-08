@@ -1,5 +1,4 @@
 // Web Tools for html scripts
-
 // registerpage.html: Show/hide password
 
 function show_pass() {

@@ -5,7 +5,8 @@ from flask import (
     url_for, flash
 )
 from flask_wtf import FlaskForm, RecaptchaField
-from wtforms import StringField, PasswordField
+from wtforms import StringField, PasswordField, TextAreaField
+from wtforms.fields.html5 import TelField
 
 from wtforms.validators import (
     InputRequired, Length,
@@ -26,15 +27,14 @@ from flask_login import (
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from pathlib import Path
-from os.path import abspath, basename
 from flask_admin import Admin, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
 from flask_security import (
     Security, SQLAlchemyUserDatastore,
-    UserMixin, RoleMixin
+    UserMixin, RoleMixin, roles_accepted,
+    roles_required
 )
-from dashboard import dash, dashboardHome
+from dashboard import dash
 # from flask_pymongo import PyMongo
 
 # ------------------ app Config ------------------
@@ -74,19 +74,6 @@ mail.init_app(app)
 
 s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
-# ------------------ app Config: Checks filepath location ------------------
-
-
-absolute_path = abspath('.')
-try:
-    assert basename(absolute_path) == 'src'
-    in_src = True
-except AssertionError:
-    in_src = False
-
-del abspath
-del basename
-    
 # ------------------ app Config: Admin Config ------------------
 admin = Admin(app, template_mode="bootstrap4")
 
@@ -105,7 +92,7 @@ class registerForm(FlaskForm):
     """
     registration form for website
     """
-    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, message="minimum length must be 3 characters")], 
+    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, max=10, message="Name length must be between 3-10 characters")], 
                        render_kw={'placeholder':'Name'})
     email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
                                              Length(min=3, max=50, message="Email length must be at most 50 characters")], 
@@ -117,7 +104,41 @@ class registerForm(FlaskForm):
                                                                         "Confirmation password must equal to the created password")],
                                                                         render_kw={'placeholder':'confirm_pass'})
     recaptcha = RecaptchaField()
+    
+    
+class articleForm(FlaskForm):
+    """
+    article form for website
+    """
+    title = StringField("title", validators=[DataRequired("Title Entry required"), Length(min=5, max=100, message="Title must be between 5-100 characters")], 
+                        render_kw={"placeholder":"Enter title"})
+    
+    short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required"), 
+                                                              Length(min=15, max=30, message="Short Description must have between 15-30 characters")], 
+                             render_kw={'placeholder':"Enter Short Description"})
+    
+    body = TextAreaField("body", validators=[DataRequired("Body Entry Required"), Length(min=50, message="Body must have minimum 50 characters")], 
+                         id="editor", render_kw={"placeholder":"Enter Body Text"})
 
+class contactForm(FlaskForm):
+    """
+    Contact Us form
+    """
+    first_name = StringField("first_name", validators=[DataRequired("First name Entry required"), Length(min=3, max=9, message="Name length must be between 3-9 characters")], 
+                             render_kw={'class':'form-control'})
+    
+    last_name = StringField("last_name", validators=[DataRequired("First name Entry required"), Length(min=2, max=19, message="Name length must be between 2-19 characters")],
+                            render_kw={'class':'form-control'})
+    
+    email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
+                                            Length(min=3, max=50, message="Email length must be at most 50 characters")],
+                        render_kw={'class':'form-control'})
+    
+    mobile = TelField("mobile_number", validators=[DataRequired("Mobile Field Required")], render_kw={'class':'form-control'})
+    
+    message = TextAreaField("message", validators=[Length(min=50, message="Body must have minimum 50 characters")], render_kw={'cols':30, 'rows':10, 'class':'form-control'})
+    
+    
 # ------------------ SQL classes ------------------
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -156,9 +177,15 @@ class User(db.Model, UserMixin):
         
     def __repr__(self):
         return f"Name: {self.name}"
-
-
-admin.add_view(ModelView(Person, db.session))
+    
+    
+# class Article(db.Model):
+#     """
+#     Article Model
+#     """
+#     id = db.Column("id", db.Integer, primary_key=True)
+#     title = db.Column("title", db.String(100))
+#     body = db.Column("body", db.String(900))
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
@@ -173,6 +200,7 @@ class BacktoDashboard(BaseView):
         return redirect(url_for("dashboard.dashboardHome"))
     
 admin.add_view(BacktoDashboard(name="back", endpoint="redirect"))
+admin.add_view(ModelView(Person, db.session))
 
 # ------------------ External Resources ------------------
 @login_manager.user_loader
@@ -206,8 +234,6 @@ def get_alert_type():
 
 EMAILS = []
 
-PATH = Path(absolute_path)
-del absolute_path
 
 ALERTS = {
     'success' : 'alert-success',
@@ -216,9 +242,6 @@ ALERTS = {
 }
 
 alert_method = {'method': ''}
-
-parent_dir = PATH / "templates" / "public" if in_src else PATH / "src" / "templates" / "public"
-html_parent_dir = str(parent_dir).replace('\\', '/')
 
 # ------------------ web pages ------------------
 
@@ -296,6 +319,7 @@ def confirmation_recieved(token):
         return redirect(url_for("loginPage"))
     
 @app.route('/signout')
+@login_required
 def signOut():
     """
     Signs out of the site
@@ -305,19 +329,67 @@ def signOut():
     alert_method.update(method='Succesfully signed out')
     return redirect(url_for("loginPage"))
     
-@app.route('/home', methods=['GET', 'POST'])
+@app.route('/home')
 @login_required
+@roles_accepted('verified', 'unverified')
 def homePage():
     """
     website homepage
     """
     alert_type = get_alert_type()
-    return render_template("homepage.html", parent=html_parent_dir, alert_type=alert_type)
+    return render_template("homepage.html", alert_type=alert_type)
     
 @app.route('/about')
 @login_required
+@roles_accepted('verified', 'unverified')
 def aboutPage():
     return redirect(url_for("loginPage"))
+
+@app.route('/articles/create_article', methods=['GET', 'POST'])
+@login_required
+@roles_accepted('admin', 'editor')
+def articleCreation():
+    form = articleForm()
+    if request.method == "POST" and form.validate_on_submit():
+        pass
+        # article = Article(
+        #     title=form.title.data
+        #     body=form.body.data
+        # )
+        # db.session.add(article)
+        # db.commit()
+    else:
+        return render_template("articleform.html", form=form)
+    
+@app.route('/articles')
+@login_required
+@roles_accepted('verified', 'unverified')
+def article_home():
+    return render_template("articlepage.html")
+
+@app.route('/contact', methods=['GET', 'POST'])
+@login_required
+@roles_accepted('verified', 'unverfied')
+def contact_us():
+    form = contactForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        name = form.first_name.data + " " + form.last_name.data
+        email = form.email.data
+        tel = form.mobile.data
+        msg = form.message.data
+        mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
+        mail_msg.body = f"""
+        Contact:
+        Name: {name}
+        Email: {email}
+        Telephone Number: {tel}
+        Message:
+        {msg}
+        """
+        mail.send(mail_msg)
+        return redirect(url_for('homePage'))
+    else:
+        return render_template('contactpage.html', form=form)
     
 # ------------------ Website Starter ------------------
 if __name__ == '__main__':

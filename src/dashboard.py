@@ -6,6 +6,7 @@ from flask import (
 )
 from flask_security import roles_required, roles_accepted
 from flask_admin import Admin, BaseView
+from flask_login import login_required
 
 # ------------------ Blueprint Config ------------------
 dash = Blueprint('dashboard', __name__, template_folder="templates/private", url_prefix='/dashboard')
@@ -22,6 +23,8 @@ class MyView(BaseView):
 
 @dash.route('/')
 @roles_accepted('member', 'admin')
+@roles_required('verified')
+@login_required
 def dashboard():
     """
     redirects to dashboard home
@@ -30,6 +33,8 @@ def dashboard():
 
 @dash.route('/home')
 @roles_accepted('member', 'admin')
+@roles_required('verified')
+@login_required
 def dashboardHome():
     """
     Dashboard of the website
@@ -38,9 +43,17 @@ def dashboardHome():
 
 
 @dash.route('/admin')
-@roles_required('admin')
+@roles_required('admin', 'verified')
+@login_required
 def adminPage():
     """
     Administrator Page
     """
     return redirect(url_for("admin.index"))
+
+@dash.route('/create_article')
+@roles_accepted('admin', 'contributor')
+@roles_required('verified')
+@login_required
+def create_article_redirect():
+    return redirect(url_for("articleCreation"))

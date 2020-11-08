@@ -8,9 +8,10 @@ from mod_history import ModHistory
 
 MOD_FILES = []
 
-FOLDERS = ["src", ".vscode", ".git", "__pycache__", "templates", "public", "assets", "render", "web_util"]
+FOLDERS = ["src", ".vscode", ".git", "__pycache__", "templates", "public", "assets", "render", "web_util", "private", "admin", "articles"
+           "static", "js", "styles"]
 
-IGNORED_FOLDERS = [".vscode", ".git", "__pycache__"]
+IGNORED_FOLDERS = [".vscode", ".git", "__pycache__", "node_modules"]
     
 # ------------------ Modified() Source ------------------
 def Modified():
