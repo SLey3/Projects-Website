@@ -5,7 +5,10 @@ from flask import (
     url_for, flash
 )
 from flask_wtf import FlaskForm, RecaptchaField
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import (
+    StringField, PasswordField, 
+    TextAreaField, SelectField
+)
 from wtforms.fields.html5 import TelField
 
 from wtforms.validators import (
@@ -118,7 +121,7 @@ class articleForm(FlaskForm):
                              render_kw={'placeholder':"Enter Short Description"})
     
     body = TextAreaField("body", validators=[DataRequired("Body Entry Required"), Length(min=50, message="Body must have minimum 50 characters")], 
-                         id="editor", render_kw={"placeholder":"Enter Body Text"})
+                        render_kw={"placeholder":"Enter Body Text", 'class':'editor'})
 
 class contactForm(FlaskForm):
     """
@@ -129,6 +132,9 @@ class contactForm(FlaskForm):
     
     last_name = StringField("last_name", validators=[DataRequired("First name Entry required"), Length(min=2, max=19, message="Name length must be between 2-19 characters")],
                             render_kw={'class':'form-control'})
+    
+    inquiry_selection = SelectField('inquiry', choices=[('General', 'General Inquiry'), ('Security', 'Security Inquiry'), ('Article', 'Aritle Inquiry'), ('Other Inquiry', 'Other')],
+                                    validators=[DataRequired("Inquiry Choice Required")], render_kw={'class':'form-control'})
     
     email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
                                             Length(min=3, max=50, message="Email length must be at most 50 characters")],
@@ -359,13 +365,13 @@ def articleCreation():
         # db.session.add(article)
         # db.commit()
     else:
-        return render_template("articleform.html", form=form)
+        return render_template("articles/articleform.html", form=form)
     
 @app.route('/articles')
 @login_required
 @roles_accepted('verified', 'unverified')
 def article_home():
-    return render_template("articlepage.html")
+    return render_template("articles/articlepage.html")
 
 @app.route('/contact', methods=['GET', 'POST'])
 @login_required
@@ -374,6 +380,7 @@ def contact_us():
     form = contactForm()
     if request.method == 'POST' and form.validate_on_submit():
         name = form.first_name.data + " " + form.last_name.data
+        inquiry_selection = dict(form.inquiry_selection.choices).get(form.inquiry_selection.data)
         email = form.email.data
         tel = form.mobile.data
         msg = form.message.data
@@ -381,6 +388,7 @@ def contact_us():
         mail_msg.body = f"""
         Contact:
         Name: {name}
+        Inquiry Selection: {inquiry_selection}
         Email: {email}
         Telephone Number: {tel}
         Message:

@@ -1,0 +1,86 @@
+{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} MyProjects | Article Registration {% endblock %} {% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/articles_form.css')}}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous"> {% endblock %} {% block content %} {% include "web_util/_navbar.html" %}
+<div class="article-form">
+    <form action="{{ url_for('articleCreation') }}" method="POST">
+        {{ form.csrf_token }}
+        <h1>Create Your Article</h1>
+        <div class="txtb">
+            <label>Title:</label> {{ render_field(form.title) }}
+        </div>
+        <div class="txtb">
+            <label>Short Description:</label> {{ render_field(form.short_desc) }}
+        </div>
+        <div class="txtb">
+            <label>Body:</label> {{ render_field(form.body) }}
+        </div>
+        <div class="submit-btn">
+            <input type="submit" value="Submit Article" />
+        </div>
+    </form>
+</div>
+<script src="{{ url_for('static', filename='js/ckeditor/build/ckeditor.js') }}"></script>
+<script type="text/javascript">
+    import Base64UploadAdapter from '../../../../../static/js/ckeditor/node_modules/@ckeditor/ckeditor5-upload/src/adapters/base64uploadadapter.js';
+
+    ClassicEditor
+        .create(document.querySelector('.editor'), {
+
+            toolbar: {
+                items: [
+                    'heading',
+                    '|',
+                    'bold',
+                    'italic',
+                    'link',
+                    'bulletedList',
+                    'numberedList',
+                    '|',
+                    'indent',
+                    'outdent',
+                    '|',
+                    'imageUpload',
+                    'blockQuote',
+                    'insertTable',
+                    'mediaEmbed',
+                    'undo',
+                    'redo'
+                ]
+            },
+            language: 'en',
+            image: {
+                toolbar: [
+                    'imageTextAlternative',
+                    'imageStyle:full',
+                    'imageStyle:side'
+                ]
+            },
+            table: {
+                contentToolbar: [
+                    'tableColumn',
+                    'tableRow',
+                    'mergeTableCells'
+                ]
+            },
+
+        })
+        .then(editor => {
+            window.editor = editor;
+
+
+
+
+
+
+
+
+        })
+        .catch(error => {
+            console.error('Oops, something went wrong!');
+            console.error('Please, report the following error on https://github.com/ckeditor/ckeditor5/issues with the build id and the error stack trace:');
+            console.warn('Build id: pge49sycw3tp-c2ogx5cku7k8');
+            console.error(error);
+        });
+</script>
+
+{% endblock %}
