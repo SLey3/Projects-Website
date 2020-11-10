@@ -7,7 +7,8 @@ from flask import (
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField, PasswordField, 
-    TextAreaField, SelectField
+    TextAreaField, SelectField,
+    FileField
 )
 from wtforms.fields.html5 import TelField
 
@@ -119,9 +120,10 @@ class articleForm(FlaskForm):
     short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required"), 
                                                               Length(min=15, max=30, message="Short Description must have between 15-30 characters")], 
                              render_kw={'placeholder':"Enter Short Description"})
+    front_image = FileField('front_img', id='front-image')
     
     body = TextAreaField("body", validators=[DataRequired("Body Entry Required"), Length(min=50, message="Body must have minimum 50 characters")], 
-                        render_kw={"placeholder":"Enter Body Text", 'class':'editor'})
+                        render_kw={"placeholder":"Enter Body Text", 'id':'Quilleditor'})
 
 class contactForm(FlaskForm):
     """
