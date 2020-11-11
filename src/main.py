@@ -5,17 +5,17 @@ from flask import (
     url_for, flash
 )
 from flask_wtf import FlaskForm, RecaptchaField
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import (
     StringField, PasswordField, 
-    TextAreaField, SelectField,
-    FileField
+    TextAreaField, SelectField
 )
 from wtforms.fields.html5 import TelField
 
 from wtforms.validators import (
     InputRequired, Length,
     Email, DataRequired,
-    EqualTo
+    EqualTo, NumberRange
 )
 from flask_sqlalchemy import SQLAlchemy
 try:
@@ -39,11 +39,24 @@ from flask_security import (
     roles_required
 )
 from dashboard import dash
-# from flask_pymongo import PyMongo
+from werkzeug.utils import secure_filename
+from flask_uploads import UploadSet, IMAGES, configure_uploads
+import os
+import shutil
+
+# ------------------ path Config ------------------
+current_path = os.getcwd()
+if 'src' in current_path:
+    PATH = current_path
+else:
+    PATH = os.path.join(current_path, 'src')
+    
+del current_path
 
 # ------------------ app Config ------------------
 app = Flask(__name__, template_folder="templates/public")
 app.config["SECRET_KEY"] = "Kwl986"
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # app.config["MONGO_URI"] = "mongodb+srv://SergioLey:admin123456@project-mikeyankeepapar.hddfz.mongodb.net/users.sqlite?retryWrites=true&w=majority"
@@ -56,6 +69,7 @@ app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
 app.config["MAIL_USE_SSL"] = True
 app.config["MAIL_USE_TLS "] = False
+app.config["UPLOADS_DEFAULT_DEST"] = f'{PATH}\\templates\\public\\articles\\uploads'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 
@@ -63,10 +77,6 @@ app.register_blueprint(dash)
 db = SQLAlchemy(app)
 
 sql_sess = Session(autoflush=False)
-
-# --------- Currently disabled for if sqlalchemy needs to be replaced
-
-# mongo = PyMongo(app)
 
 # ------------------ app Config: Flask_login Config ------------------
 login_manager = LoginManager()
@@ -80,6 +90,10 @@ s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ app Config: Admin Config ------------------
 admin = Admin(app, template_mode="bootstrap4")
+
+# ------------------ app Config: Flask Uploads(Reuploaded) Config ------------------
+img_set = UploadSet('images', IMAGES)
+configure_uploads(app, img_set)
 
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -117,13 +131,9 @@ class articleForm(FlaskForm):
     title = StringField("title", validators=[DataRequired("Title Entry required"), Length(min=5, max=100, message="Title must be between 5-100 characters")], 
                         render_kw={"placeholder":"Enter title"})
     
-    short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required"), 
-                                                              Length(min=15, max=30, message="Short Description must have between 15-30 characters")], 
+    short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required")], 
                              render_kw={'placeholder':"Enter Short Description"})
-    front_image = FileField('front_img', id='front-image')
-    
-    body = TextAreaField("body", validators=[DataRequired("Body Entry Required"), Length(min=50, message="Body must have minimum 50 characters")], 
-                        render_kw={"placeholder":"Enter Body Text", 'id':'Quilleditor'})
+    front_image = FileField('front_img', id='front-image', validators=[FileAllowed(img_set, "Images only")])
 
 class contactForm(FlaskForm):
     """
@@ -359,13 +369,15 @@ def aboutPage():
 def articleCreation():
     form = articleForm()
     if request.method == "POST" and form.validate_on_submit():
-        pass
-        # article = Article(
-        #     title=form.title.data
-        #     body=form.body.data
-        # )
-        # db.session.add(article)
-        # db.commit()
+        img_file = form.front_image.data
+        filename = secure_filename(img_file.filename)
+        img_set.save(img_file, name=f"{filename}")
+        print(form.title.data)
+        print(form.short_desc.data)
+        print(form.front_image.data)
+        print(filename)
+        print(request.form.get('editordata'))
+        return render_template("articles/articleform.html", form=form)
     else:
         return render_template("articles/articleform.html", form=form)
     
