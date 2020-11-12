@@ -42,7 +42,6 @@ from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 import os
-import shutil
 
 # ------------------ path Config ------------------
 current_path = os.getcwd()
@@ -170,6 +169,8 @@ class Role(db.Model, RoleMixin):
     
     def __repr__(self):
         return f"Permission: {self.name}"
+    
+    
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30))
@@ -381,7 +382,7 @@ def articleCreation():
     else:
         return render_template("articles/articleform.html", form=form)
     
-@app.route('/articles')
+@app.route('/articles', methods=['POST'])
 @login_required
 @roles_accepted('verified', 'unverified')
 def article_home():
