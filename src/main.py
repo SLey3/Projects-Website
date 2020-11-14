@@ -22,6 +22,8 @@ try:
     from flask_sqlalchemy.orm.session import Session
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session
+    
+from sqlalchemy.ext.declarative import declarative_base
 from passlib.hash import sha256_crypt
 from datetime import timedelta
 from flask_login import (
@@ -58,7 +60,6 @@ app.config["SECRET_KEY"] = "Kwl986"
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# app.config["MONGO_URI"] = "mongodb+srv://SergioLey:admin123456@project-mikeyankeepapar.hddfz.mongodb.net/users.sqlite?retryWrites=true&w=majority"
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
 app.config["MAIL_DEFAULT_SENDER"] = "noreplymyprojectsweb@gmail.com"
@@ -76,6 +77,8 @@ app.register_blueprint(dash)
 db = SQLAlchemy(app)
 
 sql_sess = Session(autoflush=False)
+
+Base = declarative_base()
 
 # ------------------ app Config: Flask_login Config ------------------
 login_manager = LoginManager()
@@ -198,14 +201,16 @@ class User(db.Model, UserMixin):
         return f"Name: {self.name}"
     
     
-# class Article(db.Model):
-#     """
-#     Article Model
-#     """
-#     id = db.Column("id", db.Integer, primary_key=True)
-#     title = db.Column("title", db.String(100))
-#     body = db.Column("body", db.String(900))
-
+class Article(db.Model):
+    """
+    Article Model
+    """
+    id = db.Column("id", db.Integer, primary_key=True)
+    title = db.Column("title", db.String(100))
+    short_desc = db.Column("short_description", db.String(150))
+    title_img = db.Column(db.LargeBinary)
+    body = db.Column("body", db.String(900))
+    
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
@@ -307,6 +312,7 @@ def registerPage():
         )
         db.session.commit()
         EMAILS.append(form.email.data)
+        EMAILS.append(form.name.data)
         token = s.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for("confirmation_recieved", token=token, external=True)
@@ -327,7 +333,11 @@ def confirmation_recieved(token):
     """
     try:
         email = s.loads(token, salt="email-confirm", max_age=3600/2)
+        name = EMAILS.pop(1)
         EMAILS.clear()
+        # user_datastore.remove_role_from_user(name, 'unverified')
+        # user_datastore.add_role_to_user(name, 'verified')
+        # db.session.commit()
         alert_method.update(method='Email Verified')
         return redirect(url_for("loginPage"))
     except SignatureExpired:
@@ -373,12 +383,16 @@ def articleCreation():
         img_file = form.front_image.data
         filename = secure_filename(img_file.filename)
         img_set.save(img_file, name=f"{filename}")
-        print(form.title.data)
-        print(form.short_desc.data)
-        print(form.front_image.data)
-        print(filename)
-        print(request.form.get('editordata'))
-        return render_template("articles/articleform.html", form=form)
+        new_article = Article(
+            title=form.title.data,
+            short_desc=form.short_desc.data,
+            title_img=img_file,
+            body=request.form.get('editordata')
+        )
+        db.session.add(new_article)
+        db.session.commit()
+        articles = Session.query(Article).all()
+        return render_template("articles/articlepage.html", articles=articles)
     else:
         return render_template("articles/articleform.html", form=form)
     
@@ -386,7 +400,15 @@ def articleCreation():
 @login_required
 @roles_accepted('verified', 'unverified')
 def article_home():
-    return render_template("articles/articlepage.html")
+    articles = Session.query(Article).all()
+    return render_template("articles/articlepage.html", articles=article)
+
+@app.route('/articles/<string:id>')
+@login_required
+@roles_accepted('verified', 'unverified')
+def articlePage(id):
+    article = Session.query(Article).filter_by(id=id)
+    return render_template('articles/articleviewpage.html')
 
 @app.route('/contact', methods=['GET', 'POST'])
 @login_required
