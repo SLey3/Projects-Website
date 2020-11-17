@@ -46,6 +46,7 @@ from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open
 from functools import wraps
+from html5print import HTMLBeautifier
 import base64
 import os
 
@@ -289,14 +290,15 @@ def is_valid_article_page(func):
     @wraps(func)
     def validator(id):
         articles = Article.query.all()
-        ids = []
         for article in articles:
-            id_number = article.id
-            ids.append(id_number)
-        if id in ids:
-            return func(page)
-        else:
-            return abort(404)
+            article_id_number = str(article.id)
+            print(article_id_number)
+            print(id)
+            if id == article_id_number:
+                print(200)
+                return func(id)
+        print(404)
+        return abort(404)
     return validator
 
 
@@ -434,13 +436,16 @@ def articleCreation():
         del current_date
         with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
             img = str(base64.b64encode(image.read()), 'utf-8')
+            
+        raw_body = request.form.get('editordata')
+        body = HTMLBeautifier.beautify(raw_body, 4)
         new_article = Article(
             title=form.title.data,
             author=form.author.data,
             create_date=creation_date,
             short_desc=form.short_desc.data,
             title_img=img,
-            body=request.form.get('editordata')
+            body=body
         )
         db.session.add(new_article)
         db.session.commit()
@@ -459,7 +464,7 @@ def article_home():
         abort(400)
     return render_template("articles/articlepage.html", articles=articles)
 
-@app.route('/articles/<string:id>/')
+@app.route('/articles/<string:id>')
 @login_required
 @roles_accepted('verified', 'unverified')
 @is_valid_article_page

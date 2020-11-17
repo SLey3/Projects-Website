@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans+Narrow&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@1,100&display=swap');
+.page-header {
+    margin: 10px 1px 10px;
+    padding: 0 20px;
+}
+
+.page-header .article-title {
+    font-family: 'Merriweather', serif;
+}
+
+.page-header .author {
+    font-family: 'Roboto', sans-serif;
+    padding: 3px 35px;
+}
+
+.page-header .author h3 {
+    font-size: 19px;
+    font-weight: 69px;
+}
+
+.page-header .create-date {
+    position: absolute;
+    font-family: 'Roboto', sans-serif;
+    transform: translate(50%, -35%);
+}
+
+.page-header .img-thumbnail {
+    border: none;
+    margin: 70px 6px;
+    padding: 0 20px 5em;
+}
+
+.page-header .img-thumbnail img {
+    width: 30%;
+}
+
+blockquote {
+    padding: 1em 20px;
+    background: rgb(255, 255, 255);
+    border-left: 6px solid lightgrey;
+    font-family: 'PT Sans Narrow', sans-serif;
+}
