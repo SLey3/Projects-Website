@@ -2,7 +2,7 @@
 from flask import (
     Flask, render_template,
     redirect, request,
-    url_for, flash
+    url_for, abort
 )
 from flask_wtf import FlaskForm, RecaptchaField
 from flask_wtf.file import FileField, FileAllowed
@@ -15,7 +15,7 @@ from wtforms.fields.html5 import TelField
 from wtforms.validators import (
     InputRequired, Length,
     Email, DataRequired,
-    EqualTo, NumberRange
+    EqualTo
 )
 from flask_sqlalchemy import SQLAlchemy
 try:
@@ -24,8 +24,9 @@ except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session
     
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import OperationalError
 from passlib.hash import sha256_crypt
-from datetime import timedelta
+from datetime import timedelta, datetime
 from flask_login import (
     LoginManager, login_required,
     login_user, logout_user,
@@ -43,6 +44,9 @@ from flask_security import (
 from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
+from io import open
+from functools import wraps
+import base64
 import os
 
 # ------------------ path Config ------------------
@@ -69,9 +73,10 @@ app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
 app.config["MAIL_USE_SSL"] = True
 app.config["MAIL_USE_TLS "] = False
-app.config["UPLOADS_DEFAULT_DEST"] = f'{PATH}\\templates\\public\\articles\\uploads'
+app.config["UPLOADS_DEFAULT_DEST"] = f'{PATH}\\static\\assets\\uploads'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
+
 
 # ------------------ app Config: SQLAlchemy / PyMongo Config ------------------
 db = SQLAlchemy(app)
@@ -96,6 +101,21 @@ admin = Admin(app, template_mode="bootstrap4")
 # ------------------ app Config: Flask Uploads(Reuploaded) Config ------------------
 img_set = UploadSet('images', IMAGES)
 configure_uploads(app, img_set)
+        
+# ------------------ error handlers ------------------
+@app.errorhandler(400)
+def no_articles(e):
+    """
+    returns 400 status code and 400 error page
+    """
+    return render_template('error_page/400/400.html')
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """
+    returns 404 status code and 404 error page
+    """
+    return render_template('error_page/404/404.html')
 
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -132,6 +152,9 @@ class articleForm(FlaskForm):
     """
     title = StringField("title", validators=[DataRequired("Title Entry required"), Length(min=5, max=100, message="Title must be between 5-100 characters")], 
                         render_kw={"placeholder":"Enter title"})
+    
+    author = StringField("author", validators=[DataRequired("Author Entry required"), Length(min=3, max=100, message="Name must be between 3-100")],
+                         render_kw={"placeholder":"Enter Authors name"})
     
     short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required")], 
                              render_kw={'placeholder':"Enter Short Description"})
@@ -207,8 +230,10 @@ class Article(db.Model):
     """
     id = db.Column("id", db.Integer, primary_key=True)
     title = db.Column("title", db.String(100))
+    author = db.Column("author", db.String(100))
+    create_date = db.Column(db.String(100))
     short_desc = db.Column("short_description", db.String(150))
-    title_img = db.Column(db.LargeBinary)
+    title_img = db.Column(db.String(500))
     body = db.Column("body", db.String(900))
     
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -252,6 +277,27 @@ def get_alert_type():
         else:
             return ALERTS[Type]
     return ""
+
+
+def is_valid_article_page(func):
+    """
+    Returns whether the article page is valid or not.
+    if not valid:
+    Returns:
+        404 http code
+    """
+    @wraps(func)
+    def validator(id):
+        articles = Article.query.all()
+        ids = []
+        for article in articles:
+            id_number = article.id
+            ids.append(id_number)
+        if id in ids:
+            return func(page)
+        else:
+            return abort(404)
+    return validator
 
 
 # ------------------ External Resources: Global Constants ------------------
@@ -383,32 +429,46 @@ def articleCreation():
         img_file = form.front_image.data
         filename = secure_filename(img_file.filename)
         img_set.save(img_file, name=f"{filename}")
+        current_date = datetime.now()
+        creation_date = f"{current_date.month}/{current_date.day}/{current_date.year}"
+        del current_date
+        with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
+            img = str(base64.b64encode(image.read()), 'utf-8')
         new_article = Article(
             title=form.title.data,
+            author=form.author.data,
+            create_date=creation_date,
             short_desc=form.short_desc.data,
-            title_img=img_file,
+            title_img=img,
             body=request.form.get('editordata')
         )
         db.session.add(new_article)
         db.session.commit()
-        articles = Session.query(Article).all()
+        articles = Article.query.all()
         return render_template("articles/articlepage.html", articles=articles)
     else:
         return render_template("articles/articleform.html", form=form)
     
-@app.route('/articles', methods=['POST'])
+@app.route('/articles', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('verified', 'unverified')
 def article_home():
-    articles = Session.query(Article).all()
-    return render_template("articles/articlepage.html", articles=article)
+    try:
+        articles = Article.query.all()
+    except OperationalError:
+        abort(400)
+    return render_template("articles/articlepage.html", articles=articles)
 
-@app.route('/articles/<string:id>')
+@app.route('/articles/<string:id>/')
 @login_required
 @roles_accepted('verified', 'unverified')
+@is_valid_article_page
 def articlePage(id):
-    article = Session.query(Article).filter_by(id=id)
-    return render_template('articles/articleviewpage.html')
+    try:
+        article = Article.query.filter_by(id=id).first()
+    except OperationalError:
+        abort(404)
+    return render_template('articles/articleviewpage.html', article=article)
 
 @app.route('/contact', methods=['GET', 'POST'])
 @login_required
