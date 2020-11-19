@@ -22,8 +22,6 @@ try:
     from flask_sqlalchemy.orm.session import Session
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session
-    
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
 from passlib.hash import sha256_crypt
 from datetime import timedelta, datetime
@@ -49,6 +47,7 @@ from functools import wraps
 from html5print import HTMLBeautifier
 import base64
 import os
+import bleach
 
 # ------------------ path Config ------------------
 current_path = os.getcwd()
@@ -84,8 +83,6 @@ db = SQLAlchemy(app)
 
 sql_sess = Session(autoflush=False)
 
-Base = declarative_base()
-
 # ------------------ app Config: Flask_login Config ------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -94,7 +91,7 @@ login_manager.init_app(app)
 mail = Mail()
 mail.init_app(app)
 
-s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ app Config: Admin Config ------------------
 admin = Admin(app, template_mode="bootstrap4")
@@ -292,20 +289,21 @@ def is_valid_article_page(func):
         articles = Article.query.all()
         for article in articles:
             article_id_number = str(article.id)
-            print(article_id_number)
-            print(id)
             if id == article_id_number:
-                print(200)
                 return func(id)
-        print(404)
         return abort(404)
     return validator
 
 
-# ------------------ External Resources: Global Constants ------------------
+# ------------------ External Resources: Constants and variables ------------------
 
 EMAILS = []
 
+HTML_IGNORE_TAGS = ['p', 'b', 'u', 'blockquote', 'br', 'ul', 'li', 'ol', 'img']
+
+HTML_IGNORE_ATTR = {
+    'img' : ['src']
+}
 
 ALERTS = {
     'success' : 'alert-success',
@@ -361,7 +359,7 @@ def registerPage():
         db.session.commit()
         EMAILS.append(form.email.data)
         EMAILS.append(form.name.data)
-        token = s.dumps(form.email.data, salt='email-confirm')
+        token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for("confirmation_recieved", token=token, external=True)
         verify_msg.body = f'''Thank you for registering, {form.name.data}! In order to complete the registration you must click on the link below.
@@ -380,7 +378,7 @@ def confirmation_recieved(token):
     :param token: Email token
     """
     try:
-        email = s.loads(token, salt="email-confirm", max_age=3600/2)
+        email = urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
         name = EMAILS.pop(1)
         EMAILS.clear()
         # user_datastore.remove_role_from_user(name, 'unverified')
@@ -438,7 +436,13 @@ def articleCreation():
             img = str(base64.b64encode(image.read()), 'utf-8')
             
         raw_body = request.form.get('editordata')
-        body = HTMLBeautifier.beautify(raw_body, 4)
+        uncleaned_body = HTMLBeautifier.beautify(raw_body, 4)
+        body = bleach.clean(
+            uncleaned_body, 
+            HTML_IGNORE_TAGS,
+            HTML_IGNORE_ATTR,
+            strip=True)
+        
         new_article = Article(
             title=form.title.data,
             author=form.author.data,

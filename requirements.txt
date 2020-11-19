@@ -13,3 +13,6 @@ Flask-Admin==1.5.7
 Flask-Reuploaded==0.3.2
 werkzeug==1.0.1
 html5print==0.1.2
+flask-security==3.0.0
+flask-login==0.5.0
+bleach==3.2.1
