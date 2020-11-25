@@ -32,6 +32,7 @@ def dashboard():
     return redirect(url_for("dashboard.dashboardHome"))
 
 @dash.route('/home')
+@dash.route('/home/')
 @roles_accepted('member', 'admin')
 @roles_required('verified')
 @login_required
@@ -43,6 +44,7 @@ def dashboardHome():
 
 
 @dash.route('/admin')
+@dash.route('/admin/')
 @roles_required('admin', 'verified')
 @login_required
 def adminPage():
@@ -52,7 +54,9 @@ def adminPage():
     return redirect(url_for("admin.index"))
 
 @dash.route('/create_article')
-@roles_accepted('admin', 'contributor')
+@dash.route('/create_article/')
+@dash.route('/home/create_article/')
+@roles_accepted('admin', 'editor')
 @roles_required('verified')
 @login_required
 def create_article_redirect():

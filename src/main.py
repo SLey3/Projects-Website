@@ -23,12 +23,11 @@ try:
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import OperationalError
-from passlib.hash import sha256_crypt
+from passlib.hash import sha512_crypt
 from datetime import timedelta, datetime
 from flask_login import (
-    LoginManager, login_required,
-    login_user, logout_user,
-    current_user
+    LoginManager, login_user, 
+    logout_user, current_user
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
@@ -37,17 +36,16 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import (
     Security, SQLAlchemyUserDatastore,
     UserMixin, RoleMixin, roles_accepted,
-    roles_required
+    roles_required, login_required
 )
 from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open
 from functools import wraps
-from html5print import HTMLBeautifier
+from flask_assets import Bundle, Environment
 import base64
 import os
-import bleach
 
 # ------------------ path Config ------------------
 current_path = os.getcwd()
@@ -59,7 +57,7 @@ else:
 del current_path
 
 # ------------------ app Config ------------------
-app = Flask(__name__, template_folder="templates/public")
+app = Flask(__name__, template_folder="templates/public", static_folder='static')
 app.config["SECRET_KEY"] = "Kwl986"
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
@@ -74,6 +72,11 @@ app.config["MAIL_PORT"] = 465
 app.config["MAIL_USE_SSL"] = True
 app.config["MAIL_USE_TLS "] = False
 app.config["UPLOADS_DEFAULT_DEST"] = f'{PATH}\\static\\assets\\uploads'
+app.config["SECURITY_PASSWORD_HASH"] = "sha512_crypt"
+app.config["SECURITY_FLASH_MESSAGES"] = False
+app.config["SECURITY_LOGIN_URL"] = "/auth/login" or "/auth/login/"
+app.config["SECURITY_LOGOUT_URL"] = "/auth/signout" or "/auth/signout/"
+app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'error_page/login_redirect/redirectlogin.html'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 
@@ -99,7 +102,15 @@ admin = Admin(app, template_mode="bootstrap4")
 # ------------------ app Config: Flask Uploads(Reuploaded) Config ------------------
 img_set = UploadSet('images', IMAGES)
 configure_uploads(app, img_set)
-        
+   
+   
+# ------------------ app Config: Js files Minifier ------------------ 
+js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
+                   filters='jsmin', output="js/gen/main.min.js")  
+
+assets = Environment(app)
+assets.register('main__js', js_bundle)
+  
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
 def no_articles(e):
@@ -211,7 +222,7 @@ class User(db.Model, UserMixin):
     id = db.Column("id", db.Integer, primary_key=True)
     person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
     name = db.Column("name", db.String(100))
-    username = db.Column("email", db.String(100), unique=True)
+    email = db.Column("email", db.String(100), unique=True)
     password = db.Column("password", db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
@@ -235,7 +246,8 @@ class Article(db.Model):
     body = db.Column("body", db.String(900))
     
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+
+security = Security(app, user_datastore, login_form=loginForm)
 
 # ------------------ Admin pages ------------------
 class BacktoDashboard(BaseView):
@@ -294,16 +306,9 @@ def is_valid_article_page(func):
         return abort(404)
     return validator
 
-
 # ------------------ External Resources: Constants and variables ------------------
 
 EMAILS = []
-
-HTML_IGNORE_TAGS = ['p', 'b', 'u', 'blockquote', 'br', 'ul', 'li', 'ol', 'img']
-
-HTML_IGNORE_ATTR = {
-    'img' : ['src']
-}
 
 ALERTS = {
     'success' : 'alert-success',
@@ -325,9 +330,9 @@ def loginPage():
     alert_type = get_alert_type()
     
     if request.method == "POST" and form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter_by(email=form.username.data).first()
         if user:
-            if sha256_crypt.verify(form.password.data, user.password):
+            if sha512_crypt.verify(form.password.data, user.password):
                 login_user(user)
                 return redirect(url_for("homePage"))
         error = "Invalid Email or Password"
@@ -339,6 +344,7 @@ def loginPage():
             return render_template("loginpage.html", form=form, alert_type=alert_type)
 
 @app.route('/register', methods=['GET', 'POST'])
+@app.route('/register/', methods=['GET', 'POST'])
 def registerPage():
     """
     Registration Page
@@ -351,9 +357,9 @@ def registerPage():
             user_datastore.find_or_create_role('unverified')
             user_datastore.find_or_create_role('verified')
         user_datastore.create_user(
-            name=request.form.get("name"),
-            username=request.form.get("email"),
-            password=sha256_crypt.hash(request.form.get("password")),
+            name=form.name.data,
+            email=form.email.data,
+            password=sha512_crypt.hash(form.password.data),
             roles=['admin', 'verified']
         )
         db.session.commit()
@@ -372,6 +378,7 @@ def registerPage():
         return render_template("registerpage.html", form=form)
   
 @app.route('/confirm_recieved/<token>')  
+@app.route('/confirm_recieved/<token>/')  
 def confirmation_recieved(token):
     """
     Confirmation and account creation page
@@ -394,6 +401,7 @@ def confirmation_recieved(token):
         return redirect(url_for("loginPage"))
     
 @app.route('/signout')
+@app.route('/signout/')
 @login_required
 def signOut():
     """
@@ -405,6 +413,7 @@ def signOut():
     return redirect(url_for("loginPage"))
     
 @app.route('/home')
+@app.route('/home/')
 @login_required
 @roles_accepted('verified', 'unverified')
 def homePage():
@@ -415,12 +424,14 @@ def homePage():
     return render_template("homepage.html", alert_type=alert_type)
     
 @app.route('/about')
+@app.route('/about/')
 @login_required
 @roles_accepted('verified', 'unverified')
 def aboutPage():
     return redirect(url_for("loginPage"))
 
 @app.route('/articles/create_article', methods=['GET', 'POST'])
+@app.route('/articles/create_article/', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'editor')
 def articleCreation():
@@ -435,14 +446,7 @@ def articleCreation():
         with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
             img = str(base64.b64encode(image.read()), 'utf-8')
             
-        raw_body = request.form.get('editordata')
-        uncleaned_body = HTMLBeautifier.beautify(raw_body, 4)
-        body = bleach.clean(
-            uncleaned_body, 
-            HTML_IGNORE_TAGS,
-            HTML_IGNORE_ATTR,
-            strip=True)
-        
+        body = request.form.get('editordata')          
         new_article = Article(
             title=form.title.data,
             author=form.author.data,
@@ -459,6 +463,7 @@ def articleCreation():
         return render_template("articles/articleform.html", form=form)
     
 @app.route('/articles', methods=['GET', 'POST'])
+@app.route('/articles/', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('verified', 'unverified')
 def article_home():
@@ -469,6 +474,7 @@ def article_home():
     return render_template("articles/articlepage.html", articles=articles)
 
 @app.route('/articles/<string:id>')
+@app.route('/articles/<string:id>/')
 @login_required
 @roles_accepted('verified', 'unverified')
 @is_valid_article_page
@@ -480,6 +486,7 @@ def articlePage(id):
     return render_template('articles/articleviewpage.html', article=article)
 
 @app.route('/contact', methods=['GET', 'POST'])
+@app.route('/contact/', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('verified', 'unverfied')
 def contact_us():

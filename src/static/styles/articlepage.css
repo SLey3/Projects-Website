@@ -36,6 +36,11 @@
     width: 30%;
 }
 
+pre {
+    margin: 25px 50px 75px 100px;
+    color: rgb(10, 50, 54);
+}
+
 blockquote {
     padding: 1em 20px;
     background: rgb(255, 255, 255);
