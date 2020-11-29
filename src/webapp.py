@@ -206,7 +206,7 @@ class contactForm(FlaskForm):
     last_name = StringField("last_name", validators=[DataRequired("First name Entry required"), Length(min=2, max=19, message="Name length must be between 2-19 characters")],
                             render_kw={'class':'form-control'})
     
-    inquiry_selection = SelectField('inquiry', choices=[('General', 'General Inquiry'), ('Security', 'Security Inquiry'), ('Article', 'Aritle Inquiry'), ('Other Inquiry', 'Other')],
+    inquiry_selection = SelectField('inquiry', choices=[('General', 'General Inquiry'), ('Security', 'Security Inquiry'), ('Article', 'Article Inquiry'), ('Other Inquiry', 'Other')],
                                     validators=[DataRequired("Inquiry Choice Required")], render_kw={'class':'form-control'})
     
     email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
@@ -531,6 +531,7 @@ def contact_us():
         Inquiry Selection: {inquiry_selection}
         Email: {email}
         Telephone Number: {tel}
+        -------------------------------------------------------------
         Message:
         {msg}
         """
