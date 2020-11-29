@@ -8,7 +8,8 @@ from flask_wtf import FlaskForm, RecaptchaField
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import (
     StringField, PasswordField, 
-    TextAreaField, SelectField
+    TextAreaField, SelectField,
+    ValidationError
 )
 from wtforms.fields.html5 import TelField
 
@@ -41,11 +42,13 @@ from flask_security import (
 from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
-from io import open
+from io import open as iopen
 from functools import wraps
 from flask_assets import Bundle, Environment
+from typing import Optional
 import base64
 import os
+import phonenumbers
 
 # ------------------ path Config ------------------
 current_path = os.getcwd()
@@ -59,7 +62,7 @@ del current_path
 # ------------------ app Config ------------------
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
 app.config["SECRET_KEY"] = "Kwl986"
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
@@ -104,7 +107,7 @@ img_set = UploadSet('images', IMAGES)
 configure_uploads(app, img_set)
    
    
-# ------------------ app Config: Js files Minifier ------------------ 
+# ------------------ app Config: Bundle Config ------------------ 
 js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
                    filters='jsmin', output="js/gen/main.min.js")  
 
@@ -118,13 +121,37 @@ def no_articles(e):
     returns 400 status code and 400 error page
     """
     return render_template('error_page/400/400.html')
-
 @app.errorhandler(404)
 def page_not_found(e):
     """
     returns 404 status code and 404 error page
     """
     return render_template('error_page/404/404.html')
+
+# ------------------ Forms: Cutom Validators ------------------
+def ValidatePhone(message: Optional[str] = None):
+    """
+    validates phone number
+    """
+    if isinstance(message, type(None)):
+        message = "Invalid Phone Number"
+    else:
+        message = message
+    
+    def _validatephone(form, field):
+        if len(field.data) > 16:
+            raise ValidationError("Invalid Phone Number")
+        
+        try:
+            mobile_number = phonenumbers.parse(field.data)
+            if not (phonenumbers.is_valid_number(mobile_number)):
+                raise ValidationError(message)
+        except:
+            mobile_number = phonenumbers.parse("+1"+field.data)
+            if not (phonenumbers.is_valid_number(mobile_number)):
+                raise ValidationError(message)
+    return _validatephone
+        
 
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
@@ -186,7 +213,7 @@ class contactForm(FlaskForm):
                                             Length(min=3, max=50, message="Email length must be at most 50 characters")],
                         render_kw={'class':'form-control'})
     
-    mobile = TelField("mobile_number", validators=[DataRequired("Mobile Field Required")], render_kw={'class':'form-control'})
+    mobile = TelField("mobile_number", validators=[DataRequired("Mobile Field Required"), ValidatePhone()], render_kw={'class':'form-control'})
     
     message = TextAreaField("message", validators=[Length(min=50, message="Body must have minimum 50 characters")], render_kw={'cols':30, 'rows':10, 'class':'form-control'})
     
@@ -443,7 +470,7 @@ def articleCreation():
         current_date = datetime.now()
         creation_date = f"{current_date.month}/{current_date.day}/{current_date.year}"
         del current_date
-        with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
+        with iopen(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
             img = str(base64.b64encode(image.read()), 'utf-8')
             
         body = request.form.get('editordata')          
