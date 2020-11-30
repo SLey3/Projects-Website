@@ -108,10 +108,13 @@ configure_uploads(app, img_set)
    
    
 # ------------------ app Config: Bundle Config ------------------ 
-js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
-                   filters='jsmin', output="js/gen/main.min.js")  
-
 assets = Environment(app)
+# ------------------ app Config: Bundle Config: Bundles ------------------ 
+
+js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
+                   filters='jsmin', output="js/gen/main.min.js") 
+
+# ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
   
 # ------------------ error handlers ------------------
@@ -128,7 +131,7 @@ def page_not_found(e):
     """
     return render_template('error_page/404/404.html')
 
-# ------------------ Forms: Cutom Validators ------------------
+# ------------------ Forms: Custom Validators ------------------
 def ValidatePhone(message: Optional[str] = None):
     """
     validates phone number
@@ -139,7 +142,7 @@ def ValidatePhone(message: Optional[str] = None):
         message = message
     
     def _validatephone(form, field):
-        if len(field.data) > 16:
+        if len(field.data) > 15:
             raise ValidationError("Invalid Phone Number")
         
         try:
@@ -152,7 +155,6 @@ def ValidatePhone(message: Optional[str] = None):
                 raise ValidationError(message)
     return _validatephone
         
-
 # ------------------ Forms ------------------
 class loginForm(FlaskForm):
     """
