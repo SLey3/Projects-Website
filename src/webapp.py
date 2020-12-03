@@ -63,7 +63,8 @@ del current_path
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.sqlite3"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/users.sqlite3"
+app.config["SQLALCHEMY_BINDS"] = {'articles': 'sqlite:///database/articles.sqlite3'}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
@@ -266,6 +267,7 @@ class Article(db.Model):
     """
     Article Model
     """
+    __bind_key__ = 'articles'
     id = db.Column("id", db.Integer, primary_key=True)
     title = db.Column("title", db.String(100))
     author = db.Column("author", db.String(100))
@@ -389,7 +391,7 @@ def registerPage():
             name=form.name.data,
             email=form.email.data,
             password=sha512_crypt.hash(form.password.data),
-            roles=['admin', 'verified']
+            roles=['member', 'unverified']
         )
         db.session.commit()
         EMAILS.append(form.email.data)
@@ -417,9 +419,9 @@ def confirmation_recieved(token):
         email = urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
         name = EMAILS.pop(1)
         EMAILS.clear()
-        # user_datastore.remove_role_from_user(name, 'unverified')
-        # user_datastore.add_role_to_user(name, 'verified')
-        # db.session.commit()
+        user_datastore.remove_role_from_user(name, 'unverified')
+        user_datastore.add_role_to_user(name, 'verified')
+        db.session.commit()
         alert_method.update(method='Email Verified')
         return redirect(url_for("loginPage"))
     except SignatureExpired:
