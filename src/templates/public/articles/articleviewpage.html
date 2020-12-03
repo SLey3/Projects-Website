@@ -11,9 +11,11 @@
     <div class="create-date">
         <small>{{ article.create_date }}</small>
     </div>
+    {% if article.title_img != "None" %}
     <div class="img-thumbnail">
         <img src="data:image/jpeg;base64,{{ article.title_img }}" alt="front-title-image" />
     </div>
+    {% endif %}
 </div>
 <div id="article-body">
     <article>

@@ -4,19 +4,9 @@ from flask import (
     redirect, request,
     url_for, abort
 )
-from flask_wtf import FlaskForm, RecaptchaField
-from flask_wtf.file import FileField, FileAllowed
-from wtforms import (
-    StringField, PasswordField, 
-    TextAreaField, SelectField,
-    ValidationError
-)
-from wtforms.fields.html5 import TelField
-
-from wtforms.validators import (
-    InputRequired, Length,
-    Email, DataRequired,
-    EqualTo
+from forms import (
+    loginForm, registerForm,
+    articleForm, contactForm
 )
 from flask_sqlalchemy import SQLAlchemy
 try:
@@ -45,10 +35,8 @@ from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
 from functools import wraps
 from flask_assets import Bundle, Environment
-from typing import Optional
 import base64
 import os
-import phonenumbers
 
 # ------------------ path Config ------------------
 current_path = os.getcwd()
@@ -58,6 +46,7 @@ else:
     PATH = os.path.join(current_path, 'src')
     
 del current_path
+del os
 
 # ------------------ app Config ------------------
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
@@ -85,7 +74,7 @@ app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 
 
-# ------------------ app Config: SQLAlchemy / PyMongo Config ------------------
+# ------------------ app Config: SQLAlchemy Config ------------------
 db = SQLAlchemy(app)
 
 sql_sess = Session(autoflush=False)
@@ -107,9 +96,9 @@ admin = Admin(app, template_mode="bootstrap4")
 img_set = UploadSet('images', IMAGES)
 configure_uploads(app, img_set)
    
-   
 # ------------------ app Config: Bundle Config ------------------ 
 assets = Environment(app)
+
 # ------------------ app Config: Bundle Config: Bundles ------------------ 
 
 js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
@@ -131,96 +120,7 @@ def page_not_found(e):
     returns 404 status code and 404 error page
     """
     return render_template('error_page/404/404.html')
-
-# ------------------ Forms: Custom Validators ------------------
-def ValidatePhone(message: Optional[str] = None):
-    """
-    validates phone number
-    """
-    if isinstance(message, type(None)):
-        message = "Invalid Phone Number"
-    else:
-        message = message
-    
-    def _validatephone(form, field):
-        if len(field.data) > 15:
-            raise ValidationError("Invalid Phone Number")
-        
-        try:
-            mobile_number = phonenumbers.parse(field.data)
-            if not (phonenumbers.is_valid_number(mobile_number)):
-                raise ValidationError(message)
-        except:
-            mobile_number = phonenumbers.parse("+1"+field.data)
-            if not (phonenumbers.is_valid_number(mobile_number)):
-                raise ValidationError(message)
-    return _validatephone
-        
-# ------------------ Forms ------------------
-class loginForm(FlaskForm):
-    """
-    website login Form for loginpage.html
-    """
-    username = StringField("username", validators=[
-        InputRequired(message="Username field should not be blank"), 
-        Length(min=3, max=50, message="Email length must be at most 50 characters"), Email(message="This must be an Email", check_deliverability=True)])
-    password = PasswordField("password", validators=[InputRequired("Password field should not be blank"), 
-                                                     Length(min=8, max=99, message='''length should be between 8-99 characters''')])
-    
-class registerForm(FlaskForm):
-    """
-    registration form for website
-    """
-    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, max=10, message="Name length must be between 3-10 characters")], 
-                       render_kw={'placeholder':'Name'})
-    email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
-                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], 
-                                            render_kw={'placeholder':'Email'})
-    password = PasswordField("password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
-                                                                                         message="length should be between 8-99 characters")],
-                                                                                        render_kw={'placeholder':'Password'})
-    confirm_pass = PasswordField("confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
-                                                                        "Confirmation password must equal to the created password")],
-                                                                        render_kw={'placeholder':'confirm_pass'})
-    recaptcha = RecaptchaField()
-    
-    
-class articleForm(FlaskForm):
-    """
-    article form for website
-    """
-    title = StringField("title", validators=[DataRequired("Title Entry required"), Length(min=5, max=100, message="Title must be between 5-100 characters")], 
-                        render_kw={"placeholder":"Enter title"})
-    
-    author = StringField("author", validators=[DataRequired("Author Entry required"), Length(min=3, max=100, message="Name must be between 3-100")],
-                         render_kw={"placeholder":"Enter Authors name"})
-    
-    short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required")], 
-                             render_kw={'placeholder':"Enter Short Description"})
-    front_image = FileField('front_img', id='front-image', validators=[FileAllowed(img_set, "Images only")])
-
-class contactForm(FlaskForm):
-    """
-    Contact Us form
-    """
-    first_name = StringField("first_name", validators=[DataRequired("First name Entry required"), Length(min=3, max=9, message="Name length must be between 3-9 characters")], 
-                             render_kw={'class':'form-control'})
-    
-    last_name = StringField("last_name", validators=[DataRequired("First name Entry required"), Length(min=2, max=19, message="Name length must be between 2-19 characters")],
-                            render_kw={'class':'form-control'})
-    
-    inquiry_selection = SelectField('inquiry', choices=[('General', 'General Inquiry'), ('Security', 'Security Inquiry'), ('Article', 'Article Inquiry'), ('Other Inquiry', 'Other')],
-                                    validators=[DataRequired("Inquiry Choice Required")], render_kw={'class':'form-control'})
-    
-    email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
-                                            Length(min=3, max=50, message="Email length must be at most 50 characters")],
-                        render_kw={'class':'form-control'})
-    
-    mobile = TelField("mobile_number", validators=[DataRequired("Mobile Field Required"), ValidatePhone()], render_kw={'class':'form-control'})
-    
-    message = TextAreaField("message", validators=[Length(min=50, message="Body must have minimum 50 characters")], render_kw={'cols':30, 'rows':10, 'class':'form-control'})
-    
-    
+      
 # ------------------ SQL classes ------------------
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -261,8 +161,7 @@ class User(db.Model, UserMixin):
         
     def __repr__(self):
         return f"Name: {self.name}"
-    
-    
+     
 class Article(db.Model):
     """
     Article Model
@@ -469,14 +368,17 @@ def articleCreation():
     form = articleForm()
     if request.method == "POST" and form.validate_on_submit():
         img_file = form.front_image.data
-        filename = secure_filename(img_file.filename)
-        img_set.save(img_file, name=f"{filename}")
+        if isinstance(img_file, type(None)):
+            del img_file
+            img = "None"
+        else:
+            filename = secure_filename(img_file.filename)
+            img_set.save(img_file, name=f"{filename}")
+            with iopen(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
+                img = str(base64.b64encode(image.read()), 'utf-8')
         current_date = datetime.now()
         creation_date = f"{current_date.month}/{current_date.day}/{current_date.year}"
         del current_date
-        with iopen(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
-            img = str(base64.b64encode(image.read()), 'utf-8')
-            
         body = request.form.get('editordata')          
         new_article = Article(
             title=form.title.data,
