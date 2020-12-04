@@ -1,0 +1,17 @@
+{% extends "layout.html" %} {% block title %} MyProjects | Forgot Password {% endblock %} {% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/forgot.css') }}"> {% endblock %} {% from "render/_render_form.html" import render_field %} {% block content %}
+<div class="form-container">
+    <form action="{{ url_for('initialForgotPage') }}" method="POST" class="form-wrap">
+        <h2>Forgot Password?</h2>
+        <div class="form-box">
+            {{ render_field( field.email ) }}
+        </div>
+        <div class="form-sbmt">
+            <input type="submit" value="Send" />
+            <button href="{{ url_for( 'loginPage' ) }}" onclick="NoValidateInput()">Back to Login</button>
+        </div>
+    </form>
+</div>
+{% endblock %} {% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/gen/main.min.js') }}"></script>
+{% endblock %}

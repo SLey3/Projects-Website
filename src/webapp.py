@@ -8,6 +8,7 @@ from forms import (
     loginForm, registerForm,
     articleForm, contactForm
 )
+from forms.field import EmailField
 from flask_sqlalchemy import SQLAlchemy
 try:
     from flask_sqlalchemy.orm.session import Session
@@ -101,7 +102,7 @@ assets = Environment(app)
 
 # ------------------ app Config: Bundle Config: Bundles ------------------ 
 
-js_bundle = Bundle('js/confirm.js', 'js/pass.js', 
+js_bundle = Bundle('js/confirm.js', 'js/pass.js', 'js/novalidate.js',
                    filters='jsmin', output="js/gen/main.min.js") 
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
@@ -307,6 +308,20 @@ def registerPage():
     else:
         return render_template("registerpage.html", form=form)
   
+@app.route('/forgotpwd', methods=['GET', 'POST'])
+@app.route('/forgotpwd/', methods=['GET', 'POST'])
+def initialForgotPage():
+    """
+    forgot password page.
+    """
+    field = EmailField()
+    if request.method == "POST":
+        email = field.email.data
+        print(email)
+        return redirect("/")
+    else:
+        return render_template("forgot.html", field=field)  
+    
 @app.route('/confirm_recieved/<token>')  
 @app.route('/confirm_recieved/<token>/')  
 def confirmation_recieved(token):

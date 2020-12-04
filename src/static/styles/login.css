@@ -113,6 +113,11 @@ form .txt-field {
     cursor: pointer;
 }
 
+.forgot-pass a {
+    text-decoration: none;
+    color: #a6a6a6;
+}
+
 input[type="submit"] {
     width: 100%;
     height: 50px;
