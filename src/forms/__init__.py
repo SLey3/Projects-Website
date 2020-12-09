@@ -76,3 +76,13 @@ class contactForm(FlaskForm):
     mobile = TelField("mobile_number", validators=[DataRequired("Mobile Field Required"), ValidatePhone()], render_kw={'class':'form-control'})
     
     message = TextAreaField("message", validators=[Length(min=50, message="Body must have minimum 50 characters")], render_kw={'cols':30, 'rows':10, 'class':'form-control'})
+    
+class forgotForm(FlaskForm):
+    """
+    Password change form for forgot password
+    """
+    new_password = PasswordField("password", validators=[DataRequired("Password field Entry required."),  Length(min=8, max=99,
+                                message="length should be between 8-99 characters")], render_kw={'placeholder':'New Password'})
+    
+    confirm_new_password = PasswordField("confirm_new_password", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
+                                         render_kw={'placeholder':'Confirm Password'})

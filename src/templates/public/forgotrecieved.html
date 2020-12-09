@@ -1,0 +1,20 @@
+{% extends "layout.html" %} {% block title %} MyProjects | Reset Password {% endblock %} {% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/reset.css' ) }}">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"> {% endblock %} {% from "render/_render_form.html" import render_field %} {% block content %}
+<div class="form-container">
+    <form action="{{ url_for('resetRequestRecieved', token=token, email=email) }}" method="POST" class="wrapper">
+        <h2>Password Reset</h2>
+        <div class="form-txt">
+            <p>
+                Please use this form to reset your password if you have forgotten it. If you remembered and don't want to change it, close out of this window.
+            </p>
+        </div>
+        <div class="form-box">
+            {{ render_field( form.new_password ) }} {{ render_field( form.confirm_new_password ) }}
+        </div>
+        <div class="form-sbmt">
+            <input type="submit" value="Reset Password" />
+        </div>
+    </form>
+</div>
+{% endblock %}

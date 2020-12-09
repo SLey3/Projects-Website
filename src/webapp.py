@@ -6,7 +6,8 @@ from flask import (
 )
 from forms import (
     loginForm, registerForm,
-    articleForm, contactForm
+    articleForm, contactForm,
+    forgotForm
 )
 from forms.field import EmailField
 from flask_sqlalchemy import SQLAlchemy
@@ -267,7 +268,7 @@ def loginPage():
                 login_user(user)
                 return redirect(url_for("homePage"))
         error = "Invalid Email or Password"
-        return render_template("loginpage.html", form=form, error=error)
+        return render_template("loginpage.html", form=form, error=error, alert_type=alert_type)
     else:
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
@@ -295,7 +296,6 @@ def registerPage():
         )
         db.session.commit()
         EMAILS.append(form.email.data)
-        EMAILS.append(form.name.data)
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for("confirmation_recieved", token=token, external=True)
@@ -307,20 +307,6 @@ def registerPage():
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
-  
-@app.route('/forgotpwd', methods=['GET', 'POST'])
-@app.route('/forgotpwd/', methods=['GET', 'POST'])
-def initialForgotPage():
-    """
-    forgot password page.
-    """
-    field = EmailField()
-    if request.method == "POST":
-        email = field.email.data
-        print(email)
-        return redirect("/")
-    else:
-        return render_template("forgot.html", field=field)  
     
 @app.route('/confirm_recieved/<token>')  
 @app.route('/confirm_recieved/<token>/')  
@@ -330,19 +316,73 @@ def confirmation_recieved(token):
     :param token: Email token
     """
     try:
-        email = urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-        name = EMAILS.pop(1)
-        EMAILS.clear()
-        user_datastore.remove_role_from_user(name, 'unverified')
-        user_datastore.add_role_to_user(name, 'verified')
+        urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
+        email = EMAILS.pop(0)
+        user_datastore.remove_role_from_user(user_datastore.get_user(email), 'unverified')
+        user_datastore.add_role_to_user(user_datastore.get_user(email), "verified")
         db.session.commit()
         alert_method.update(method='Email Verified')
         return redirect(url_for("loginPage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
-        User.query.filter_by(username=email_string).delete()
+        User.query.filter_by(email=email_string).delete()
         db.session.commit()
         alert_method.update(method='Confirmation link expired. You must Register again')
+        return redirect(url_for("loginPage"))
+    
+@app.route('/forgotpwd', methods=['GET', 'POST'])
+@app.route('/forgotpwd/', methods=['GET', 'POST'])
+def initialForgotPage():
+    """
+    forgot password page.
+    """
+    field = EmailField()
+    if request.method == "POST":
+        recipient_email = field.email.data
+        user = User.query.filter_by(email=recipient_email).first()
+        if isinstance(user, type(None)):
+            alert_method.update(method=f"No Account found under {recipient_email}.")
+            return redirect(url_for("loginPage"))
+        reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
+        reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
+        reset_msg = Message('Rest Password', recipients=[recipient_email])
+        reset_msg.body = f"""
+        Dear User,
+        You have requested to reset your password. Follow the link below to reset your password.
+        Reset Password: {reset_url}
+        """
+        mail.send(reset_msg)
+        alert_method.update(method=f"Reset Password Email has been sent.")
+        return redirect(url_for('loginPage'))
+    else:
+        return render_template("forgot.html", field=field)
+    
+@app.route('/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
+@app.route('/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
+def resetRequestRecieved(token, email):
+    """
+    Redirects to Reset Form link after validating token
+    """
+    try:
+        urlSerializer.loads(token, salt="forgot-pass", max_age=300)
+        
+        form = forgotForm()
+        if request.method == 'POST':
+            email = str(email).replace("%40", '@')
+            replacementPassword = sha512_crypt.hash(form.confirm_new_password.data)
+            user = User.query.filter_by(email=email).first()
+            if not sha512_crypt.verify(form.confirm_new_password.data, user.password):
+                user.password = replacementPassword
+                db.session.commit()
+                alert_method.update(method="Password has been Successfully reset.")
+            else:
+                alert_method.update(method="The Requested Password is the same as the current password")
+            return redirect(url_for('loginPage'))
+        else:
+            return render_template("forgotrecieved.html", form=form, token=token, email=email)
+    
+    except SignatureExpired:
+        alert_method.update(method="Reset Link Expired. You must request to reset your password again")
         return redirect(url_for("loginPage"))
     
 @app.route('/signout')
