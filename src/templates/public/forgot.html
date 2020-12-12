@@ -12,6 +12,6 @@
         </div>
     </form>
 </div>
-{% endblock %} {% block js %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/gen/main.min.js') }}"></script>
-{% endblock %}
+{% endblock %} {% block js %} {% assets "main__js" %}
+<script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %} {% endblock %}

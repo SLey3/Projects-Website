@@ -103,8 +103,8 @@ assets = Environment(app)
 
 # ------------------ app Config: Bundle Config: Bundles ------------------ 
 
-js_bundle = Bundle('js/confirm.js', 'js/pass.js', 'js/novalidate.js',
-                   filters='jsmin', output="js/gen/main.min.js") 
+js_bundle = Bundle('js/src/confirm.js', 'js/src/pass.js', 'js/src/novalidate.js',
+                   filters='jsmin', output="js/dist/main.min.js") 
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)

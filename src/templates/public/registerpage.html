@@ -11,8 +11,8 @@
         {{ render_field(form.name) }}
         <i class="fas fa-user"></i> {{ render_field(form.email) }}
         <i class="far fa-envelope"></i> {{ render_field(form.password) }}
-        <i class="fas fa-lock" onclick="show_pass()"></i> {{ render_field(form.confirm_pass )}}
-        <i class="fas fa-check" onclick="show_confirm()"></i> {{ form.recaptcha }}
+        <i class="fas fa-lock" onclick="show_pass('password')"></i> {{ render_field(form.confirm_pass )}}
+        <i class="fas fa-check" onclick="show_confirm('confirm_pass')"></i> {{ form.recaptcha }}
 
         <ul>
             {% for error in form.recaptcha.errors %}

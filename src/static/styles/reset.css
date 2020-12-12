@@ -33,6 +33,33 @@ body {
     justify-content: center;
 }
 
+.form-container .wrapper .form-box {
+    padding: 10px 0 10px 5px;
+}
+
+.form-container .wrapper .form-box .sep {
+    padding: 5px 0 5px;
+}
+
+.form-container .wrapper .form-box input[type="password"] {
+    border: none;
+    width: 50%;
+}
+
+.form-container .wrapper .form-box input[type="password"]:focus {
+    border: none;
+}
+
+.form-container .wrapper .form-box i {
+    position: absolute;
+    transform: translateX(2295%);
+}
+
+.form-container .wrapper .form-box i.fas.fa-check {
+    position: absolute;
+    transform: translateX(2012%);
+}
+
 .form-container .wrapper .form-sbmt input[type="submit"] {
     padding: 4px 10px;
     border: none;

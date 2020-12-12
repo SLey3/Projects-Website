@@ -31,13 +31,13 @@ class registerForm(FlaskForm):
     """
     name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, max=10, message="Name length must be between 3-10 characters")], 
                        render_kw={'placeholder':'Name'})
-    email = StringField("email", validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
+    email = StringField("email",  validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
                                              Length(min=3, max=50, message="Email length must be at most 50 characters")], 
                                             render_kw={'placeholder':'Email'})
-    password = PasswordField("password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
+    password = PasswordField("password", id="password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
                                                                                          message="length should be between 8-99 characters")],
                                                                                         render_kw={'placeholder':'Password'})
-    confirm_pass = PasswordField("confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
+    confirm_pass = PasswordField("confirm_pass", id="confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
                                                                         "Confirmation password must equal to the created password")],
                                                                         render_kw={'placeholder':'confirm_pass'})
     recaptcha = RecaptchaField()
@@ -81,8 +81,8 @@ class forgotForm(FlaskForm):
     """
     Password change form for forgot password
     """
-    new_password = PasswordField("password", validators=[DataRequired("Password field Entry required."),  Length(min=8, max=99,
+    new_password = PasswordField("password", id="password", validators=[DataRequired("Password field Entry required."),  Length(min=8, max=99,
                                 message="length should be between 8-99 characters")], render_kw={'placeholder':'New Password'})
     
-    confirm_new_password = PasswordField("confirm_new_password", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
+    confirm_new_password = PasswordField("confirm_new_password", id="confirm_pass", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
                                          render_kw={'placeholder':'Confirm Password'})
