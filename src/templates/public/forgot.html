@@ -2,13 +2,16 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/forgot.css') }}"> {% endblock %} {% from "render/_render_form.html" import render_field %} {% block content %}
 <div class="form-container">
     <form action="{{ url_for('initialForgotPage') }}" method="POST" class="form-wrap">
+        {{ field.csrf_token }}
         <h2>Forgot Password?</h2>
         <div class="form-box">
             {{ render_field( field.email ) }}
         </div>
         <div class="form-sbmt">
             <input type="submit" value="Send" />
-            <button href="{{ url_for( 'loginPage' ) }}" onclick="NoValidateInput()">Back to Login</button>
+            <div class="bckbtn">
+                <button href="{{ url_for( 'loginPage' ) }}" onclick="NoValidateInput()">Back to Login</button>
+            </div>
         </div>
     </form>
 </div>

@@ -3,6 +3,7 @@
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"> {% endblock %} {% from "render/_render_form.html" import render_field %} {% block content %}
 <div class="form-container">
     <form action="{{ url_for('resetRequestRecieved', token=token, email=email) }}" method="POST" class="wrapper">
+        {{ form.csrf_token }}
         <h2>Password Reset</h2>
         <div class="form-txt">
             <p>

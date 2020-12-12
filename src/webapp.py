@@ -116,6 +116,7 @@ def no_articles(e):
     returns 400 status code and 400 error page
     """
     return render_template('error_page/400/400.html')
+
 @app.errorhandler(404)
 def page_not_found(e):
     """
@@ -345,7 +346,7 @@ def initialForgotPage():
             return redirect(url_for("loginPage"))
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
-        reset_msg = Message('Rest Password', recipients=[recipient_email])
+        reset_msg = Message('Reset Password', recipients=[recipient_email])
         reset_msg.body = f"""
         Dear User,
         You have requested to reset your password. Follow the link below to reset your password.
@@ -413,7 +414,7 @@ def homePage():
 @login_required
 @roles_accepted('verified', 'unverified')
 def aboutPage():
-    return redirect(url_for("loginPage"))
+    return render_template('aboutpage.html')
 
 @app.route('/articles/create_article', methods=['GET', 'POST'])
 @app.route('/articles/create_article/', methods=['GET', 'POST'])
