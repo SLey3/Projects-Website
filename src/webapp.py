@@ -1,4 +1,6 @@
 # ------------------ Imports ------------------
+import sys
+sys.path.insert(0, '.')
 from flask import (
     Flask, render_template,
     redirect, request,
@@ -35,7 +37,8 @@ from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
-from functools import wraps
+from util import AlertUtil, is_valid_article_page
+from util.helpers import EMAILS
 from flask_assets import Bundle, Environment
 import base64
 import os
@@ -54,6 +57,11 @@ del os
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
+app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1]
+app.config["ALERT_CODES_DICT"] = {
+    0: "Confirmation link expired. You must Register again",
+    1: "Reset Link Expired. You must request to reset your password again"
+}
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/users.sqlite3"
 app.config["SQLALCHEMY_BINDS"] = {'articles': 'sqlite:///database/articles.sqlite3'}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -109,6 +117,9 @@ js_bundle = Bundle('js/src/confirm.js', 'js/src/pass.js', 'js/src/novalidate.js'
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
   
+# ------------------ app Config: AlertUtil Config ------------------
+alert = AlertUtil(app)
+
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
 def no_articles(e):
@@ -194,62 +205,13 @@ class BacktoDashboard(BaseView):
 admin.add_view(BacktoDashboard(name="back", endpoint="redirect"))
 admin.add_view(ModelView(Person, db.session))
 
-# ------------------ External Resources ------------------
+# ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
 def load_user(user_id):
     """
     Gets the User
     """
     return User.query.get(int(user_id))
-
-
-
-def get_alert_type():
-    """
-    Gets alert type
-    
-    Returns:
-        ALERTS[Type]
-    """
-    if alert_method['method'] != '':
-        Type = alert_method['method']
-        alert_method.update(method='')
-        check_list = list(ALERTS.items())
-        if Type not in check_list:
-            return Type
-        else:
-            return ALERTS[Type]
-    return ""
-
-
-def is_valid_article_page(func):
-    """
-    Returns whether the article page is valid or not.
-    if not valid:
-    Returns:
-        404 http code
-    """
-    @wraps(func)
-    def validator(id):
-        articles = Article.query.all()
-        for article in articles:
-            article_id_number = str(article.id)
-            if id == article_id_number:
-                return func(id)
-        return abort(404)
-    return validator
-
-# ------------------ External Resources: Constants and variables ------------------
-
-EMAILS = []
-
-ALERTS = {
-    'success' : 'alert-success',
-    'error' : 'alert-danger',
-    'warn': 'alert-warnings'
-}
-
-alert_method = {'method': ''}
 
 # ------------------ web pages ------------------
 
@@ -260,7 +222,7 @@ def loginPage():
     """
     form = loginForm()
     
-    alert_type = get_alert_type()
+    alert_type = alert.getAlert()
     
     if request.method == "POST" and form.validate_on_submit():
         user = User.query.filter_by(email=form.username.data).first()
@@ -304,7 +266,7 @@ def registerPage():
         Link will expire in 30 minutes after this email has been sent.
         Link: {confirm_link}'''
         mail.send(verify_msg)
-        alert_method.update(method='Registration Succesful. Verification required, check your email for confirmation link.')
+        alert.setAlert('success', 'Registration Succesful. Verification required, check your email for confirmation link.')
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
@@ -322,13 +284,13 @@ def confirmation_recieved(token):
         user_datastore.remove_role_from_user(user_datastore.get_user(email), 'unverified')
         user_datastore.add_role_to_user(user_datastore.get_user(email), "verified")
         db.session.commit()
-        alert_method.update(method='Email Verified')
+        alert.setAlert('success', 'Email Verified')
         return redirect(url_for("loginPage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
         User.query.filter_by(email=email_string).delete()
         db.session.commit()
-        alert_method.update(method='Confirmation link expired. You must Register again')
+        alert.setAlert('error', 0)
         return redirect(url_for("loginPage"))
     
 @app.route('/forgotpwd', methods=['GET', 'POST'])
@@ -342,7 +304,7 @@ def initialForgotPage():
         recipient_email = field.email.data
         user = User.query.filter_by(email=recipient_email).first()
         if isinstance(user, type(None)):
-            alert_method.update(method=f"No Account found under {recipient_email}.")
+            alert.setAlert('success', f"No Account found under {recipient_email}.")
             return redirect(url_for("loginPage"))
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
@@ -353,7 +315,7 @@ def initialForgotPage():
         Reset Password: {reset_url}
         """
         mail.send(reset_msg)
-        alert_method.update(method=f"Reset Password Email has been sent.")
+        alert.setAlert('success', 'Reset Password Email has been sent.')
         return redirect(url_for('loginPage'))
     else:
         return render_template("forgot.html", field=field)
@@ -375,15 +337,15 @@ def resetRequestRecieved(token, email):
             if not sha512_crypt.verify(form.confirm_new_password.data, user.password):
                 user.password = replacementPassword
                 db.session.commit()
-                alert_method.update(method="Password has been Successfully reset.")
+                alert.setAlert('success', 'Password has been Successfully reset.')
             else:
-                alert_method.update(method="The Requested Password is the same as the current password")
+                alert.setAlert('warning', 'The Requested Password is the same as the current password')
             return redirect(url_for('loginPage'))
         else:
             return render_template("forgotrecieved.html", form=form, token=token, email=email)
     
     except SignatureExpired:
-        alert_method.update(method="Reset Link Expired. You must request to reset your password again")
+        alert.setAlert('error', 1)
         return redirect(url_for("loginPage"))
     
 @app.route('/signout')
@@ -395,7 +357,7 @@ def signOut():
     """
     logout_user()
     form = loginForm()
-    alert_method.update(method='Succesfully signed out')
+    alert.setAlert('success', 'Succesfully signed out')
     return redirect(url_for("loginPage"))
     
 @app.route('/home')
@@ -406,7 +368,7 @@ def homePage():
     """
     website homepage
     """
-    alert_type = get_alert_type()
+    alert_type = alert.getAlert()
     return render_template("homepage.html", alert_type=alert_type)
     
 @app.route('/about')
