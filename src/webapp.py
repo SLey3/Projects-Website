@@ -1,18 +1,19 @@
 # ------------------ Imports ------------------
 import sys
 sys.path.insert(0, '.')
+del sys
 from flask import (
     Flask, render_template,
     redirect, request,
     url_for, abort
 )
-from forms import (
+from src.forms import (
     loginForm, registerForm,
     articleForm, contactForm,
     forgotForm
 )
 from forms.field import EmailField
-from flask_sqlalchemy import SQLAlchemy
+from src.database.models import *
 try:
     from flask_sqlalchemy.orm.session import Session
 except ModuleNotFoundError:
@@ -29,16 +30,16 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_admin import Admin, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
 from flask_security import (
-    Security, SQLAlchemyUserDatastore,
-    UserMixin, RoleMixin, roles_accepted,
-    roles_required, login_required
+    Security, SQLAlchemyUserDatastore, 
+    roles_accepted, roles_required, 
+    login_required
 )
 from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
-from util import AlertUtil, is_valid_article_page
-from util.helpers import EMAILS
+from src.util import AlertUtil, is_valid_article_page
+from src.util.helpers import EMAILS
 from flask_assets import Bundle, Environment
 import base64
 import os
@@ -85,7 +86,7 @@ app.register_blueprint(dash)
 
 
 # ------------------ app Config: SQLAlchemy Config ------------------
-db = SQLAlchemy(app)
+db.init_app(app)
 
 sql_sess = Session(autoflush=False)
 
@@ -120,6 +121,12 @@ assets.register('main__js', js_bundle)
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
 
+# ------------------ app Config: Security Loader ------------------
+    
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+
+security = Security(app, user_datastore, login_form=loginForm)
+
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
 def no_articles(e):
@@ -134,64 +141,6 @@ def page_not_found(e):
     returns 404 status code and 404 error page
     """
     return render_template('error_page/404/404.html')
-      
-# ------------------ SQL classes ------------------
-roles_users = db.Table('roles_users',
-        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
-
-class Role(db.Model, RoleMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
-    name = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(255))
-    
-    def __repr__(self):
-        return f"Permission: {self.name}"
-    
-    
-class Person(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30))
-    account = db.relationship("User", primaryjoin="and_(Person.id==User.person_id)")
-    role = db.relationship("Role", backref='roles', primaryjoin="and_(Person.id==Role.person_id)")
-    
-    def __repr__(self):
-        return f"Person({name})"
-    
-class User(db.Model, UserMixin):
-    """
-    User Model
-    """
-    id = db.Column("id", db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
-    name = db.Column("name", db.String(100))
-    email = db.Column("email", db.String(100), unique=True)
-    password = db.Column("password", db.String(255))
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
-        
-    def __repr__(self):
-        return f"Name: {self.name}"
-     
-class Article(db.Model):
-    """
-    Article Model
-    """
-    __bind_key__ = 'articles'
-    id = db.Column("id", db.Integer, primary_key=True)
-    title = db.Column("title", db.String(100))
-    author = db.Column("author", db.String(100))
-    create_date = db.Column(db.String(100))
-    short_desc = db.Column("short_description", db.String(150))
-    title_img = db.Column(db.String(500))
-    body = db.Column("body", db.String(900))
-    
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-
-security = Security(app, user_datastore, login_form=loginForm)
 
 # ------------------ Admin pages ------------------
 class BacktoDashboard(BaseView):
@@ -466,8 +415,20 @@ def contact_us():
     
 # ------------------ Website Starter ------------------
 if __name__ == '__main__':
-    print("[PRE-CONNECTING] Creating database if not exists")
-    db.create_all()
-    print("[PRE-CONNECTING] ........")
-    print("[CONNECTING] Connecting to website...")
-    app.run(debug=True)
+    from rich.console import Console
+    from rich.progress import Progress
+    
+    console = Console()
+    console.print("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]")
+    with Progress() as progress:
+        sql_database_task = progress.add_task("[cyan] Creating SQL Databases...", total=150)
+        
+        db.create_all(app=app)
+        while not progress.finished:
+            from time import sleep
+            progress.update(sql_database_task, advance=1.5)
+            sleep(0.02)
+    console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
+    console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
+    sleep(1)
+    app.run()

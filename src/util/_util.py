@@ -1,18 +1,22 @@
 # ------------------ Imports ------------------
+from flask import abort
 from functools import wraps
-from .helpers import (
-    ALERTS, alertMessageType, alert_dict
-)
+from .helpers import alertMessageType
 from typing import (
     Dict, Optional, Any, List
 )
-from ..webapp import Article
+from src.database.models import Article
 from warnings import warn
 # ------------------ Utils ------------------
 class AlertUtil(object):
     """
     Util for alert manegement
     """
+    alert_dict = {
+    'type': '',
+    'message':''
+    }
+    
     def __init__(self, app=None):
         try:
             self.config = app.config
@@ -29,20 +33,19 @@ class AlertUtil(object):
     def setAlert(self, alertType: str , msg: Optional[alertMessageType] = None):
         if isinstance(msg, type(None)):
             warn("Alert message has been detected as None. Defaulting to Error msg", category=ResourceWarning)
-            return {
-                'type': 'error',
-                'message': 'Error: AlertUtil: setAlert: Failed to load alert message. Please contact the administrator if this continues'
-            }
-        alert_dict['type'] = alertType
-        alert_dict['message'] = msg
+            self.alert_dict['type'] = 'error'
+            self.alert_dict['message'] = 'Error: AlertUtil: setAlert: Failed to load alert message. Please contact the administrator if this continues.'
+        else:
+            self.alert_dict['type'] = alertType
+            self.alert_dict['message'] = msg
     
     def getAlert(self) -> Dict[str, Any]:
         alert_codes_list: List[int] = self.getConfigValue("ALERT_CODES_NUMBER_LIST")
         alert_codes_dict: Dict[int, str] = self.getConfigValue("ALERT_CODES_DICT")
             
-        alertType = alert_dict['type']
-        alertMsg: alertMessageType = alert_dict['message']                
-        alert_dict.update(type='', message='')
+        alertType = self.alert_dict['type']
+        alertMsg: alertMessageType = self.alert_dict['message']                
+        self.alert_dict.update(type='', message='')
         if alertType == 'error':
             for code in alert_codes_list:
                 if alertMsg == code:

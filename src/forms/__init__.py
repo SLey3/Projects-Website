@@ -2,6 +2,6 @@
 forms for MyProjects
 """
 # ------------------ Imports ------------------
-from ._forms import *
-import .field
-import .validators
+from src.forms._forms import *
+import src.forms.field
+import src.forms.validators
