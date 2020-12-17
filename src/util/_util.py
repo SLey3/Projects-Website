@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 from flask import abort
 from functools import wraps
-from .helpers import alertMessageType
+from src.util.helpers import alertMessageType
 from typing import (
     Dict, Optional, Any, List
 )
@@ -31,6 +31,9 @@ class AlertUtil(object):
             raise ValueError(f'Value: {configValue} was not found in app Config')
     
     def setAlert(self, alertType: str , msg: Optional[alertMessageType] = None):
+        """
+        Set Alert for webpages that supports Alert messages
+        """
         if isinstance(msg, type(None)):
             warn("Alert message has been detected as None. Defaulting to Error msg", category=ResourceWarning)
             self.alert_dict['type'] = 'error'
@@ -40,6 +43,11 @@ class AlertUtil(object):
             self.alert_dict['message'] = msg
     
     def getAlert(self) -> Dict[str, Any]:
+        """
+        Gets the Alert Type and message
+        Returns:
+            valueDict
+        """
         alert_codes_list: List[int] = self.getConfigValue("ALERT_CODES_NUMBER_LIST")
         alert_codes_dict: Dict[int, str] = self.getConfigValue("ALERT_CODES_DICT")
             

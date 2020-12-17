@@ -115,9 +115,16 @@ assets = Environment(app)
 js_bundle = Bundle('js/src/confirm.js', 'js/src/pass.js', 'js/src/novalidate.js',
                    filters='jsmin', output="js/dist/main.min.js") 
 
+css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
+                    'styles/alert_css/src/info.css', 'styles/alert_css/src/success.css',
+                    'styles/alert_css/src/warning.css', filters='cssmin', 
+                    output='styles/alert_css/dist/alerts.min.css')
+
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
   
+assets.register('alert__css', css_bundle)
+
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
 
@@ -171,7 +178,7 @@ def loginPage():
     """
     form = loginForm()
     
-    alert_type = alert.getAlert()
+    alert_dict = alert.getAlert()
     
     if request.method == "POST" and form.validate_on_submit():
         user = User.query.filter_by(email=form.username.data).first()
@@ -185,7 +192,7 @@ def loginPage():
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
-            return render_template("loginpage.html", form=form, alert_type=alert_type)
+            return render_template("loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
 @app.route('/register', methods=['GET', 'POST'])
 @app.route('/register/', methods=['GET', 'POST'])
@@ -317,8 +324,8 @@ def homePage():
     """
     website homepage
     """
-    alert_type = alert.getAlert()
-    return render_template("homepage.html", alert_type=alert_type)
+    alert_dict = alert.getAlert()
+    return render_template("homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     
 @app.route('/about')
 @app.route('/about/')
@@ -417,15 +424,16 @@ def contact_us():
 if __name__ == '__main__':
     from rich.console import Console
     from rich.progress import Progress
+    from time import sleep
     
     console = Console()
+    
     console.print("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]")
     with Progress() as progress:
-        sql_database_task = progress.add_task("[cyan] Creating SQL Databases...", total=150)
+        sql_database_task = progress.add_task("[cyan] Creating SQL Databases...", total=85)
         
         db.create_all(app=app)
         while not progress.finished:
-            from time import sleep
             progress.update(sql_database_task, advance=1.5)
             sleep(0.02)
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")

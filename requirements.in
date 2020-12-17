@@ -16,3 +16,4 @@ jsmin==2.2.2
 flask-assets==2.0
 phonenumbers==8.12.13
 rich==9.4.0; python_version > '3.8'
+cssmin

@@ -1,0 +1,28 @@
+.box {
+    margin: 0 35px 5px;
+    padding: 12px;
+    border-radius: .5em;
+    box-shadow: 1px 1px 3px #888;
+    height: 25px;
+}
+
+.box div p {
+    position: absolute;
+    transform: translate(6%, -59%);
+}
+
+.message-success-bx {
+    background: rgb(144, 238, 144);
+}
+
+.message-info-bx {
+    background: rgb(0, 255, 255);
+}
+
+.message-warning-bx {
+    background: rgb(255, 255, 0);
+}
+
+.message-error-bx {
+    background: rgb(255, 0, 0);
+}
