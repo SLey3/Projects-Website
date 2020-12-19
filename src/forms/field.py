@@ -3,16 +3,11 @@ Custom Field for Website
 """
 # ------------------ Imports ------------------
 from wtforms import StringField
-from flask_wtf import FlaskForm
-from .validators import (
-    DataRequired, Email, Length
-)
+from src.forms.widget import ButtonWidget
 
 # ------------------ Field ------------------
-class EmailField(FlaskForm):
+class ButtonField(StringField):
     """
-    Produces only the email field
+    Returns a button in the form.
     """
-    email = StringField('email', validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
-                                            Length(min=3, max=50, message="Email length must be at most 50 characters")], 
-                        render_kw={"placeholder": "Enter Email"})
+    widget = ButtonWidget()

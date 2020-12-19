@@ -8,9 +8,9 @@
             {{ render_field( field.email ) }}
         </div>
         <div class="form-sbmt">
-            <input type="submit" value="Send" />
+            {{ render_field( field.submit )}}
             <div class="bckbtn">
-                <button href="{{ url_for( 'loginPage' ) }}" onclick="NoValidateInput()">Back to Login</button>
+                {{ render_field( field.back_button )}}
             </div>
         </div>
     </form>

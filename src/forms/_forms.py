@@ -2,11 +2,13 @@
 from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField, PasswordField, 
-    TextAreaField, SelectField
+    TextAreaField, SelectField,
+    SubmitField
 )
 from wtforms.fields.html5 import TelField
 from flask_uploads import UploadSet, IMAGES
-from .validators import *
+from src.forms.validators import *
+from src.forms.field import ButtonField
 
 # ------------------ img_set Config ------------------
 img_set = UploadSet('images', IMAGES)
@@ -83,3 +85,15 @@ class forgotForm(FlaskForm):
     
     confirm_new_password = PasswordField("confirm_new_password", id="confirm_pass", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
                                          render_kw={'placeholder':'Confirm Password'})
+    
+class forgotRequestForm(FlaskForm):
+    """
+    Returns the Initial Forgot Request Form
+    """
+    email = StringField('email', validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
+                                            Length(min=3, max=50, message="Email length must be at most 50 characters")], 
+                        render_kw={"placeholder": "Enter Email"})
+    
+    submit = SubmitField('Submit', id='sbmt-btn', render_kw={'value':'Send'})
+    
+    back_button = ButtonField('Back to Login', id='btn-redirect', render_kw={'href': '/', 'onclick':'NoValidateInput()'})

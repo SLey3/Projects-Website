@@ -1,0 +1,9 @@
+{% macro render_alert(type, msg) %}
+<div class="box message-{{ type }}-bx">
+    <div id="{{ type }}-msg" class="{{ type }}-txt">
+        <p>
+            <strong>{{ msg }}</strong>
+        </p>
+    </div>
+</div>
+{% endmacro %}

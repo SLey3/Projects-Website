@@ -1,29 +1,19 @@
-{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} Login | Private Website {% endblock %} {% block css %}
+{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% from "render/_render_alert.html" import render_alert %} {% block title %} Login | Private Website {% endblock %} {% block css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css')}}"> {% assets "alert__css" %}
 <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %} {% endblock %} {% block content %}
 <div class="center-container">
     <form action="{{ url_for( 'loginPage' ) }}" method="POST">
         {{ form.csrf_token }}
         <h1>Login</h1>
-        <div id="message_boxes">
-            {% if error %}
-            <div class="box message-error-bx">
-                <div id="custom-error-msg" class="error-txt">
-                    <p>
-                        <strong>{{ error }}</strong>
-                    </p>
-                </div>
+        {% if error %}
+        <div class="box message-error-bx">
+            <div id="custom-error-msg" class="error-txt">
+                <p>
+                    <strong>{{ error }}</strong>
+                </p>
             </div>
-            {% endif %} {% if alert_msg %}
-            <div class="box message-{{ alert_type }}-bx">
-                <div id="{{ alert_type }}-msg" class="{{ alert_type }}-txt">
-                    <p>
-                        <strong>{{ alert_msg }}</strong>
-                    </p>
-                </div>
-            </div>
-            {% endif %}
         </div>
+        {% endif %} {% if alert_msg %} {{ render_alert( alert_type, alert_msg ) }} {% endif %}
         <div class="txt-field">
             {{ render_field(form.username) }}
             <label> Username </label>

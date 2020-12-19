@@ -10,9 +10,8 @@ from flask import (
 from src.forms import (
     loginForm, registerForm,
     articleForm, contactForm,
-    forgotForm
+    forgotForm, forgotRequestForm
 )
-from forms.field import EmailField
 from src.database.models import (
     db, Article, User, Role, Person
 )
@@ -65,7 +64,7 @@ app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1, 2]
 app.config["ALERT_CODES_DICT"] = {
     0: "Confirmation link expired. You must Register again.",
-    1: "Reset Link Expired. You must request to reset your password again.",
+    1: "Reset Link Expired.",
     2: "Internal Server error. If this happens again contact the administrator."
 }
 app.config["ALERT_TYPES"] = [
@@ -277,16 +276,23 @@ def initialForgotPage():
     """
     forgot password page.
     """
-    field = EmailField()
+    form = forgotRequestForm()
     if request.method == "POST":
-        recipient_email = field.email.data
+        recipient_email = form.email.data
         user = User.query.filter_by(email=recipient_email.lower()).first()
         if isinstance(user, type(None)):
+            if recipient_email != '' and form.submit.data == True:
+                form.back_button.raw_data.insert(0, '.')
             if recipient_email == '':
+                return redirect(url_for('loginPage'))
+            elif form.back_button.raw_data.pop(0) == '':
                 return redirect(url_for('loginPage'))
             else:
                 alert.setAlert('warning', f"No Account found under {recipient_email}.")
                 return redirect(url_for("loginPage"))
+        
+        if not form.submit.data:
+            return redirect(url_for('loginPage')) 
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
         reset_msg = Message('Reset Password', recipients=[recipient_email])
@@ -299,7 +305,7 @@ def initialForgotPage():
         alert.setAlert('success', 'Reset Password Email has been sent.')
         return redirect(url_for('loginPage'))
     else:
-        return render_template("forgot.html", field=field)
+        return render_template("forgot.html", field=form)
     
 @app.route('/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
 @app.route('/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
