@@ -13,7 +13,9 @@ from src.forms import (
     forgotForm
 )
 from forms.field import EmailField
-from src.database.models import *
+from src.database.models import (
+    db, Article, User, Role, Person
+)
 try:
     from flask_sqlalchemy.orm.session import Session
 except ModuleNotFoundError:
@@ -38,7 +40,9 @@ from dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
-from src.util import AlertUtil, is_valid_article_page
+from src.util import (
+    AlertUtil, is_valid_article_page, formatPhoneNumber
+)
 from src.util.helpers import EMAILS
 from flask_assets import Bundle, Environment
 import base64
@@ -58,11 +62,18 @@ del os
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
 app.config["SECRET_KEY"] = "Kwl986"
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
-app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1]
+app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1, 2]
 app.config["ALERT_CODES_DICT"] = {
-    0: "Confirmation link expired. You must Register again",
-    1: "Reset Link Expired. You must request to reset your password again"
+    0: "Confirmation link expired. You must Register again.",
+    1: "Reset Link Expired. You must request to reset your password again.",
+    2: "Internal Server error. If this happens again contact the administrator."
 }
+app.config["ALERT_TYPES"] = [
+    'info',
+    'success',
+    'warning',
+    'error'
+]
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/users.sqlite3"
 app.config["SQLALCHEMY_BINDS"] = {'articles': 'sqlite:///database/articles.sqlite3'}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -149,6 +160,17 @@ def page_not_found(e):
     """
     return render_template('error_page/404/404.html')
 
+@app.errorhandler(500)
+def servererror(e):
+    """
+    returns 500 status code and home or login page.
+    """
+    alert.setAlert('error', 2)
+    if current_user.is_authenticated:
+        return redirect(url_for('homePage'))
+    else:
+        return redirect(url_for('loginPage'))
+
 # ------------------ Admin pages ------------------
 class BacktoDashboard(BaseView):
     @expose('/')
@@ -181,13 +203,13 @@ def loginPage():
     alert_dict = alert.getAlert()
     
     if request.method == "POST" and form.validate_on_submit():
-        user = User.query.filter_by(email=form.username.data).first()
+        user = User.query.filter_by(email=form.username.data.lower()).first()
         if user:
             if sha512_crypt.verify(form.password.data, user.password):
                 login_user(user)
                 return redirect(url_for("homePage"))
         error = "Invalid Email or Password"
-        return render_template("loginpage.html", form=form, error=error, alert_type=alert_type)
+        return render_template("loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
@@ -209,7 +231,7 @@ def registerPage():
             user_datastore.find_or_create_role('verified')
         user_datastore.create_user(
             name=form.name.data,
-            email=form.email.data,
+            email=form.email.data.lower(),
             password=sha512_crypt.hash(form.password.data),
             roles=['member', 'unverified']
         )
@@ -222,7 +244,7 @@ def registerPage():
         Link will expire in 30 minutes after this email has been sent.
         Link: {confirm_link}'''
         mail.send(verify_msg)
-        alert.setAlert('success', 'Registration Succesful. Verification required, check your email for confirmation link.')
+        alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
         return redirect(url_for("loginPage"))
     else:
         return render_template("registerpage.html", form=form)
@@ -258,10 +280,13 @@ def initialForgotPage():
     field = EmailField()
     if request.method == "POST":
         recipient_email = field.email.data
-        user = User.query.filter_by(email=recipient_email).first()
+        user = User.query.filter_by(email=recipient_email.lower()).first()
         if isinstance(user, type(None)):
-            alert.setAlert('success', f"No Account found under {recipient_email}.")
-            return redirect(url_for("loginPage"))
+            if recipient_email == '':
+                return redirect(url_for('loginPage'))
+            else:
+                alert.setAlert('warning', f"No Account found under {recipient_email}.")
+                return redirect(url_for("loginPage"))
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
         reset_msg = Message('Reset Password', recipients=[recipient_email])
@@ -295,7 +320,7 @@ def resetRequestRecieved(token, email):
                 db.session.commit()
                 alert.setAlert('success', 'Password has been Successfully reset.')
             else:
-                alert.setAlert('warning', 'The Requested Password is the same as the current password')
+                alert.setAlert('warning', 'The Requested Password matches your current password.')
             return redirect(url_for('loginPage'))
         else:
             return render_template("forgotrecieved.html", form=form, token=token, email=email)
@@ -364,8 +389,8 @@ def articleCreation():
         )
         db.session.add(new_article)
         db.session.commit()
-        articles = Article.query.all()
-        return render_template("articles/articlepage.html", articles=articles)
+        alert.setAlert('success', 'Article has been Created.')
+        return redirect(url_for("homePage"))
     else:
         return render_template("articles/articleform.html", form=form)
     
@@ -402,7 +427,7 @@ def contact_us():
         name = form.first_name.data + " " + form.last_name.data
         inquiry_selection = dict(form.inquiry_selection.choices).get(form.inquiry_selection.data)
         email = form.email.data
-        tel = form.mobile.data
+        tel = formatPhoneNumber(form.mobile.data)
         msg = form.message.data
         mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
         mail_msg.body = f"""
@@ -416,10 +441,21 @@ def contact_us():
         {msg}
         """
         mail.send(mail_msg)
+        alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('homePage'))
     else:
         return render_template('contactpage.html', form=form)
-    
+
+@app.route('/home/admin')
+@app.route('/home/admin/')   
+@roles_required('admin', 'verified')
+@login_required
+def adminPage():
+    """
+    Administrator Page
+    """
+    return redirect(url_for("admin.index"))
+
 # ------------------ Website Starter ------------------
 if __name__ == '__main__':
     from rich.console import Console

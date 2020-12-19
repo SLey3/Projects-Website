@@ -1,5 +1,8 @@
 .box {
-    margin: 0 35px 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin: 35px 5px;
     padding: 12px;
     border-radius: .5em;
     box-shadow: 1px 1px 3px #888;
@@ -7,8 +10,8 @@
 }
 
 .box div p {
-    position: absolute;
     transform: translate(6%, -59%);
+    user-select: none;
 }
 
 .message-success-bx {

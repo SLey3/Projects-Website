@@ -7,8 +7,10 @@ alertMessageType = Union[str, int]
 
 EMAILS = []
 
-ALERTS = {
-    'success' : 'alert-success',
-    'error' : 'alert-danger',
-    'warn': 'alert-warnings'
-}
+class InvalidType(ValueError):
+    """
+    Raised when theres an Invalid type
+    """
+    def __init__(self, *args):
+        self.args = args
+        super().__init__(*self.args)

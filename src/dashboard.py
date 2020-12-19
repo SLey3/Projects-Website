@@ -43,8 +43,8 @@ def dashboardHome():
     return render_template("dashboard.html")
 
 
-@dash.route('/admin')
-@dash.route('/admin/')
+@dash.route('/home/adminredirect')
+@dash.route('/home/adminredirect/')
 @roles_required('admin', 'verified')
 @login_required
 def adminPage():
