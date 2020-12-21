@@ -18,23 +18,44 @@ class AlertUtil(object):
     }
     
     def __init__(self, app=None):
-        if app:
-            self.config = app.config
-            self.init_app(app)
+        self.app = app
+        self.init_app(app)
             
         
     def init_app(self, app):
         """
         Initializes AlertUtil
         """
-        app.extensions['alertUtil'] = self
+        if not hasattr(self, 'config'):
+            setattr(self, 'config', app.config)
+            if not (
+                self.config.get("ALERT_CODES_NUMBER_LIST")
+                or 
+                self.config.get("ALERT_CODES_DICT")
+                or 
+                self.config.get("ALERT_TYPES")
+            ):
+                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                 ALERT_TYPES was not found in the apps Config''')
+        else:
+            if not (
+                self.config.get("ALERT_CODES_NUMBER_LIST")
+                or 
+                self.config.get("ALERT_CODES_DICT")
+                or 
+                self.config.get("ALERT_TYPES")
+            ):
+                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                 ALERT_TYPES was not found in the apps Config''')
+                
+        app.extensions['AlertUtil'] = self
     
     def getConfigValue(self, configValue: str):
         try: 
             response = self.config.get(configValue)
             return response
         except:
-            raise ValueError(f'Value: {configValue} was not found in app Config')
+            raise ValueError(f'Value: {configValue} was not found in the apps Config')
     
     def setAlert(self, alertType: str , msg: alertMessageType):
         """

@@ -35,7 +35,7 @@ from flask_security import (
     roles_accepted, roles_required, 
     login_required
 )
-from dashboard import dash
+from src.dashboard import dash
 from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
@@ -102,12 +102,10 @@ db.init_app(app)
 sql_sess = Session(autoflush=False)
 
 # ------------------ app Config: Flask_login Config ------------------
-login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager = LoginManager(app)
 
 # ------------------ app Config: Flask_mail Config ------------------
-mail = Mail()
-mail.init_app(app)
+mail = Mail(app)
 
 urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
@@ -272,8 +270,8 @@ def confirmation_recieved(token):
         alert.setAlert('error', 0)
         return redirect(url_for("loginPage"))
     
-@app.route('/forgotpwd', methods=['GET', 'POST'])
-@app.route('/forgotpwd/', methods=['GET', 'POST'])
+@app.route('/login/forgotpwd', methods=['GET', 'POST'])
+@app.route('/login/forgotpwd/', methods=['GET', 'POST'])
 def initialForgotPage():
     """
     forgot password page.
@@ -309,8 +307,8 @@ def initialForgotPage():
     else:
         return render_template("forgot.html", field=form)
     
-@app.route('/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
-@app.route('/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
+@app.route('/login/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
+@app.route('/login/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
 def resetRequestRecieved(token, email):
     """
     Redirects to Reset Form link after validating token
@@ -357,6 +355,14 @@ def homePage():
     """
     alert_dict = alert.getAlert()
     return render_template("homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+
+@app.route('/home')
+@app.route('/home/')
+def redirectToHomePage():
+    """
+    redirects to homepage
+    """
+    return redirect(url_for('homePage'))
     
 @app.route('/about')
 @app.route('/about/')
