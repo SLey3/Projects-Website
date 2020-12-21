@@ -93,6 +93,7 @@ app.config["SECURITY_LOGOUT_URL"] = "/auth/signout" or "/auth/signout/"
 app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'error_page/login_redirect/redirectlogin.html'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
+app.add_template_global(current_user, 'current_user')
 
 
 # ------------------ app Config: SQLAlchemy Config ------------------
@@ -192,7 +193,8 @@ def load_user(user_id):
 
 # ------------------ web pages ------------------
 
-@app.route('/', methods=["GET", "POST"])
+@app.route('/login', methods=["GET", "POST"])
+@app.route('/login/', methods=["GET", "POST"])
 def loginPage():
     """
     main front page
@@ -345,12 +347,10 @@ def signOut():
     logout_user()
     form = loginForm()
     alert.setAlert('success', 'Succesfully signed out')
-    return redirect(url_for("loginPage"))
+    return redirect(url_for("homePage"))
     
-@app.route('/home')
-@app.route('/home/')
-@login_required
-@roles_accepted('verified', 'unverified')
+@app.route('/')
+@app.route('/')
 def homePage():
     """
     website homepage
@@ -360,8 +360,6 @@ def homePage():
     
 @app.route('/about')
 @app.route('/about/')
-@login_required
-@roles_accepted('verified', 'unverified')
 def aboutPage():
     return render_template('aboutpage.html')
 
@@ -402,8 +400,6 @@ def articleCreation():
     
 @app.route('/articles', methods=['GET', 'POST'])
 @app.route('/articles/', methods=['GET', 'POST'])
-@login_required
-@roles_accepted('verified', 'unverified')
 def article_home():
     try:
         articles = Article.query.all()
@@ -413,8 +409,6 @@ def article_home():
 
 @app.route('/articles/<string:id>')
 @app.route('/articles/<string:id>/')
-@login_required
-@roles_accepted('verified', 'unverified')
 @is_valid_article_page
 def articlePage(id):
     try:
@@ -425,8 +419,6 @@ def articlePage(id):
 
 @app.route('/contact', methods=['GET', 'POST'])
 @app.route('/contact/', methods=['GET', 'POST'])
-@login_required
-@roles_accepted('verified', 'unverfied')
 def contact_us():
     form = contactForm()
     if request.method == 'POST' and form.validate_on_submit():
@@ -481,4 +473,4 @@ if __name__ == '__main__':
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
-    app.run()
+    app.run(debug=True)

@@ -18,10 +18,16 @@ class AlertUtil(object):
     }
     
     def __init__(self, app=None):
-        try:
+        if app:
             self.config = app.config
-        except:
-            raise ValueError("The app value is None. This cannot be None")
+            self.init_app(app)
+            
+        
+    def init_app(self, app):
+        """
+        Initializes AlertUtil
+        """
+        app.extensions['alertUtil'] = self
     
     def getConfigValue(self, configValue: str):
         try: 
