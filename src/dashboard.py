@@ -2,22 +2,14 @@
 from flask import (
     Blueprint, redirect,
     url_for, request,
-    render_template
+    render_template,
+    abort
 )
 from flask_security import roles_required, roles_accepted
-from flask_admin import Admin, BaseView
 from flask_login import login_required
 
 # ------------------ Blueprint Config ------------------
-dash = Blueprint('dashboard', __name__, template_folder="templates/private", url_prefix='/dashboard')
-
-# ------------------ Admin MyView class ------------------
-    
-class MyView(BaseView):
-    def __init__(self, *args, **kwargs):
-        self._default_view = True
-        super(MyView, self).__init__(*args, **kwargs)
-        self.admin = Admin()    
+dash = Blueprint('dashboard', __name__, static_folder='static', template_folder="templates/private", url_prefix='/dashboard')
 
 # ------------------ Dashboard urls ------------------
 
@@ -40,18 +32,7 @@ def dashboardHome():
     """
     Dashboard of the website
     """
-    return render_template("dashboard.html")
-
-
-@dash.route('/home/adminredirect')
-@dash.route('/home/adminredirect/')
-@roles_required('admin', 'verified')
-@login_required
-def adminPage():
-    """
-    Administrator Page
-    """
-    return redirect(url_for("admin.index"))
+    return abort(400)
 
 @dash.route('/create_article')
 @dash.route('/create_article/')

@@ -1,1 +1,4 @@
-{% extends "admin/master.html" %} {% block title %} {{ super() }} Dashboard {% endblock %} {% block brand %} MyProjects Admin Dashboard {% endblock %}
+{% extends "base.html" %} {% block title %} MyProjects Admin Dashboard {% endblock %} {% block css %} {% assets "admin_index_css" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %} {% endblock %} {% block content %} {% include "admin/navbar/navbar.html" %}
+<h1>Coming Soon. Being Developed</h1>
+{% endblock %}

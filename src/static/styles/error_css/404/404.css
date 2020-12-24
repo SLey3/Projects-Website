@@ -1,0 +1,61 @@
+/*For 404 Title */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
+
+/* For Header */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+/* For msg */
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap');
+body {
+    overflow: hidden;
+}
+
+.container-404 {
+    position: absolute;
+    transform: translate(50%);
+    -webkit-user-select: none;
+}
+
+.container-404>.container-404-img {
+    margin-top: 45px;
+}
+
+.container-404>.container-404-img>.img-404 {
+    transform: translateX(19%);
+    padding-bottom: 1rem;
+}
+
+.container-404>.container-404-img .title-404-txt {
+    position: relative;
+    left: 20rem;
+    font-family: 'NotoSansTC', sans-serif;
+    font-size: 80px;
+    letter-spacing: 1px;
+}
+
+.container-404 .txt-subtxt-container-404 {
+    margin: 9px;
+    padding: 4px;
+}
+
+.container-404 .txt-subtxt-container-404>div>.subhead-404 {
+    position: relative;
+    top: -20px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 35px;
+}
+
+.container-404 .txt-subtxt-container-404>div .info-msg-404 {
+    position: relative;
+    top: -1.5rem;
+    font-family: 'Lato', sans-serif;
+    font-size: 18px;
+}
+
+.container-404 .txt-subtxt-container-404>div .info-msg-404>p>a.info-msg-lnk-404 {
+    cursor: pointer;
+    text-decoration: none;
+}

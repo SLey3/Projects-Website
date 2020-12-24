@@ -28,8 +28,6 @@ from flask_login import (
 )
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from flask_admin import Admin, expose, BaseView
-from flask_admin.contrib.sqla import ModelView
 from flask_security import (
     Security, SQLAlchemyUserDatastore, 
     roles_accepted, roles_required, 
@@ -44,6 +42,7 @@ from src.util import (
 )
 from src.util.helpers import EMAILS
 from flask_assets import Bundle, Environment
+from src.admin import admin
 import base64
 import os
 
@@ -93,6 +92,7 @@ app.config["SECURITY_LOGOUT_URL"] = "/auth/signout" or "/auth/signout/"
 app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'error_page/login_redirect/redirectlogin.html'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
+app.register_blueprint(admin)
 app.add_template_global(current_user, 'current_user')
 
 
@@ -109,9 +109,6 @@ mail = Mail(app)
 
 urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
-# ------------------ app Config: Admin Config ------------------
-admin = Admin(app, template_mode="bootstrap4")
-
 # ------------------ app Config: Flask Uploads(Reuploaded) Config ------------------
 img_set = UploadSet('images', IMAGES)
 configure_uploads(app, img_set)
@@ -124,15 +121,20 @@ assets = Environment(app)
 js_bundle = Bundle('js/src/confirm.js', 'js/src/pass.js', 'js/src/novalidate.js',
                    filters='jsmin', output="js/dist/main.min.js") 
 
-css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
+alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
                     'styles/alert_css/src/info.css', 'styles/alert_css/src/success.css',
                     'styles/alert_css/src/warning.css', filters='cssmin', 
                     output='styles/alert_css/dist/alerts.min.css')
 
+admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', filters='cssmin',
+                               output='styles/admin/index/dist/index.main.css')
+
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
   
-assets.register('alert__css', css_bundle)
+assets.register('alert__css', alert_css_bundle)
+
+assets.register('admin_index_css', admin_home_css_bundle)
 
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
@@ -168,18 +170,6 @@ def servererror(e):
         return redirect(url_for('homePage'))
     else:
         return redirect(url_for('loginPage'))
-
-# ------------------ Admin pages ------------------
-class BacktoDashboard(BaseView):
-    @expose('/')
-    def index(self):
-        """
-        Returns to the dashboard
-        """
-        return redirect(url_for("dashboard.dashboardHome"))
-    
-admin.add_view(BacktoDashboard(name="back", endpoint="redirect"))
-admin.add_view(ModelView(Person, db.session))
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
