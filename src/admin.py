@@ -7,11 +7,20 @@ from flask_login import login_required, confirm_login
 from flask_security import roles_required
 
 # ------------------ Blueprint Config ------------------
-admin = Blueprint('admin', 'admindashboard', static_folder='static', template_folder='templates/private/', url_prefix='/admin')
+admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates/private/', url_prefix='/admin')
 
 # ------------------ Blueprint Routes ------------------
-
 @admin.route('/')
+@login_required
+@roles_required('admin', 'verified')
+def adminRedirectHomePage():
+    """
+    Administrator Redirect to Homepage
+    """
+    confirm_login()
+    return redirect(url_for("admin.adminHomePage"))
+
+@admin.route('/dashboard')
 @login_required
 @roles_required('admin', 'verified')
 def adminHomePage():

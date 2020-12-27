@@ -126,7 +126,8 @@ alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/
                     'styles/alert_css/src/warning.css', filters='cssmin', 
                     output='styles/alert_css/dist/alerts.min.css')
 
-admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', filters='cssmin',
+admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/scrollbar/scrollbar.css',
+                               'styles/admin/navbar/navbar.css', filters='cssmin',
                                output='styles/admin/index/dist/index.main.css')
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
@@ -163,13 +164,10 @@ def page_not_found(e):
 @app.errorhandler(500)
 def servererror(e):
     """
-    returns 500 status code and home or login page.
+    returns 500 status code and redirects to HomePage
     """
     alert.setAlert('error', 2)
-    if current_user.is_authenticated:
-        return redirect(url_for('homePage'))
-    else:
-        return redirect(url_for('loginPage'))
+    return redirect(url_for('homePage'))
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -448,7 +446,7 @@ def adminPage():
     """
     Administrator Page
     """
-    return redirect(url_for("admin.index"))
+    return redirect(url_for("admin.adminHomePage"))
 
 # ------------------ Website Starter ------------------
 if __name__ == '__main__':
