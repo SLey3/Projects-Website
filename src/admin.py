@@ -21,6 +21,7 @@ def adminRedirectHomePage():
     return redirect(url_for("admin.adminHomePage"))
 
 @admin.route('/dashboard')
+@admin.route('/dashboard/')
 @login_required
 @roles_required('admin', 'verified')
 def adminHomePage():
@@ -29,3 +30,13 @@ def adminHomePage():
     """
     confirm_login()
     return render_template('admin/index.html')
+
+@admin.route('/manegement/accounts', methods=['GET', 'POST'])
+@admin.route('/manegement/accounts/', methods=['GET', 'POST'])
+@login_required
+@roles_required('admin', 'verified')
+def adminAccountsManegement():
+    """
+    Administrator Account Manegement page
+    """
+    return render_template("admin/accounts.html")

@@ -1,15 +1,21 @@
-<div class="navigation">
+<div id="nav" class="navigation">
     <ul>
         <li>
             <a href="/admin">
                 <span class="item-icon"><i class="fa fa-home" aria-hidden="true"></i></span>
-                <span class="item-txt">Dasboard</span>
+                <span class="item-txt">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="/admin/manegement/accounts">
+                <span class="item-icon"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
+                <span class="item-txt">Account Manegement</span>
             </a>
         </li>
         <li>
             <a href="#">
-                <span class="item-icon"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
-                <span class="item-txt">Accounts</span>
+                <span class="item-icon"><i class="fa fa-file-text-o" aria-hidden="true"></i></span>
+                <span class="item-txt">Article Manegement</span>
             </a>
         </li>
         <li>
@@ -38,12 +44,3 @@
         </li>
     </ul>
 </div>
-<div class="toggle" onclick="toggleMenu()"></div>
-<script type="text/javascript">
-    function toggleMenu() {
-        let navigation = document.querySelector('.navigation');
-        let toggle = document.querySelector('.toggle');
-        navigation.classList.toggle('active');
-        toggle.classList.toggle('active');
-    }
-</script>

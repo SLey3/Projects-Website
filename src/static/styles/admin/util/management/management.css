@@ -1,0 +1,23 @@
+.management-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-left: -66.32rem;
+    transition: 0.5s;
+}
+
+.management-container .management-title-header {
+    display: flex;
+    align-items: baseline;
+    padding: 10px;
+    margin-left: 5rem;
+}
+
+.management-container .management-title-header span.management-title-header-sep {
+    display: flex;
+    position: absolute;
+    transform: translate(-1%, 2110%);
+    width: 55%;
+    height: 2px;
+    background: rgb(128, 128, 128);
+}

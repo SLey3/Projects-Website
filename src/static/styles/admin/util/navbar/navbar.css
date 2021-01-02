@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
 .navigation {
     position: fixed;
+    user-select: none;
     font-family: 'Poppins', sans-serif;
     width: 60px;
     height: 100%;
@@ -9,7 +10,7 @@
     overflow: hidden;
 }
 
-.navigation.active {
+.navigation:hover {
     width: 300px;
 }
 
@@ -60,34 +61,4 @@
     line-height: 60px;
     text-align: start;
     white-space: nowrap;
-}
-
-.toggle {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60px;
-    height: 60px;
-    background: rgb(44, 44, 44);
-    cursor: pointer;
-}
-
-.toggle.active {
-    background: rgb(34, 34, 34);
-}
-
-.toggle:before {
-    content: "\f0c9";
-    font-family: fontAwesome;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    line-height: 60px;
-    text-align: center;
-    font-size: 24px;
-    color: #fff;
-}
-
-.toggle.active:before {
-    content: "\f00d";
 }

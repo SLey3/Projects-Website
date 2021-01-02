@@ -1,0 +1,30 @@
+{% extends "base.html" %} {% block title %} MyProjects Accounts Management {% endblock %} {% block css %} {% assets "admin_articles_css" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous"> {% endblock %} {% block content %} {% include "admin/navbar/navbar.html" %}
+<div id="cntnr" class="management-container">
+    <div class="management-title-header">
+        <h1 id="acc-title" class="page-title">Accounts Manegement</h1>
+        <span id="sep" class="management-title-header-sep"></span>
+    </div>
+</div>
+{% endblock %} {% block js %}
+<script type="text/javascript">
+    const isHover = e => e.parentElement.querySelector(':hover') === e;
+
+    let navbar = document.getElementById('nav');
+    document.addEventListener('mousemove', function checkNavHover() {
+        var hovered = isHover(navbar);
+        if (hovered !== checkNavHover.hovered) {
+            console.log(hovered ? 'hovered' : 'not hovered');
+            checkNavHover.hovered = hovered;
+            if (hovered) {
+                const container = document.getElementById('cntnr');
+                container.style.marginLeft = "-33.32rem";
+            } else {
+                const container = document.getElementById('cntnr');
+                container.style.marginLeft = '-66.32rem';
+            }
+        }
+    });
+</script>
+{% endblock %}

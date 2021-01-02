@@ -126,16 +126,22 @@ alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/
                     'styles/alert_css/src/warning.css', filters='cssmin', 
                     output='styles/alert_css/dist/alerts.min.css')
 
-admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/scrollbar/scrollbar.css',
-                               'styles/admin/navbar/navbar.css', filters='cssmin',
-                               output='styles/admin/index/dist/index.main.css')
+admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
+                               'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css', 
+                               filters='cssmin', output='styles/admin/index/dist/index.min.css')
+
+admin_article_css_bundle = Bundle('styles/admin/accounts/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
+                                  'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
+                                  filters='cssmin', output='styles/admin/accounts/dist/index.min.css')
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
   
 assets.register('alert__css', alert_css_bundle)
 
-assets.register('admin_index_css', admin_home_css_bundle)
+assets.register('admin_dashboard_css', admin_home_css_bundle)
+
+assets.register('admin_articles_css', admin_article_css_bundle)
 
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
