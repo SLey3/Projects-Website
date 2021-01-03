@@ -118,8 +118,8 @@ assets = Environment(app)
 
 # ------------------ app Config: Bundle Config: Bundles ------------------ 
 
-js_bundle = Bundle('js/src/confirm.js', 'js/src/pass.js', 'js/src/novalidate.js',
-                   filters='jsmin', output="js/dist/main.min.js") 
+js_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
+                   filters='jsmin', output="js/main/dist/main.min.js") 
 
 alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
                     'styles/alert_css/src/info.css', 'styles/alert_css/src/success.css',
