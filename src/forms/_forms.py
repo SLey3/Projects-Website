@@ -5,7 +5,7 @@ from wtforms import (
     TextAreaField, SelectField,
     SubmitField
 )
-from wtforms.fields.html5 import TelField
+from wtforms.fields.html5 import TelField, SearchField
 from flask_uploads import UploadSet, IMAGES
 from src.forms.validators import *
 from src.forms.field import ButtonField
@@ -88,7 +88,7 @@ class forgotForm(FlaskForm):
     
 class forgotRequestForm(FlaskForm):
     """
-    Returns the Initial Forgot Request Form
+    Creates the Initial Forgot Request Form
     """
     email = StringField('email', validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], 
@@ -97,3 +97,13 @@ class forgotRequestForm(FlaskForm):
     submit = SubmitField('Submit', id='sbmt-btn', render_kw={'value':'Send'})
     
     back_button = ButtonField('Back to Login', id='btn-redirect', render_kw={'href': '/', 'onclick':'NoValidateInput()'})
+    
+class AccountManegementForms:
+    """
+    Forms for account Mangement Admin dashboard
+    """
+    class tableSearchForm(FlaskForm):
+        """
+        Creates Search Input
+        """
+        command = SearchField('tbl search', id="table-search", render_kw={'class':'tbl-srch'})

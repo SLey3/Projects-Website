@@ -39,6 +39,7 @@ class User(db.Model, UserMixin):
     password = db.Column("password", db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
+    created_at = db.Column("date", db.String(30))
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
         

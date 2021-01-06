@@ -222,10 +222,12 @@ def registerPage():
             user_datastore.find_or_create_role('member')
             user_datastore.find_or_create_role('unverified')
             user_datastore.find_or_create_role('verified')
+        current_date = datetime.now()
         user_datastore.create_user(
             name=form.name.data,
             email=form.email.data.lower(),
             password=sha512_crypt.hash(form.password.data),
+            created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             roles=['member', 'unverified']
         )
         db.session.commit()
@@ -238,7 +240,7 @@ def registerPage():
         Link: {confirm_link}'''
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
-        return redirect(url_for("loginPage"))
+        return redirect(url_for("homePage"))
     else:
         return render_template("registerpage.html", form=form)
     
@@ -256,13 +258,13 @@ def confirmation_recieved(token):
         user_datastore.add_role_to_user(user_datastore.get_user(email), "verified")
         db.session.commit()
         alert.setAlert('success', 'Email Verified')
-        return redirect(url_for("loginPage"))
+        return redirect(url_for("homePage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
         User.query.filter_by(email=email_string).delete()
         db.session.commit()
         alert.setAlert('error', 0)
-        return redirect(url_for("loginPage"))
+        return redirect(url_for("homePage"))
     
 @app.route('/login/forgotpwd', methods=['GET', 'POST'])
 @app.route('/login/forgotpwd/', methods=['GET', 'POST'])
@@ -297,7 +299,7 @@ def initialForgotPage():
         """
         mail.send(reset_msg)
         alert.setAlert('success', 'Reset Password Email has been sent.')
-        return redirect(url_for('loginPage'))
+        return redirect(url_for('homePage'))
     else:
         return render_template("forgot.html", field=form)
     

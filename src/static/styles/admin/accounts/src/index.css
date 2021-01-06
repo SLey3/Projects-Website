@@ -1,10 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-div>div>h1.page-title {
+div#cntnr>div#title>h1.page-title {
     font-family: 'Roboto Condensed', sans-serif;
+}
+
+div#cntnr .body-cfg {
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 2px;
+}
+
+div#cntnr .body-cfg>#acc-tbl-cntnr>.acc-lbl {
+    padding: 1rem 3px;
+    font-family: 'Lato', sans-serif !important;
+}
+
+div#cntnr .body-cfg .table-cntnr {
+    margin: 10px 1rem 0 -1px;
+    padding: 1px;
 }

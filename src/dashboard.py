@@ -32,7 +32,7 @@ def dashboardHome():
     """
     Dashboard of the website
     """
-    return abort(400)
+    return abort(404)
 
 @dash.route('/create_article')
 @dash.route('/create_article/')

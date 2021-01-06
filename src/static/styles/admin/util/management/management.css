@@ -2,8 +2,14 @@
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    margin-left: -66.32rem;
+    margin-left: -48.85rem;
     transition: margin-left 0.5s;
+}
+
+.management-header-sep {
+    height: 2px;
+    background: rgb(128, 128, 128);
+    transition: background-color 0.8s ease-in-out;
 }
 
 .management-container .management-title-header {
@@ -13,14 +19,11 @@
     margin-left: 50rem;
 }
 
-.management-container .management-title-header span.management-title-header-sep {
+.management-container .management-title-header span.title-header-sep-align {
     display: flex;
     position: absolute;
-    transform: translate(-1%, 2110%);
     width: 55%;
-    height: 2px;
-    background: rgb(128, 128, 128);
-    transition: background-color 0.8s ease-in-out;
+    transform: translate(-2px, 2110%);
 }
 
 .management-container .management-body-container {
@@ -28,6 +31,13 @@
     align-items: flex-end;
     position: relative;
     top: 4.69rem;
-    right: 59.32rem;
+    right: 39.32rem;
     transition: right 0.5s;
+}
+
+.management-container .management-body-container>#acc-tbl-cntnr>.acc-lbl #header-sep span.lbl-sep-align {
+    display: flex;
+    position: absolute;
+    width: 13.75rem;
+    transform: translate(-1%, 743%);
 }
