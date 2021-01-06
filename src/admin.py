@@ -5,6 +5,7 @@ from flask import (
 )
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
+from src.database.models import User
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates/private/', url_prefix='/admin')
@@ -39,4 +40,5 @@ def adminAccountsManegement():
     """
     Administrator Account Manegement page
     """
-    return render_template("admin/accounts.html")
+    users = User.query.all()
+    return render_template("admin/accounts.html", accounts=users)

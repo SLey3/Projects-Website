@@ -58,12 +58,11 @@ form .txt-field {
 .txt-field span::before {
     content: '';
     position: absolute;
-    top: 40px;
     left: 0;
     width: 0%;
     height: 2px;
     background: #2691d9;
-    transition: .5s
+    transition: .5s;
 }
 
 .txt-field input:focus~label,

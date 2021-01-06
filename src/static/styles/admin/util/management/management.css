@@ -3,14 +3,14 @@
     flex-direction: row;
     justify-content: space-around;
     margin-left: -66.32rem;
-    transition: 0.5s;
+    transition: margin-left 0.5s;
 }
 
 .management-container .management-title-header {
     display: flex;
     align-items: baseline;
     padding: 10px;
-    margin-left: 5rem;
+    margin-left: 50rem;
 }
 
 .management-container .management-title-header span.management-title-header-sep {
@@ -20,4 +20,14 @@
     width: 55%;
     height: 2px;
     background: rgb(128, 128, 128);
+    transition: background-color 0.8s ease-in-out;
+}
+
+.management-container .management-body-container {
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    top: 4.69rem;
+    right: 59.32rem;
+    transition: right 0.5s;
 }
