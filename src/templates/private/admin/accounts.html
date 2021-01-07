@@ -17,25 +17,80 @@
             </div>
             <div class="table-cntnr">
                 <table id="acc-table" class="table table-striped table-bordered table-hover">
-                    <tr>
-                        <th>Account ID</th>
-                        <th>User</th>
-                        <th>Created Date</th>
-                        <th>Search: {{ tbl_search_form.command }}</th>
-                    </tr>
-                    {% for user in accounts %}
-                    <tr>
-                        <th>{{ user.id }}</th>
-                        <th>{{ user.name }}</th>
-                        <th>{{ user.created_at }}</th>
-                        <th><button class="acc-edit-btn"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button></th>
-                    </tr>
-                    {% endfor %}
+                    <thead>
+                        <tr>
+                            <th>Account ID</th>
+                            <th>User</th>
+                            <th>Created Date</th>
+                            <form method="POST" action="">
+                                <th>Search: {{ tbl_search_form.command }} <button class="acc-search-btn"><i class="fa fa-search" aria-hidden="true"></i></button></th>
+                            </form>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in accounts.items %}
+                        <tr>
+                            <td> {{ user.id }}</td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.created_at }}</td>
+                            <td><button class="acc-edit-btn"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Account ID</th>
+                            <th>User</th>
+                            <th>Created Date</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
                 </table>
+                <div id="tbl-pagination">
+                    <nav aria-label="Table-Pagination">
+                        <ul class="pagination">
+                            {% if accounts.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=accounts.next_num ) }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link btn disabled" href="#">Previous</a>
+                            </li>
+                            {% endif %} {% for page in accounts.iter_pages(left_edge=3, right_edge=3) %} {% if page %} {% if page == accounts.page %}
+                            <li class="page-item active">
+                                <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=page ) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=page ) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                            {% endif %} {% else %}
+                            <li id="ellipsis" class="page-item disabled">
+                                <a class="page-link" href="#">...</a>
+                            </li>
+                            {% endif %} {% endfor %} {% if accounts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=accounts.next_num ) }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link btn disabled" href="#">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %} {% block js %}
 <script type="text/javascript" src="{{ url_for('static', filename='js/ext/admin/navalign.js') }}"></script>
+<script type="text/javascript">
+</script>
 {% endblock %}

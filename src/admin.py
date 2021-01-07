@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 from flask import (
     Blueprint, render_template, url_for,
-    redirect
+    redirect, request
 )
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
@@ -33,14 +33,26 @@ def adminHomePage():
     confirm_login()
     return render_template('admin/index.html')
 
-@admin.route('/manegement/accounts', methods=['GET', 'POST'])
-@admin.route('/manegement/accounts/', methods=['GET', 'POST'])
+@admin.route('/manegement/accounts/', methods=['GET', 'POST'], defaults={'page': 1})
+@admin.route('/manegement/accounts/<int:page>', methods=['GET', 'POST'])
 @login_required
 @roles_required('admin', 'verified')
-def adminAccountsManegement():
+def adminAccountsManegement(page):
     """
     Administrator Account Manegement page
     """
-    users = User.query.all()
     search_form = AccountManegementForms.tableSearchForm()
+    page = page
+    pages = 5
+    users = User.query.paginate(page, pages, error_out=False)
+    if request.method == 'POST':
+        form_found = False
+        while not form_found:
+            if not isinstance(search_form.command.data, type(None)) or search_form.command.data != "":
+                search_query = search_form.command.data
+                form_found = True
+        if search_query:
+            users = User.query.filter(User.name.like(search_query)).paginate(per_page=pages, error_out=False)
+        else:
+            users = User.query.paginate(page, pages, error_out=False)
     return render_template("admin/accounts.html", accounts=users, tbl_search_form=search_form)

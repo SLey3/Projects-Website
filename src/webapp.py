@@ -146,7 +146,7 @@ assets.register('admin_articles_css', admin_article_css_bundle)
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
 
-# ------------------ app Config: Security Loader ------------------
+# ------------------ app Config: Security Config ------------------
     
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
