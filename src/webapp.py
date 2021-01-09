@@ -13,7 +13,7 @@ from src.forms import (
     forgotForm, forgotRequestForm
 )
 from src.database.models import (
-    db, Article, User, Role, Person
+    db, Article, User, Role
 )
 try:
     from flask_sqlalchemy.orm.session import Session
@@ -58,7 +58,7 @@ del os
 
 # ------------------ app Config ------------------
 app = Flask(__name__, template_folder="templates/public", static_folder='static')
-app.config["SECRET_KEY"] = "Kwl986"
+app.config["SECRET_KEY"] = '\xe8\rP\xc9+\xca\xf16\x1b\xce\xe8\xb1\xa3E1\xf2F\xd9\xf4\x18\x92\xe7\x04>'
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1, 2]
 app.config["ALERT_CODES_DICT"] = {
@@ -73,7 +73,10 @@ app.config["ALERT_TYPES"] = [
     'error'
 ]
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/users.sqlite3"
-app.config["SQLALCHEMY_BINDS"] = {'articles': 'sqlite:///database/articles.sqlite3'}
+app.config["SQLALCHEMY_BINDS"] = {
+                                    'articles': 'sqlite:///database/articles.sqlite3',
+                                    'blacklist': 'sqlite:///database/blacklist.sqlite3'
+                                }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
 app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
@@ -128,11 +131,15 @@ alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/
 
 admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
                                'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css', 
-                               filters='cssmin', output='styles/admin/index/dist/index.min.css')
+                               filters='cssmin', output='styles/admin/main/dist/index.min.css')
 
-admin_article_css_bundle = Bundle('styles/admin/accounts/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
+admin_main_accounts_css_bundle = Bundle('styles/admin/accounts/main/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
                                   'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
-                                  filters='cssmin', output='styles/admin/accounts/dist/index.min.css')
+                                  filters='cssmin', output='styles/admin/accounts/main/dist/index.min.css')
+
+admin_edit_profile_accounts_css_bundle = Bundle('styles/admin/accounts/edit_profiles/src/edit_profile.css', 'styles/admin/util/scrollbar/scrollbar.css',
+                                                'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
+                                                filters='cssmin', output='styles/admin/edit_profiles/dist/edit_profile.min.css')
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
@@ -141,7 +148,9 @@ assets.register('alert__css', alert_css_bundle)
 
 assets.register('admin_dashboard_css', admin_home_css_bundle)
 
-assets.register('admin_articles_css', admin_article_css_bundle)
+assets.register('admin_main_accounts_css', admin_main_accounts_css_bundle)
+
+assets.register('admin_edit_accounts_css', admin_edit_profile_accounts_css_bundle)
 
 # ------------------ app Config: AlertUtil Config ------------------
 alert = AlertUtil(app)
@@ -224,10 +233,11 @@ def registerPage():
             user_datastore.find_or_create_role('verified')
         current_date = datetime.now()
         user_datastore.create_user(
-            name=form.name.data,
+            name=form.name.data.capitalize(),
             email=form.email.data.lower(),
             password=sha512_crypt.hash(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
+            blacklisted=False,
             roles=['member', 'unverified']
         )
         db.session.commit()

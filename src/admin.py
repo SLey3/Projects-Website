@@ -5,7 +5,7 @@ from flask import (
 )
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
-from src.database.models import User
+from src.database.models import User, Article
 from src.forms import AccountManegementForms
 
 # ------------------ Blueprint Config ------------------
@@ -43,7 +43,7 @@ def adminAccountsManegement(page):
     """
     search_form = AccountManegementForms.tableSearchForm()
     page = page
-    pages = 5
+    pages = 3
     users = User.query.paginate(page, pages, error_out=False)
     if request.method == 'POST':
         form_found = False
@@ -56,3 +56,16 @@ def adminAccountsManegement(page):
         else:
             users = User.query.paginate(page, pages, error_out=False)
     return render_template("admin/accounts.html", accounts=users, tbl_search_form=search_form)
+
+
+@admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
+@admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
+@login_required
+@roles_required('admin', 'verified')
+def adminAccountsUserManagement(user, page):
+    page: int = page
+    pages = 4
+    user = str(user).replace('%20', ' ')
+    user_info = User.query.filter_by(name=user).first()
+    article_info = Article.query.filter_by(author=user).paginate(page, pages, error_out=False)
+    return render_template("admin/accountsuser.html", user=user_info, article_info=article_info)

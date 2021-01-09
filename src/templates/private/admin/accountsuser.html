@@ -1,0 +1,62 @@
+ {% extends "base.html" %} {% block title %} MyProjects | {{ user.name }} Profile {% endblock %} {% block css %} {% assets "admin_edit_accounts_css" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous"> {% endblock %} {% block content %} {% include "admin/navbar/navbar.html" %}
+<div id="cntnr" class="management-container">
+    <div id="profile-title" class="management-title-header">
+        <h1 id="acc-profile-title" class="page-title">Edit {{ user.name }} Account Profile</h1>
+        <span name="sep" class="management-header-sep title-header-sep-align"></span>
+    </div>
+    <div id="body-content" class="management-body-container">
+        <div id="info-cntnr" class="acc-info-cntnr">
+            <div class="acc-info-title">
+                <h2 class="acc-info-title">Account Info</h2>
+                <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
+            </div>
+            <div class="text-body">
+                <information id="prof-info" class="text-wrap">
+                    Name: {{ user.name }} <br> Email: {{ user.email }} <br> Password: **** <br> Active Status: {{ user.active }} <br> Account Created: {{ user.created_at }}
+                </information>
+            </div>
+            <div class="role-table">
+                <div id="role-tbl-ttle" class="role-title">
+                    <h4 class="role-tbl-title">Account Roles</h4>
+                    <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
+                </div>
+                <div class="table-cntnr">
+                    <table id="roles-table" class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Role ID</th>
+                                <th>Role Name</th>
+                                <th>Select <input name="role-check-all" type="checkbox" class="select-check" /></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in user.roles %}
+                            <tr>
+                                <td>{{ role.id }}</td>
+                                <td>{{ role.name }}</td>
+                                <td><input type="checkbox" class="select-check inner-check" /></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Role ID</th>
+                                <th>Role Name</th>
+                                <th>Select <input name="role-check-all" type="checkbox" class="select-check" /></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} {% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/ext/admin/accounts/edit_profile/navalign.js') }}"></script>
+<script type="text/javascript">
+    document.createElement("information");
+</script>
+{% endblock %}

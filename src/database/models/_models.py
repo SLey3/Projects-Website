@@ -5,51 +5,43 @@ from flask_security import UserMixin, RoleMixin
 # ------------------ db Config ------------------
 db = SQLAlchemy()
 # ------------------ SQL classes  ------------------
-roles_users = db.Table('roles_users',
-        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+# class UserRoles(db.Model):
+#     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), primary_key=True)
+#     role_id = db.Column(db.Integer(), db.ForeignKey('role.id'), primary_key=True)
 
 class Role(db.Model, RoleMixin):
+    __tablename__ = 'roles'
     id = db.Column(db.Integer(), primary_key=True)
-    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
+    user_id = db.Column(db.ForeignKey("user.id"))
     name = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(255))
     
     def __repr__(self):
-        return f"Permission: {self.name}"
-    
-    
-class Person(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30))
-    account = db.relationship("User", primaryjoin="and_(Person.id==User.person_id)")
-    role = db.relationship("Role", backref='roles', primaryjoin="and_(Person.id==Role.person_id)")
-    
-    def __repr__(self):
-        return f"Person({name})"
+        return f"{self.name}"
     
 class User(db.Model, UserMixin):
     """
     User Model
     """
+    __tablename__ = 'user'
     id = db.Column("id", db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer(), db.ForeignKey("person.id"))
     name = db.Column("name", db.String(100))
     email = db.Column("email", db.String(100), unique=True)
     password = db.Column("password", db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     created_at = db.Column("date", db.String(30))
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+    blacklisted = db.Column(db.Boolean())
+    roles = db.relationship('Role', primaryjoin="and_(User.id==Role.user_id)",
+                            backref=db.backref('users'))
         
     def __repr__(self):
-        return f"Name: {self.name}"
+        return f"{self.name}"
      
 class Article(db.Model):
     """
     Article Model
     """
+    __tablename__ = 'article'
     __bind_key__ = 'articles'
     id = db.Column("id", db.Integer, primary_key=True)
     title = db.Column("title", db.String(100))
@@ -58,3 +50,14 @@ class Article(db.Model):
     short_desc = db.Column("short_description", db.String(150))
     title_img = db.Column(db.String(500))
     body = db.Column("body", db.String(900))
+    
+    
+class Blacklist(db.Model):
+    """
+    Blacklist Model
+    """
+    __tablename__ = 'blacklist'
+    __bind_key__ = 'blacklist'
+    id = db.Column("id", db.Integer(), primary_key=True)
+    blacklisted_person = db.Column("person", db.String(100), unique=True, nullable=False)
+    date_blacklisted = db.Column("date", db.String(30))

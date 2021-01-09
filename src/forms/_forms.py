@@ -106,4 +106,4 @@ class AccountManegementForms:
         """
         Creates Search Input
         """
-        command = SearchField('tbl search', id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name'})
+        command = SearchField('tbl search', id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})

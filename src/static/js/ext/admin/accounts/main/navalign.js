@@ -21,8 +21,8 @@ document.addEventListener('mousemove', function checkNavHover() {
             const container = document.getElementById('cntnr');
             const seperators = document.getElementsByName('sep');
             const body = document.getElementById("body-content");
-            container.style.marginLeft = '-48.85rem';
-            body.style.right = '39.32rem';
+            container.style.marginLeft = '-51.85rem';
+            body.style.right = '37.32rem';
             for (s = 0; s < seperators.length; s++) {
                 let seperator = seperators[s];
                 seperator.style.background = "rgb(128, 128, 128)";

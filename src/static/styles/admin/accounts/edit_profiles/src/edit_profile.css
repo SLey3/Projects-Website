@@ -1,0 +1,19 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+span[name="sep"].acc-info-title-sep-align {
+    display: flex;
+    position: absolute;
+    width: 15em;
+    transform: translate(-2px, 31105);
+}
+
+span[name="sep"].acc-roles-title-sep-align {
+    display: flex;
+    position: absolute;
+    width: 11.6em;
+    transform: translate(-2px, 41105);
+}
