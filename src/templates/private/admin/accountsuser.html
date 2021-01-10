@@ -15,40 +15,124 @@
             </div>
             <div class="text-body">
                 <information id="prof-info" class="text-wrap">
-                    Name: {{ user.name }} <br> Email: {{ user.email }} <br> Password: **** <br> Active Status: {{ user.active }} <br> Account Created: {{ user.created_at }}
+                    Name: {{ user.name }} <br> Email: {{ user.email }} <br> Password: **** <br> Active Status: {{ user.active }} <br> Account Created: {{ user.created_at }} <br> Blacklisted Status: {{ user.blacklisted }}
                 </information>
             </div>
-            <div class="role-table">
-                <div id="role-tbl-ttle" class="role-title">
-                    <h4 class="role-tbl-title">Account Roles</h4>
-                    <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
-                </div>
-                <div class="table-cntnr">
-                    <table id="roles-table" class="table table-striped table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Role ID</th>
-                                <th>Role Name</th>
-                                <th>Select <input name="role-check-all" type="checkbox" class="select-check" /></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for role in user.roles %}
-                            <tr>
-                                <td>{{ role.id }}</td>
-                                <td>{{ role.name }}</td>
-                                <td><input type="checkbox" class="select-check inner-check" /></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <th>Role ID</th>
-                                <th>Role Name</th>
-                                <th>Select <input name="role-check-all" type="checkbox" class="select-check" /></th>
-                            </tr>
-                        </tfoot>
-                    </table>
+        </div>
+        <div class="role-table">
+            <div id="role-tbl-title" class="role-ttle-cntnr">
+                <h4 class="role-tbl-title">Account Roles</h4>
+                <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
+            </div>
+            <div class="table-cntnr">
+                <table id="roles-table" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Role ID</th>
+                            <th>Role Name</th>
+                            <th>Select <input id="role-head-selectAll" type="checkbox" class="select-check" /></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in user.roles %}
+                        <tr>
+                            <td>{{ role.id }}</td>
+                            <td>{{ role.name }}</td>
+                            <td><input name="role-check-inner" type="checkbox" class="select-check inner-check" /></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Role ID</th>
+                            <th>Role Name</th>
+                            <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" /></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="article-table">
+            <div id="article-tbl=title" class="article-tbl-ttle-cntnr">
+                <h4 class="article-tbl-title">Articles Made by: {{ user.name }}</h4>
+                <span name="sep" class="management-header-sep article-title-sep-align"></span>
+            </div>
+            <div class="table-cntnr">
+                <table id="article-table" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Article ID</th>
+                            <th>Article Name</th>
+                            <th>Article Desc</th>
+                            <th>Article Link</th>
+                            <th>Created In</th>
+                            <th id="srch-upper-cell">Search: {{ search_form.command }} <button id="article-srch-btn" class="article-search-btn"><i class="fa fa-search" aria-hidden="true"></i></button></th>
+                            <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" /></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in article_info.items %}
+                        <tr>
+                            <td>{{ article.id }}</td>
+                            <td> {{ article.title }}</td>
+                            <td>{{ article.short_desc }}</td>
+                            <td>{{ article.create_date }}</td>
+                            <td><a class="article-tbl-item-link" href="{{ url_for('articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
+                            <td></td>
+                            <td><input name="article-check-inner" type="checkbox" class="select-check inner-check" /></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Article ID</th>
+                            <th>Article Name</th>
+                            <th>Article Desc</th>
+                            <th>Article Link</th>
+                            <th>Created In:</th>
+                            <th></th>
+                            <th>Select <input id="article-foot-selectAll" type="checkbox" class="select-check" /></th>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="article-tbl-pagination">
+                    <nav aria-label="Article-Table-Pagination">
+                        <ul class="pagination">
+                            {% if article_info.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link btn disabled" href="#">Previous</a>
+                            </li>
+                            {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
+                            <li class="page-item active">
+                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                                        {{ page }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                                        {{ page }}
+                                </a>
+                            </li>
+                            {% endif %} {% else %}
+                            <li id="ellipsis" class="page-item disabled">
+                                <a class="page-link" href="#">...</a>
+                            </li>
+                            {% endif %} {% endfor %} {% if article_info.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link btn disabled" href="#">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -56,7 +140,28 @@
 </div>
 {% endblock %} {% block js %}
 <script type="text/javascript" src="{{ url_for('static', filename='js/ext/admin/accounts/edit_profile/navalign.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script type="text/javascript">
     document.createElement("information");
+</script>
+<script type="text/javascript">
+    $('#role-head-selectAll').click(function() {
+        $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input#role-foot-selectAll").prop('checked', $(this).prop('checked'));
+    });
+    $('#role-foot-selectAll').click(function() {
+        $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input#role-head-selectAll").prop('checked', $(this).prop('checked'));
+    });
+</script>
+<script type="text/javascript">
+    $('#article-head-selectAll').click(function() {
+        $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input#article-foot-selectAll").prop('checked', $(this).prop('checked'));
+    });
+    $('#article-foot-selectAll').click(function() {
+        $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input#article-head-selectAll").prop('checked', $(this).prop('checked'));
+    });
 </script>
 {% endblock %}

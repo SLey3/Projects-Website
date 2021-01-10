@@ -6,26 +6,34 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
-                <a class="nav-link" href="/home">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Projects</a>
+                <a class="nav-link" href="/articles">Articles</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/about">About</a>
             </li>
         </ul>
         <ul class="navbar-nav justify-content-center ml-auto">
+            {% if current_user.is_authenticated %}
             <li class="nav-item dropdown">
                 <a class="nav-link justify-content-end ml-auto dropdown-toggle" href="#" id="navDropDown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
                 <div class="dropdown-menu" aria-labelledby="navDropDown">
-                    <a class="dropdown-item" href="/dashboard">My Account</a>
+                    <a class="dropdown-item" href="/dashboard">My Account</a> {% if current_user.has_role('admin') %}
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/home/admin">Admin Dashboard</a> {% endif %}
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="/signout">Sign Out</a>
                 </div>
             </li>
+            {% else %}
             <li class="nav-item">
-                <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Contact Me</a>
+                <a class="nav-link" href="/login">Login</a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="/contact">Contact Us</a>
             </li>
         </ul>
     </div>

@@ -4,16 +4,32 @@
     box-sizing: border-box;
 }
 
+:root {
+    --sep-display-type: flex;
+    --sep-position-type: absolute;
+}
+
+body {
+    display: grid;
+}
+
 span[name="sep"].acc-info-title-sep-align {
-    display: flex;
-    position: absolute;
+    display: var(--sep-display-type);
+    position: var(--sep-position-type);
     width: 15em;
     transform: translate(-2px, 31105);
 }
 
 span[name="sep"].acc-roles-title-sep-align {
-    display: flex;
-    position: absolute;
-    width: 11.6em;
+    display: var(--sep-display-type);
+    position: var(--sep-position-type);
+    width: 14.6em;
     transform: translate(-2px, 41105);
+}
+
+span[name="sep"].article-title-sep-align {
+    display: var(--sep-display-type);
+    position: var(--sep-position-type);
+    width: 25.5em;
+    transform: translate(-2px, 51105);
 }

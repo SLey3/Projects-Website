@@ -63,9 +63,10 @@ def adminAccountsManegement(page):
 @login_required
 @roles_required('admin', 'verified')
 def adminAccountsUserManagement(user, page):
+    search_form = AccountManegementForms.tableSearchForm()
     page: int = page
-    pages = 4
+    pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.query.filter_by(name=user).first()
-    article_info = Article.query.filter_by(author=user).paginate(page, pages, error_out=False)
-    return render_template("admin/accountsuser.html", user=user_info, article_info=article_info)
+    article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
+    return render_template("admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form)

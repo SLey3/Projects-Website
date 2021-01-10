@@ -10,8 +10,8 @@ document.addEventListener('mousemove', function checkNavHover() {
             const container = document.getElementById('cntnr');
             const seperators = document.getElementsByName("sep");
             const body = document.getElementById("body-content");
-            container.style.marginLeft = "-31.95rem";
-            body.style.right = "48.12rem"
+            container.style.marginLeft = "-25.95rem";
+            body.style.right = "15.12rem"
             for (s = 0; s < seperators.length; s++) {
                 let seperator = seperators[s];
                 seperator.style.background = "rgb(44, 44, 44)";
@@ -21,8 +21,8 @@ document.addEventListener('mousemove', function checkNavHover() {
             const container = document.getElementById('cntnr');
             const seperators = document.getElementsByName('sep');
             const body = document.getElementById("body-content");
-            container.style.marginLeft = '-60.85rem';
-            body.style.right = '63.21rem';
+            container.style.marginLeft = '-45.01rem';
+            body.style.right = '28.13rem';
             for (s = 0; s < seperators.length; s++) {
                 let seperator = seperators[s];
                 seperator.style.background = "rgb(128, 128, 128)";
