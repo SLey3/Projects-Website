@@ -5,31 +5,33 @@
 }
 
 :root {
-    --sep-display-type: flex;
     --sep-position-type: absolute;
 }
 
-body {
+.body-grid {
     display: grid;
+    grid-template-rows: 5.25rem;
+    justify-items: stretch;
+    justify-content: space-evenly;
+    transition: margin-left 0.5s ease-out;
+}
+
+span[name="sep"].title-header-sep-align {
+    position: var(--sep-position-type);
+    width: 55%;
 }
 
 span[name="sep"].acc-info-title-sep-align {
-    display: var(--sep-display-type);
     position: var(--sep-position-type);
     width: 15em;
-    transform: translate(-2px, 31105);
 }
 
 span[name="sep"].acc-roles-title-sep-align {
-    display: var(--sep-display-type);
     position: var(--sep-position-type);
     width: 14.6em;
-    transform: translate(-2px, 41105);
 }
 
 span[name="sep"].article-title-sep-align {
-    display: var(--sep-display-type);
     position: var(--sep-position-type);
     width: 25.5em;
-    transform: translate(-2px, 51105);
 }

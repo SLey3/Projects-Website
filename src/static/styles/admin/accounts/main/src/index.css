@@ -1,123 +1,121 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lato&family=Montserrat:wght@300&display=swap');
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-div#title>h1.page-title {
-    font-family: 'Roboto Condensed', sans-serif;
-}
-
-div#cntnr .body-cfg {
-    font-family: 'Montserrat', sans-serif;
-    letter-spacing: 2px;
-}
-
-.body-cfg>#acc-tbl-cntnr>.acc-lbl {
-    padding: 1rem 3px;
-    font-family: 'Lato', sans-serif !important;
-}
-
-.table-cntnr {
-    margin: 10px 1rem 0 -1px;
-    padding: 1px;
-}
-
-td {
-    background: rgb(255, 255, 255);
-}
-
-@keyframes input-surround-focus {
-    0% {
-        border-top-color: rgb(0, 255, 255);
-        border-left-color: rgb(128, 128, 128);
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Lato&family=Montserrat:wght@300&display=swap');
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
-    25% {
-        border-right-color: rgb(0, 255, 255);
-        border-top-color: rgb(128, 128, 128);
+    
+    div#title>h1.page-title {
+        font-family: 'Roboto Condensed', sans-serif;
     }
-    50% {
-        border-bottom-color: rgb(0, 255, 255);
-        border-right-color: rgb(128, 128, 128);
+    
+    div#cntnr .body-cfg {
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: 2px;
     }
-    75% {
-        border-left-color: rgb(0, 255, 255);
-        border-bottom-color: rgb(128, 128, 128);
+    
+    .body-cfg>#acc-tbl-cntnr>.acc-lbl {
+        padding: 1rem 3px;
+        font-family: 'Lato', sans-serif !important;
     }
-    100% {
-        border-top-color: rgb(0, 255, 255);
-        border-left-color: rgb(128, 128, 128);
+    
+    .table-cntnr {
+        margin: 10px 1rem 0 -1px;
+        padding: 1px;
     }
-}
-
-@-webkit-keyframes input-surround-focus {
-    0% {
-        border-top-color: rgb(0, 255, 255);
-        border-left-color: rgb(128, 128, 128);
+    
+    td {
+        background: rgb(255, 255, 255);
     }
-    25% {
-        border-right-color: rgb(0, 255, 255);
-        border-top-color: rgb(128, 128, 128);
+    
+    @keyframes input-surround-focus {
+        0%,
+        100% {
+            border-top-color: rgb(0, 255, 255);
+            border-left-color: rgb(128, 128, 128);
+        }
+        25% {
+            border-right-color: rgb(0, 255, 255);
+            border-top-color: rgb(128, 128, 128);
+        }
+        50% {
+            border-bottom-color: rgb(0, 255, 255);
+            border-right-color: rgb(128, 128, 128);
+        }
+        75% {
+            border-left-color: rgb(0, 255, 255);
+            border-bottom-color: rgb(128, 128, 128);
+        }
     }
-    50% {
-        border-bottom-color: rgb(0, 255, 255);
-        border-right-color: rgb(128, 128, 128);
+    
+    @-webkit-keyframes input-surround-focus {
+        0%,
+        100% {
+            border-top-color: rgb(0, 255, 255);
+            border-left-color: rgb(128, 128, 128);
+        }
+        25% {
+            border-right-color: rgb(0, 255, 255);
+            border-top-color: rgb(128, 128, 128);
+        }
+        50% {
+            border-bottom-color: rgb(0, 255, 255);
+            border-right-color: rgb(128, 128, 128);
+        }
+        75% {
+            border-left-color: rgb(0, 255, 255);
+            border-bottom-color: rgb(128, 128, 128);
+        }
     }
-    75% {
-        border-left-color: rgb(0, 255, 255);
-        border-bottom-color: rgb(128, 128, 128);
+    
+    input[type="search"].tbl-srch {
+        border: 1px solid rgb(128, 128, 128);
+        border-radius: 2px;
+        overflow: hidden;
+        outline: none;
+        font-size: 14px;
     }
-    100% {
-        border-top-color: rgb(0, 255, 255);
-        border-left-color: rgb(128, 128, 128);
+    
+    input[type="search"]:focus.tbl-srch {
+        animation: input-surround-focus 3.5s ease-in-out;
+        -webkit-animation: input-surround-focus 3.5s ease-in-out;
+        border-color: rgb(0, 255, 255)
     }
-}
-
-input[type="search"].tbl-srch {
-    border: 1px solid rgb(128, 128, 128);
-    border-radius: 2px;
-    overflow: hidden;
-    outline: none;
-    font-size: 14px;
-}
-
-input[type="search"]:focus.tbl-srch {
-    animation: input-surround-focus 3.5s ease-in-out;
-    -webkit-animation: input-surround-focus 3.5s ease-in-out;
-    border-color: rgb(0, 255, 255)
-}
-
-.acc-search-btn,
-.acc-edit-btn {
-    outline: none;
-    box-shadow: none;
-    border: none;
-    background: rgb(255, 255, 255);
-}
-
-.acc-search-btn>i.fa.fa-search {
-    color: rgb(128, 128, 128);
-    transition: color .5s;
-}
-
-.acc-search-btn>i.fa.fa-search:hover {
-    color: rgb(0, 255, 255);
-}
-
-.acc-edit-btn {
-    position: absolute;
-    transform: translateX(7.5rem);
-}
-
-.acc-edit-btn>.btn-wrap {
-    text-decoration: none;
-    color: rgb(128, 128, 128);
-    transition: color .5s;
-}
-
-.acc-edit-btn>a:hover {
-    color: rgb(0, 255, 255);
-}
+    
+    .acc-search-btn,
+    .acc-edit-btn {
+        outline: none;
+        box-shadow: none;
+        border: none;
+        background: rgb(255, 255, 255);
+    }
+    
+    .acc-search-btn>i.fa.fa-search {
+        color: rgb(128, 128, 128);
+        transition: color .5s;
+    }
+    
+    .acc-search-btn>i.fa.fa-search:hover {
+        color: rgb(0, 255, 255);
+    }
+    
+    .acc-search-btn:focus {
+        outline: none;
+    }
+    
+    .acc-edit-btn {
+        position: absolute;
+        transform: translateX(7.5rem);
+    }
+    
+    .acc-edit-btn>.btn-wrap {
+        text-decoration: none;
+        color: rgb(128, 128, 128);
+        transition: color .5s;
+    }
+    
+    .acc-edit-btn>a:hover {
+        color: rgb(0, 255, 255);
+    }
