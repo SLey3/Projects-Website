@@ -2,6 +2,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
 }
 
 :root {
@@ -15,6 +17,36 @@
     justify-content: space-evenly;
     transition: margin-left 0.5s ease-out;
 }
+
+.acc-info-cntnr {
+    padding: 5px 10px;
+    z-index: -2;
+}
+
+.acc-info-cntnr>.acc-info-title {
+    white-space: pre-line;
+}
+
+.acc-info-cntnr>.acc-info-title:nth-child(1) {
+    letter-spacing: 3.4px;
+    font-style: italic;
+    user-select: none;
+}
+
+.acc-info-cntnr>.acc-info-title #inf-title {
+    transition: 0.5s;
+}
+
+.acc-info-cntnr>.acc-info-title #inf-title:hover {
+    letter-spacing: 0;
+}
+
+.acc-info-cntnr .text-body {
+    margin: 1px;
+    padding: 4px 8px;
+}
+
+.acc-info-cntnr .text-body>.text-wrap {}
 
 span[name="sep"].title-header-sep-align {
     position: var(--sep-position-type);

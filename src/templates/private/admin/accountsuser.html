@@ -9,13 +9,14 @@
     </div>
     <div id="body-content">
         <div id="info-cntnr" class="acc-info-cntnr">
-            <div class="acc-info-title">
-                <h2 class="acc-info-title">Account Info</h2>
+            <div name="sub-title" class="acc-info-title">
+                <h2 id="inf-title">Account Info</h2>
                 <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
             </div>
             <div class="text-body">
                 <information id="prof-info" class="text-wrap">
-                    Name: {{ user.name }} <br> Email: {{ user.email }} <br> Password: **** <br> Active Status: {{ user.active }} <br> Account Created: {{ user.created_at }} <br> Blacklisted Status: {{ user.blacklisted }}
+                    <span class="info-name">Name: {{ user.name }} </span> <br> <span class="info-email">Email: {{ user.email }}</span> <br> <span class="info-password">Password: **** </span><br> <span class="info-active-status">Active Status: {{ user.active }} </span><br>
+                    <span class="info-acc-create"> Account Created: {{ user.created_at }} </span><br><span class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }} </span>
                 </information>
             </div>
         </div>
