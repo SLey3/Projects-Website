@@ -167,14 +167,14 @@ def no_articles(e):
     """
     returns 400 status code and 400 error page
     """
-    return render_template('error_page/400/400.html')
+    return render_template('error_page/400/400.html'), 400
 
 @app.errorhandler(404)
 def page_not_found(e):
     """
     returns 404 status code and 404 error page
     """
-    return render_template('error_page/404/404.html')
+    return render_template('error_page/404/404.html'), 404
 
 @app.errorhandler(500)
 def servererror(e):
@@ -182,7 +182,7 @@ def servererror(e):
     returns 500 status code and redirects to HomePage
     """
     alert.setAlert('error', 2)
-    return redirect(url_for('homePage'))
+    return redirect(url_for('homePage')), 500
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader

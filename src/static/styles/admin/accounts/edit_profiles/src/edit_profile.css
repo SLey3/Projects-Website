@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
 * {
     margin: 0;
     padding: 0;
@@ -46,7 +47,36 @@
     padding: 4px 8px;
 }
 
-.acc-info-cntnr .text-body>.text-wrap {}
+.acc-info-cntnr .text-body>.text-wrap {
+    letter-spacing: 1.1px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.acc-info-cntnr .text-body information#prof-info span {
+    transition: 0.5s;
+}
+
+.acc-info-cntnr .text-body information#prof-info span.info-name:hover,
+.acc-info-cntnr .text-body information#prof-info span.info-email:hover,
+.acc-info-cntnr .text-body information#prof-info span.info-password:hover,
+.acc-info-cntnr .text-body information#prof-info span.info-active-status:hover,
+.acc-info-cntnr .text-body information#prof-info span.info-acc-create:hover,
+.acc-info-cntnr .text-body information#prof-info span.info-blacklist-status:hover {
+    content: '';
+    z-index: 10;
+    font-style: italic;
+    font-weight: 650px;
+    font-size: 35px;
+}
+
+.lower-span-txt {
+    user-select: none;
+    pointer-events: none;
+    z-index: -10;
+    content: '';
+    font-size: 10px;
+    font-weight: 100px;
+}
 
 span[name="sep"].title-header-sep-align {
     position: var(--sep-position-type);
