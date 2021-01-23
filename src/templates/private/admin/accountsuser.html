@@ -15,8 +15,19 @@
             </div>
             <div class="text-body">
                 <information id="prof-info" class="text-wrap">
-                    <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }} </span> <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.email }}</span> <br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span><br>                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }} </span><br>
-                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }} </span><br><span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }} </span>
+                    <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
+                    <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.email }}</span>
+                    <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
+                    <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
+                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}
+
+                        </span>
+                    <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
+                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span>
+                    <div id="edit-acc-created-date-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
+                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}
+                            </span>
+                    <div id="edit-blacklist-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div>
                 </information>
             </div>
         </div>
@@ -166,36 +177,29 @@
     });
 </script>
 <script type="text/javascript">
-    const isHovered = i => i.parentElement.querySelector(':hover') === i;
+    const isHovered = e => e.parentElement.querySelector(':hover') === e;
 
     document.getElementsByName("info-txt-span").forEach(item => {
-        if (item.id == 'order-1') {
+        if (item.id == "order-1") {
             const spanOrderList = [
                 "span#order-2",
                 "span#order-3",
                 "span#order-4",
                 "span#order-5",
                 "span#order-6"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 1 hovered' : 'Span Order 1 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-1").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         } else if (item.id == 'order-2') {
             const spanOrderList = [
                 "span#order-1",
@@ -203,26 +207,19 @@
                 "span#order-4",
                 "span#order-5",
                 "span#order-6"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 2 hovered' : 'Span Order 2 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-2").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         } else if (item.id == 'order-3') {
             const spanOrderList = [
                 "span#order-1",
@@ -230,26 +227,19 @@
                 "span#order-4",
                 "span#order-5",
                 "span#order-6"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 3 hovered' : 'Span Order 3 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-3").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         } else if (item.id == 'order-4') {
             const spanOrderList = [
                 "span#order-1",
@@ -257,26 +247,19 @@
                 "span#order-3",
                 "span#order-5",
                 "span#order-6"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 4 hovered' : 'Span Order 4 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-4").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         } else if (item.id == 'order-5') {
             const spanOrderList = [
                 "span#order-1",
@@ -284,26 +267,19 @@
                 "span#order-3",
                 "span#order-4",
                 "span#order-6"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 2 hovered' : 'Span Order 2 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-5").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         } else if (item.id == 'order-6') {
             const spanOrderList = [
                 "span#order-1",
@@ -311,27 +287,20 @@
                 "span#order-3",
                 "span#order-4",
                 "span#order-5"
-            ]
+            ];
 
-            item.addEventListener('mousemove', checkspanOrderOneMovement => {
-                let orderHovered = isHovered(item);
-                if (orderHovered !== checkspanOrderOneMovement.orderHovered) {
-                    console.log(orderHovered ? 'Span Order 6 hovered' : 'Span Order 6 not hovered');
-                    checkspanOrderOneMovement.orderHovered = orderHovered
-                    if (orderHovered) {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).addClass("lower-span-txt");
-                        }
-                    } else {
-                        for (var o = 0; o < spanOrderList.length; o++) {
-                            let order = spanOrderList[o];
-                            $(order).removeClass("lower-span-txt");
-                        }
-                    }
+            $(item.nodeName.toLowerCase() + "#order-6").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
                 }
-            })
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
         }
-    })
+    });
 </script>
 {% endblock %}
