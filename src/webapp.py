@@ -131,7 +131,7 @@ alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/
 
 admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
                                'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css', 
-                               filters='cssmin', output='styles/admin/main/dist/index.min.css')
+                               filters='cssmin', output='styles/admin/index/dist/index.min.css')
 
 admin_main_accounts_css_bundle = Bundle('styles/admin/accounts/main/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
                                   'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
@@ -139,7 +139,7 @@ admin_main_accounts_css_bundle = Bundle('styles/admin/accounts/main/src/index.cs
 
 admin_edit_profile_accounts_css_bundle = Bundle('styles/admin/accounts/edit_profiles/src/edit_profile.css', 'styles/admin/util/scrollbar/scrollbar.css',
                                                 'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
-                                                filters='cssmin', output='styles/admin/edit_profiles/dist/edit_profile.min.css')
+                                                filters='cssmin', output='styles/admin/accounts/edit_profiles/dist/edit_profile.min.css')
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
 assets.register('main__js', js_bundle)
