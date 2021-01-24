@@ -159,154 +159,148 @@
     })();
 </script>
 <script type="text/javascript">
-    (function() {
-        $('input[type=checkbox]#role-head-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
-            $("input[type=checkbox]#role-foot-selectAll").prop('checked', $(this).prop('checked'));
-        });
-        $('input[type=checkbox]#role-foot-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
-            $("input[type=checkbox]#role-head-selectAll").prop('checked', $(this).prop('checked'));
-        });
-    })();
+    $('input[type=checkbox]#role-head-selectAll').click(function() {
+        $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input[type=checkbox]#role-foot-selectAll").prop('checked', $(this).prop('checked'));
+    });
+    $('input[type=checkbox]#role-foot-selectAll').click(function() {
+        $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input[type=checkbox]#role-head-selectAll").prop('checked', $(this).prop('checked'));
+    });
 </script>
 <script type="text/javascript">
-    (function() {
-        $('input[type=checkbox]#article-head-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
-            $("input[type=checkbox]#article-foot-selectAll").prop('checked', $(this).prop('checked'));
-        });
-        $('input[type=checkbox]#article-foot-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
-            $("input[type=checkbox]#article-head-selectAll").prop('checked', $(this).prop('checked'));
-        });
-    })();
+    $('input[type=checkbox]#article-head-selectAll').click(function() {
+        $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input[type=checkbox]#article-foot-selectAll").prop('checked', $(this).prop('checked'));
+    });
+    $('input[type=checkbox]#article-foot-selectAll').click(function() {
+        $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+        $("input[type=checkbox]#article-head-selectAll").prop('checked', $(this).prop('checked'));
+    });
 </script>
 <script type="text/javascript">
-    (function() {
-        document.getElementsByName("info-txt-span").forEach(item => {
-            if (item.id == "order-1") {
-                const spanOrderList = [
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
+    document.getElementsByName("info-txt-span").forEach(item => {
+        if (item.id == "order-1") {
+            const spanOrderList = [
+                "span#order-2",
+                "span#order-3",
+                "span#order-4",
+                "span#order-5",
+                "span#order-6"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-1").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-2') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
+            $(item.nodeName.toLowerCase() + "#order-1").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        } else if (item.id == 'order-2') {
+            const spanOrderList = [
+                "span#order-1",
+                "span#order-3",
+                "span#order-4",
+                "span#order-5",
+                "span#order-6"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-2").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-3') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
+            $(item.nodeName.toLowerCase() + "#order-2").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        } else if (item.id == 'order-3') {
+            const spanOrderList = [
+                "span#order-1",
+                "span#order-2",
+                "span#order-4",
+                "span#order-5",
+                "span#order-6"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-3").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-4') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-5",
-                    "span#order-6"
-                ];
+            $(item.nodeName.toLowerCase() + "#order-3").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        } else if (item.id == 'order-4') {
+            const spanOrderList = [
+                "span#order-1",
+                "span#order-2",
+                "span#order-3",
+                "span#order-5",
+                "span#order-6"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-4").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-5') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-6"
-                ];
+            $(item.nodeName.toLowerCase() + "#order-4").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        } else if (item.id == 'order-5') {
+            const spanOrderList = [
+                "span#order-1",
+                "span#order-2",
+                "span#order-3",
+                "span#order-4",
+                "span#order-6"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-5").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-6') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5"
-                ];
+            $(item.nodeName.toLowerCase() + "#order-5").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        } else if (item.id == 'order-6') {
+            const spanOrderList = [
+                "span#order-1",
+                "span#order-2",
+                "span#order-3",
+                "span#order-4",
+                "span#order-5"
+            ];
 
-                $(item.nodeName.toLowerCase() + "#order-6").hover(function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            }
-        });
-    })();
+            $(item.nodeName.toLowerCase() + "#order-6").hover(function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).addClass("lower-span-txt");
+                }
+            }, function() {
+                for (var o = 0; o < spanOrderList.length; o++) {
+                    let order = spanOrderList[o];
+                    $(order).removeClass("lower-span-txt");
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}
