@@ -19,14 +19,10 @@
                     <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.email }}</span>
                     <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
                     <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
-                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}
-
-                        </span>
+                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
                     <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
-                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span>
-                    <div id="edit-acc-created-date-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br>
-                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}
-                            </span>
+                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
+                    <span id="order-6" name="info-txt-span" class="info-blacklist-status top-pad-marg"> Blacklisted Status: {{ user.blacklisted }}</span>
                     <div id="edit-blacklist-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div>
                 </information>
             </div>
@@ -77,7 +73,7 @@
                             <th>Article Name</th>
                             <th>Article Desc</th>
                             <th>Created In:</th>
-                            <th>Article Link</th>
+                            <th>Article Link </th>
                             <th id="srch-upper-cell">Search: {{ search_form.command }} <button id="article-srch-btn" class="article-search-btn"><i class="fa fa-search" aria-hidden="true"></i></button></th>
                             <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" /></th>
                         </tr>
@@ -190,11 +186,17 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-1").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
@@ -210,11 +212,17 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-2").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
@@ -230,11 +238,17 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-3").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
@@ -250,11 +264,17 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-4").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
@@ -270,11 +290,17 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-5").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
@@ -290,17 +316,31 @@
             ];
 
             $(item.nodeName.toLowerCase() + "#order-6").hover(function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 0);
+                });
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).addClass("lower-span-txt");
                 }
             }, function() {
+                $(".edit-icon").each(function() {
+                    $(this).css("opacity", 1);
+                })
                 for (var o = 0; o < spanOrderList.length; o++) {
                     let order = spanOrderList[o];
                     $(order).removeClass("lower-span-txt");
                 }
             });
         }
+    });
+</script>
+<script type="text/javascript">
+    $("#edit-name-icn").click(function() {
+        $(".edit-icon").each(function() {
+            $(this).css("opacity", 0);
+        });
+        $(".info-name").replaceWith($('<form method="POST" action="{{ request.url }}form_post">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.name.label }}' + '{{ info_forms.name }}' + '{{ info_forms.name_sbmt }}' + '</form>'));
     });
 </script>
 {% endblock %}

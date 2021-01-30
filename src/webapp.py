@@ -97,6 +97,7 @@ app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 app.register_blueprint(admin)
 app.add_template_global(current_user, 'current_user')
+app.add_template_global(request, 'request')
 
 
 # ------------------ app Config: SQLAlchemy Config ------------------

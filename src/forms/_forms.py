@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField, PasswordField, 
     TextAreaField, SelectField,
-    SubmitField
+    SubmitField, BooleanField
 )
 from wtforms.fields.html5 import TelField, SearchField
 from flask_uploads import UploadSet, IMAGES
@@ -107,3 +107,15 @@ class AccountManegementForms:
         Creates Search Input
         """
         command = SearchField('tbl search', id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
+        
+    class adminUserInfoForm(FlaskForm):
+        """
+        Creates Info Ediit form Inputs
+        """
+        name = StringField('Name', id='edit-name-input', validators=[DataRequired("Field may not be blank"), Length(min=3, max=10, message="Name length must be between 3-10 characters")],
+                           render_kw={'placeholder':'Edit Name...', 'class':'name-input'})
+        
+        name_sbmt = SubmitField('Submit', id='name-sbmt-btn', render_kw={'value':'Submit', 'class':'name-sbmt-btn'})
+        
+        email = StringField('Email', id='edit-email-input', validators=[DataRequired("Field may not be blank"), Email("This must be an email", check_deliverability=True), 
+                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], render_kw={'placeholder': 'Enter Email...', 'class': 'email-input'})

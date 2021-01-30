@@ -7,10 +7,6 @@
     -moz-box-sizing: border-box;
 }
 
-:root {
-    --sep-position-type: absolute;
-}
-
 .body-grid {
     display: grid;
     grid-template-rows: 5.25rem;
@@ -34,14 +30,6 @@
     user-select: none;
 }
 
-.acc-info-cntnr>.acc-info-title #inf-title {
-    transition: 0.5s;
-}
-
-.acc-info-cntnr>.acc-info-title #inf-title:hover {
-    letter-spacing: 0;
-}
-
 .acc-info-cntnr .text-body {
     margin: 1px;
     padding: 4px 8px;
@@ -50,6 +38,7 @@
 .acc-info-cntnr .text-body>.text-wrap {
     letter-spacing: 1.1px;
     font-family: 'Montserrat', sans-serif;
+    user-select: none;
 }
 
 .acc-info-cntnr .text-body information#prof-info span {
@@ -70,7 +59,6 @@
 }
 
 .lower-span-txt {
-    user-select: none;
     pointer-events: none;
     z-index: -10;
     content: '';
@@ -78,22 +66,82 @@
     font-weight: 100px;
 }
 
+.prof-info-btn-clicked {
+    letter-spacing: 1.1px !important;
+    font-family: 'Montserrat', sans-serif !important;
+    user-select: none !important;
+}
+
+.prof-info-btn-clicked-icon {
+    position: relative !important;
+    left: 11em !important;
+    bottom: 1.31rem !important;
+    opacity: 1 !important;
+}
+
+.edit-icon {
+    position: relative;
+    left: 11em;
+    bottom: 1.31rem;
+    opacity: 1;
+}
+
+.edit-icon#edit-name-icn {
+    transform: translateX(-0.9rem);
+    transition: 0.5s;
+}
+
+.edit-icon#edit-email-icn {
+    transform: translateX(5.95rem);
+    transition: 0.5s;
+}
+
+.edit-icon#edit-pwd-icn {
+    transform: translateX(-2.65rem);
+    transition: 0.5s;
+}
+
+.edit-icon#edit-active-status-icn {
+    transform: translateX(0.1rem);
+    transition: 0.5s;
+}
+
+.edit-icon#edit-acc-created-date-icn {
+    transform: translateX(3.99rem);
+    transition: 0.5s;
+}
+
+.edit-icon#edit-blacklist-status-icn {
+    transform: translateX(3.2rem);
+    transition: 0.5s;
+}
+
+.edit-icon>.fa.fa-pencil-square-o {
+    transition: 0.5s ease-out;
+}
+
+.edit-icon>.fa.fa-pencil-square-o:hover {
+    cursor: pointer;
+    color: rgb(0, 255, 255);
+    opacity: 0.35;
+}
+
 span[name="sep"].title-header-sep-align {
-    position: var(--sep-position-type);
+    position: absolute;
     width: 55%;
 }
 
 span[name="sep"].acc-info-title-sep-align {
-    position: var(--sep-position-type);
+    position: absolute;
     width: 15em;
 }
 
 span[name="sep"].acc-roles-title-sep-align {
-    position: var(--sep-position-type);
+    position: absolute;
     width: 14.6em;
 }
 
 span[name="sep"].article-title-sep-align {
-    position: var(--sep-position-type);
+    position: absolute;
     width: 25.5em;
 }
