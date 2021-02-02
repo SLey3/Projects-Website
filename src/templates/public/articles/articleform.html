@@ -1,7 +1,7 @@
-{% extends "layout.html" %} {% from "render/_render_form.html" import render_field %} {% block title %} MyProjects | Article Registration {% endblock %} {% block css %}
+{% extends "public/layout.html" %} {% from "public/render/_render_form.html" import render_field %} {% block title %} MyProjects | Article Registration {% endblock %} {% block css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/articles_form.css')}}">
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet"> {% endblock %} {% block content %}
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet"> {% endblock %} {% block content %} {% include "public/web_util/_navbar.html" %}
 <div class="article-form">
     <form action="{{ url_for('articleCreation') }}" method="POST" enctype="multipart/form-data">
         {{ form.csrf_token }}

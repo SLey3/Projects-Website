@@ -10,7 +10,7 @@ from src.forms import AccountManegementForms
 from src.util.helpers import bool_re, email_re
 
 # ------------------ Blueprint Config ------------------
-admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates/private/', url_prefix='/admin')
+admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
 
 # ------------------ Blueprint Routes ------------------
 @admin.route('/')
@@ -32,7 +32,7 @@ def adminHomePage():
     Administrator Homepage
     """
     confirm_login()
-    return render_template('admin/index.html')
+    return render_template('private/admin/index.html')
 
 @admin.route('/manegement/accounts/', methods=['GET', 'POST'], defaults={'page': 1})
 @admin.route('/manegement/accounts/<int:page>', methods=['GET', 'POST'])
@@ -56,7 +56,7 @@ def adminAccountsManegement(page):
             users = User.query.filter(User.name.like(search_query)).paginate(per_page=pages, error_out=False)
         else:
             users = User.query.paginate(page, pages, error_out=False)
-    return render_template("admin/accounts.html", accounts=users, tbl_search_form=search_form)
+    return render_template("private/admin/accounts.html", accounts=users, tbl_search_form=search_form)
 
 
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
@@ -71,13 +71,14 @@ def adminAccountsUserManagement(user, page):
     user = str(user).replace('%20', ' ')
     user_info = User.query.filter_by(name=user).first()
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
-    return render_template("admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)
+    return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)
 
 @admin.route('management/accounts/edit_user/<string:user>/post_form', methods=['GET', 'POST'])
 @login_required
 @roles_required('admin', 'verified')
 def adminAccountsUserManagementformValidations(user):
-    if request.method == "POST":
+    form = AccountManegementForms.adminUserInfoForm()
+    if request.method == "POST" and form.validate_on_submit():
         return redirect(url_for("admin.adminAccountsUserManagement", user=user))
     else:
         return redirect(url_for("admin.adminAccountsUserManagement", user=user))

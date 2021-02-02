@@ -57,7 +57,7 @@ del current_path
 del os
 
 # ------------------ app Config ------------------
-app = Flask(__name__, template_folder="templates/public", static_folder='static')
+app = Flask(__name__, template_folder="templates", static_folder='static')
 app.config["SECRET_KEY"] = '\xe8\rP\xc9+\xca\xf16\x1b\xce\xe8\xb1\xa3E1\xf2F\xd9\xf4\x18\x92\xe7\x04>'
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1, 2]
@@ -122,8 +122,12 @@ assets = Environment(app)
 
 # ------------------ app Config: Bundle Config: Bundles ------------------ 
 
-js_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
+js_main_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
                    filters='jsmin', output="js/main/dist/main.min.js") 
+
+edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/check-all.js',
+                                'js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/accounts/edit_profile/src/navalign.js',
+                                filters='jsmin', output='js/ext/admin/accounts/edit_profile/dist/index.min.js')
 
 alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
                     'styles/alert_css/src/info.css', 'styles/alert_css/src/success.css',
@@ -143,7 +147,9 @@ admin_edit_profile_accounts_css_bundle = Bundle('styles/admin/accounts/edit_prof
                                                 filters='cssmin', output='styles/admin/accounts/edit_profiles/dist/edit_profile.min.css')
 
 # ------------------ app Config: Bundle Config: Registration ------------------ 
-assets.register('main__js', js_bundle)
+assets.register('main__js', js_main_bundle)
+
+assets.register('edit_prof_main_js', edit_profile_js_bundle)
   
 assets.register('alert__css', alert_css_bundle)
 
@@ -168,14 +174,14 @@ def no_articles(e):
     """
     returns 400 status code and 400 error page
     """
-    return render_template('error_page/400/400.html'), 400
+    return render_template('public/error_page/400/400.html'), 400
 
 @app.errorhandler(404)
 def page_not_found(e):
     """
     returns 404 status code and 404 error page
     """
-    return render_template('error_page/404/404.html'), 404
+    return render_template('public/error_page/404/404.html'), 404
 
 @app.errorhandler(500)
 def servererror(e):
@@ -212,12 +218,12 @@ def loginPage():
                 login_user(user)
                 return redirect(url_for("homePage"))
         error = "Invalid Email or Password"
-        return render_template("loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+        return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
         if current_user.is_authenticated:
             return redirect(url_for("homePage"))
         else:
-            return render_template("loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+            return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
 @app.route('/register', methods=['GET', 'POST'])
 @app.route('/register/', methods=['GET', 'POST'])
@@ -253,7 +259,7 @@ def registerPage():
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
         return redirect(url_for("homePage"))
     else:
-        return render_template("registerpage.html", form=form)
+        return render_template("public/registerpage.html", form=form)
     
 @app.route('/confirm_recieved/<token>')  
 @app.route('/confirm_recieved/<token>/')  
@@ -312,7 +318,7 @@ def initialForgotPage():
         alert.setAlert('success', 'Reset Password Email has been sent.')
         return redirect(url_for('homePage'))
     else:
-        return render_template("forgot.html", field=form)
+        return render_template("public/forgot.html", field=form)
     
 @app.route('/login/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
 @app.route('/login/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
@@ -336,7 +342,7 @@ def resetRequestRecieved(token, email):
                 alert.setAlert('warning', 'The Requested Password matches your current password.')
             return redirect(url_for('loginPage'))
         else:
-            return render_template("forgotrecieved.html", form=form, token=token, email=email)
+            return render_template("public/forgotrecieved.html", form=form, token=token, email=email)
     
     except SignatureExpired:
         alert.setAlert('error', 1)
@@ -361,7 +367,7 @@ def homePage():
     website homepage
     """
     alert_dict = alert.getAlert()
-    return render_template("homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+    return render_template("public/homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
 @app.route('/home')
 @app.route('/home/')
@@ -374,7 +380,7 @@ def redirectToHomePage():
 @app.route('/about')
 @app.route('/about/')
 def aboutPage():
-    return render_template('aboutpage.html')
+    return render_template('public/aboutpage.html')
 
 @app.route('/articles/create_article', methods=['GET', 'POST'])
 @app.route('/articles/create_article/', methods=['GET', 'POST'])
@@ -409,7 +415,7 @@ def articleCreation():
         alert.setAlert('success', 'Article has been Created.')
         return redirect(url_for("homePage"))
     else:
-        return render_template("articles/articleform.html", form=form)
+        return render_template("public/articles/articleform.html", form=form)
     
 @app.route('/articles', methods=['GET', 'POST'])
 @app.route('/articles/', methods=['GET', 'POST'])
@@ -418,7 +424,7 @@ def article_home():
         articles = Article.query.all()
     except OperationalError:
         abort(400)
-    return render_template("articles/articlepage.html", articles=articles)
+    return render_template("public/articles/articlepage.html", articles=articles)
 
 @app.route('/articles/<string:id>')
 @app.route('/articles/<string:id>/')
@@ -455,7 +461,7 @@ def contact_us():
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('homePage'))
     else:
-        return render_template('contactpage.html', form=form)
+        return render_template('public/contactpage.html', form=form)
 
 @app.route('/home/admin')
 @app.route('/home/admin/')   

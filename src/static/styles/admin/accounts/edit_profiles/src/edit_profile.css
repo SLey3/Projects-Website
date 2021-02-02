@@ -72,13 +72,6 @@
     user-select: none !important;
 }
 
-.prof-info-btn-clicked-icon {
-    position: relative !important;
-    left: 11em !important;
-    bottom: 1.31rem !important;
-    opacity: 1 !important;
-}
-
 .edit-icon {
     position: relative;
     left: 11em;
