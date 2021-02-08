@@ -5,6 +5,10 @@ from src.util.helpers import alertMessageType, InvalidType
 from typing import Dict, List
 from src.database.models import Article
 from warnings import warn
+from typing import Any
+from dataclasses import dataclass
+from datetime import datetime
+from re import Pattern
 import re
 
 # ------------------ Utils ------------------
@@ -17,38 +21,68 @@ class AlertUtil(object):
     'message':''
     }
     
-    def __init__(self, app=None):
-        self.app = app
-        self.init_app(app)
+    def __init__(self, app=None, in_blueprint: bool = False):
+        if in_blueprint:
+            from flask import current_app as context_app
+            self.context_app = context_app
+            self.init_app(context_app, in_blueprint=True)
+        else:
+           self.init_app(app)
             
         
-    def init_app(self, app):
+    def init_app(self, app, in_blueprint: bool = False):
         """
         Initializes AlertUtil
         """
-        if not hasattr(self, 'config'):
-            setattr(self, 'config', app.config)
-            if not (
-                self.config.get("ALERT_CODES_NUMBER_LIST")
-                or 
-                self.config.get("ALERT_CODES_DICT")
-                or 
-                self.config.get("ALERT_TYPES")
-            ):
-                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                 ALERT_TYPES was not found in the apps Config''')
+        if in_blueprint:
+            from src.webapp import app as webapp
+            with webapp.app_context():
+                if not hasattr(self, 'config'):
+                    setattr(self, 'config', self.context_app.config)
+                    if not (
+                        self.config.get("ALERT_CODES_NUMBER_LIST")
+                        or 
+                        self.config.get("ALERT_CODES_DICT")
+                        or 
+                        self.config.get("ALERT_TYPES")
+                    ):
+                        raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                        ALERT_TYPES was not found in the apps Config''')
+                else:
+                    if not (
+                        self.config.get("ALERT_CODES_NUMBER_LIST")
+                        or 
+                        self.config.get("ALERT_CODES_DICT")
+                        or 
+                        self.config.get("ALERT_TYPES")
+                    ):
+                        raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                        ALERT_TYPES was not found in the apps Config''')
+                self.context_app.extensions['AlertUtil'] = self
         else:
-            if not (
-                self.config.get("ALERT_CODES_NUMBER_LIST")
-                or 
-                self.config.get("ALERT_CODES_DICT")
-                or 
-                self.config.get("ALERT_TYPES")
-            ):
-                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                 ALERT_TYPES was not found in the apps Config''')
+            if not hasattr(self, 'config'):
+                setattr(self, 'config', app.config)
+                if not (
+                    self.config.get("ALERT_CODES_NUMBER_LIST")
+                    or 
+                    self.config.get("ALERT_CODES_DICT")
+                    or 
+                    self.config.get("ALERT_TYPES")
+                ):
+                    raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                    ALERT_TYPES was not found in the apps Config''')
+            else:
+                if not (
+                    self.config.get("ALERT_CODES_NUMBER_LIST")
+                    or 
+                    self.config.get("ALERT_CODES_DICT")
+                    or 
+                    self.config.get("ALERT_TYPES")
+                ):
+                    raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                    ALERT_TYPES was not found in the apps Config''')
                 
-        app.extensions['AlertUtil'] = self
+            app.extensions['AlertUtil'] = self
     
     def getConfigValue(self, configValue: str):
         try: 
@@ -126,3 +160,42 @@ def formatPhoneNumber(phone_number: str) -> str:
     clean_phone_number = re.sub('[^0-9]+', '', phone_number)
     formatted_phone_number = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", f"{int(clean_phone_number[:-1])}") + clean_phone_number[-1]
     return formatted_phone_number
+
+
+
+@dataclass
+class DateUtil:
+    """
+    DateUtil for Correcting and Validating Date
+    """
+    date: Any
+        
+    def validateDate(self, re_pattern: Pattern):
+        """
+        returns True if date is valid. Returns false if not
+        """
+        if len(self.date) == (7, 8, 9):
+            return False
+        elif not re_pattern.match(self.date):
+            return False
+        else:
+            return True
+         
+    def subDate(self, re_sub_pattern: Pattern, reversed_sub: bool = False):
+        """
+        Corrects Date to correct format
+        """
+        if isinstance(self.date, datetime):
+            self.date = "{month}/{day}/{year}".format(month=self.date.month, day=self.date.day, year=self.date.year)
+            return self.date
+        else:
+            if self.validateDate(re_sub_pattern):
+                return self.date
+            else:
+                if reversed_sub:
+                    new_date = re.sub(r"(\d{1,2})/(\d({1,2})/(\d{2,4})", r"\3-\1-\2", self.date)
+                    self.date = new_date
+                    return new_date
+                new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+                self.date = new_date
+                return new_date   

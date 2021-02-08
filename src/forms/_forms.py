@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import (
     StringField, PasswordField, 
     TextAreaField, SelectField,
-    SubmitField, BooleanField
+    SubmitField
 )
 from wtforms.fields.html5 import TelField, SearchField
 from flask_uploads import UploadSet, IMAGES
@@ -28,7 +28,7 @@ class registerForm(FlaskForm):
     """
     registration form for website
     """
-    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, max=10, message="Name length must be between 3-10 characters")], 
+    name = StringField("name", validators=[DataRequired("Name Entry required"), Length(min=3, max=30, message="Name length must be between 3-30 characters")], 
                        render_kw={'placeholder':'Name'})
     email = StringField("email",  validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True), 
                                              Length(min=3, max=50, message="Email length must be at most 50 characters")], 
@@ -90,11 +90,11 @@ class forgotRequestForm(FlaskForm):
     """
     Creates the Initial Forgot Request Form
     """
-    email = StringField('email', validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
+    email = StringField(validators=[DataRequired("Email Entry required"), Email("This must be an email", check_deliverability=True),
                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], 
                         render_kw={"placeholder": "Enter Email"})
     
-    submit = SubmitField('Submit', id='sbmt-btn', render_kw={'value':'Send'})
+    submit = SubmitField(id='sbmt-btn', render_kw={'value':'Send'})
     
     back_button = ButtonField('Back to Login', id='btn-redirect', render_kw={'href': '/', 'onclick':'NoValidateInput()'})
     
@@ -106,16 +106,34 @@ class AccountManegementForms:
         """
         Creates Search Input
         """
-        command = SearchField('tbl search', id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
+        command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
         
     class adminUserInfoForm(FlaskForm):
         """
         Creates Info Ediit form Inputs
         """
-        name = StringField('Name', id='edit-name-input', validators=[DataRequired("Field may not be blank"), Length(min=3, max=10, message="Name length must be between 3-10 characters")],
-                           render_kw={'placeholder':'Edit Name...', 'class':'name-input'})
+        name = StringField('Name: ', id='edit-name-input', validators=[DataRequired("Name Entry required"), Length(min=3, max=30, message="Name length must be between 3-30 characters")], 
+                           render_kw={'placeholder':'Edit name...', 'class':'name-input'})
         
-        name_sbmt = SubmitField('Submit', id='name-sbmt-btn', render_kw={'value':'Submit', 'class':'name-sbmt-btn'})
+        name_sbmt = SubmitField(id='name-sbmt-btn', render_kw={'value':'Submit', 'class':'name-sbmt-btn'})
         
-        email = StringField('Email', id='edit-email-input', validators=[DataRequired("Field may not be blank"), Email("This must be an email", check_deliverability=True), 
-                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], render_kw={'placeholder': 'Enter Email...', 'class': 'email-input'})
+        email = StringField('Email: ', id='edit-email-input', validators=[DataRequired("Field may not be blank"), Email("This must be an email", check_deliverability=True), 
+                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], render_kw={'placeholder': 'Edit email...', 'class': 'email-input'})
+        
+        email_sbmt = SubmitField(id='email-sbmt-btn', render_kw={'value':'Submit', 'class':'email-sbmt-btn'})
+        
+        password = PasswordField('Password: ', id='edit-pwd-input', validators=[DataRequired("Field may not be blank"), 
+                                                                              Length(min=8, max=99, message="length should be between 8-99 characters")], 
+                                 render_kw={'placeholder': 'Edit password...', 'class':'pwd-input'})
+        
+        password_sbmt = SubmitField(id='pwd-sbmt-btn', render_kw={'value':'Submit', 'class':'pwd-sbmt-btn'})
+        
+        active = StringField('Active Status: ', id='edit-active-input', validators=[DataRequired("Field may not be blank"), ValidateBool()], 
+                             render_kw={'placeholder':'Edit active status...', 'class':'active-status-input'})
+        
+        active_sbmt = SubmitField(id='active-status-sbmt-btn', render_kw={'value':'Submit', 'class':'active-status-sbmt-btn'})
+        
+        blacklist = StringField('Blacklist Status: ', id='edit-blacklist-input', validators=[DataRequired("Field may not be empty"), ValidateBool()],
+                                render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input'})
+        
+        blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status=sbmt-btn'})

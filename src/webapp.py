@@ -38,9 +38,9 @@ from werkzeug.utils import secure_filename
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from io import open as iopen
 from src.util import (
-    AlertUtil, is_valid_article_page, formatPhoneNumber
+    AlertUtil, is_valid_article_page, formatPhoneNumber, DateUtil
 )
-from src.util.helpers import EMAILS
+from src.util.helpers import EMAILS, date_re
 from flask_assets import Bundle, Environment
 from src.admin import admin
 import base64
@@ -399,9 +399,10 @@ def articleCreation():
             with iopen(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
                 img = str(base64.b64encode(image.read()), 'utf-8')
         current_date = datetime.now()
-        creation_date = f"{current_date.month}/{current_date.day}/{current_date.year}"
+        date_util = DateUtil(current_date)
+        creation_date = date_util.subDate(date_re)
         del current_date
-        body = request.form.get('editordata')          
+        body = request.form["editordata"]         
         new_article = Article(
             title=form.title.data,
             author=form.author.data,

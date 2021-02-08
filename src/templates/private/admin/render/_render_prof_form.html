@@ -1,7 +1,0 @@
-{% macro render_field(field) %} {{ field(**kwargs)| safe}}
-<div id="err" class="error-box">
-    {% for error in field.errors %}
-    <p class="err-txt">- {{ error }}</p>
-    {% endfor %}
-</div>
-{% endmacro %}

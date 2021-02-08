@@ -3,11 +3,13 @@ from flask import (
     Blueprint, render_template, url_for,
     redirect, request
 )
+from src.database.models import db
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
 from src.database.models import User, Article
 from src.forms import AccountManegementForms
 from src.util.helpers import bool_re, email_re
+from passlib.hash import sha512_crypt
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
@@ -65,21 +67,21 @@ def adminAccountsManegement(page):
 @roles_required('admin', 'verified')
 def adminAccountsUserManagement(user, page):
     search_form = AccountManegementForms.tableSearchForm()
-    info_forms= AccountManegementForms.adminUserInfoForm()
+    info_forms = AccountManegementForms.adminUserInfoForm()
     page: int = page
     pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.query.filter_by(name=user).first()
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
-    return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)
-
-@admin.route('management/accounts/edit_user/<string:user>/post_form', methods=['GET', 'POST'])
-@login_required
-@roles_required('admin', 'verified')
-def adminAccountsUserManagementformValidations(user):
-    form = AccountManegementForms.adminUserInfoForm()
-    if request.method == "POST" and form.validate_on_submit():
-        return redirect(url_for("admin.adminAccountsUserManagement", user=user))
+    if request.method == "POST":
+        if info_forms.name.data and info_forms.name.validate(info_forms):
+            user_info.name = info_forms.name.data
+            user = info_forms.name.data
+        else:
+            for error in info_forms.name.errors:
+                print(error, sep="\n")
+        db.session.commit()
+        return redirect(url_for("admin.adminAccountsUserManagement", user=user, article_info=article_info, search_form=search_form, info_forms=info_forms))
     else:
-        return redirect(url_for("admin.adminAccountsUserManagement", user=user))
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)
         
