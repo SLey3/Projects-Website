@@ -92,7 +92,7 @@ app.config["SECURITY_PASSWORD_HASH"] = "sha512_crypt"
 app.config["SECURITY_FLASH_MESSAGES"] = False
 app.config["SECURITY_LOGIN_URL"] = "/auth/login" or "/auth/login/"
 app.config["SECURITY_LOGOUT_URL"] = "/auth/signout" or "/auth/signout/"
-app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'error_page/login_redirect/redirectlogin.html'
+app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'public/error_page/login_redirect/redirectlogin.html'
 app.permanent_session_lifetime = timedelta(days=5)
 app.register_blueprint(dash)
 app.register_blueprint(admin)
@@ -467,7 +467,6 @@ def contact_us():
 @app.route('/home/admin')
 @app.route('/home/admin/')   
 @roles_required('admin', 'verified')
-@login_required
 def adminPage():
     """
     Administrator Page

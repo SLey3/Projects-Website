@@ -163,7 +163,7 @@ def formatPhoneNumber(phone_number: str) -> str:
 
 
 
-@dataclass
+@dataclass(eq=False)
 class DateUtil:
     """
     DateUtil for Correcting and Validating Date
