@@ -8,6 +8,7 @@ astroid==2.4.2            # via pylint, pylint-flask
 babel==2.9.0              # via flask-babelex
 beautifulsoup4==4.9.3     # via -r requirements.in
 blinker==1.4              # via flask-mail, flask-principal
+cachelib==0.1.1           # via flask-session
 certifi==2020.12.5        # via requests
 chardet==4.0.0            # via requests
 click==7.1.2              # via flask
@@ -23,9 +24,10 @@ flask-mail==0.9.1         # via -r requirements.in, flask-security
 flask-principal==0.4.0    # via flask-security
 flask-reuploaded==0.3.2   # via -r requirements.in
 flask-security==3.0.0     # via -r requirements.in
+flask-session==0.3.2      # via -r requirements.in
 flask-sqlalchemy==2.4.4   # via -r requirements.in
 flask-wtf==0.14.3         # via -r requirements.in, flask-security
-flask==1.1.2              # via -r requirements.in, flask-assets, flask-babelex, flask-login, flask-mail, flask-principal, flask-reuploaded, flask-security, flask-sqlalchemy, flask-wtf
+flask==1.1.2              # via -r requirements.in, flask-assets, flask-babelex, flask-login, flask-mail, flask-principal, flask-reuploaded, flask-security, flask-session, flask-sqlalchemy, flask-wtf
 idna==2.10                # via -r requirements.in, email-validator, requests
 isort==5.7.0              # via pylint
 itsdangerous==1.1.0       # via -r requirements.in, flask, flask-security, flask-wtf

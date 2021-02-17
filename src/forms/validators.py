@@ -47,8 +47,8 @@ def ValidateBool(python_bool: bool = True):
                 raise ValidationError("Input is not in Python bool format or is not a bool.")
         else:
             import re
-            bool_re = re.compile(r"True|False", re.I)
-            if not bool_re.match(field.data):
+            other_bool_re = re.compile(r"True|False", re.I)
+            if not other_bool_re.match(field.data):
                 raise ValidationError("Input is not a bool.")
     
     return _validatebool

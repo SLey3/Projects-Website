@@ -8,7 +8,7 @@ from flask_login import login_required, confirm_login
 from flask_security import roles_required
 from src.database.models import User, Article
 from src.forms import AccountManegementForms
-from src.util.helpers import bool_re, email_re
+from src.util import scrapeError
 from passlib.hash import sha512_crypt
 from bs4 import BeautifulSoup, NavigableString
 from typing import Union
@@ -78,60 +78,34 @@ def adminAccountsUserManagement(user, page):
         if info_forms.name.data and info_forms.name.validate(info_forms):
             user_info.name = info_forms.name.data
             user = info_forms.name.data
-        elif not info_forms.name.validate(info_forms):
-            with requests.Session() as sess:
-                web = sess.get(URL)
-                soup = BeautifulSoup(web.content, 'html5lib')
-                p_name_tag = soup.find_all('p', {'id':'name-err-p'})
-                for p_tag in p_name_tag:                   
-                    for error in info_forms.name.errors:
-                        p_tag.insert(0, NavigableString(f"- {error}\n"))
-                        name_error = p_tag
+        elif not info_forms.name.validate(info_forms) and info_forms.name.data:
+            name_error = scrapeError(URL, ('id', 'name-err-p'), info_forms.name.errors)
         elif info_forms.email.data and info_forms.email.validate(info_forms):
             user_info.email = info_forms.email.data
-        elif not info_forms.email.validate(info_forms):
-            with requests.Session() as sess:
-                web = sess.get(URL)
-                soup = BeautifulSoup(web.content, 'html5lib')
-                p_email_tag = soup.find_all('p', {'id':'email-err-p'})
-                for p_tag in p_email_tag:
-                    for error in info_forms.email.errors:
-                        p_tag.insert(0, NavigableString(f"- {error}\n"))
-                        email_error = p_tag
+        elif not info_forms.email.validate(info_forms) and info_forms.email.data:
+            email_error = scrapeError(URL, ('id', 'email-err-p'), info_forms.email.data)
         elif info_forms.password.data and info_forms.password.validate(info_forms):
             user_info.password = sha512_crypt.hash(info_forms.password.data)
-        elif not info_forms.password.validate(info_forms):
-            with requests.Session() as sess:
-                web = sess.get(URL)
-                soup = BeautifulSoup(web.content, 'html5lib')
-                p_pwd_tag = soup.find_all('p', {'id':'pwd-err-p'})
-                for p_tag in p_email_tag:
-                    for error in info_forms.password.errors:
-                        p_tag.insert(0, NavigableString(f"- {error}\n"))
-                        password_error = p_tag
+        elif not info_forms.password.validate(info_forms) and info_forms.password.data:
+            password_error = scrapeError(URL, ('id', 'pwd-err-p'), info_forms.password.errors)
         elif info_forms.active.data and info_forms.active.validate(info_forms):
-            user_info.active = info_forms.active.data
+            if info_forms.active.data == "False":
+                data = False
+            else:
+                data = True
+            user_info.active = data
+            db.session.commit()
         elif not info_forms.active.validate(info_forms):
-            with requests.Session() as sess:
-                web = sess.get(URL)
-                soup = BeautifulSoup(web.content, 'html5lib')
-                p_active_tag = soup.find_all('p', {'id':'active-status-err-p'})
-                for p_tag in p_active_tag:
-                    for error in info_forms.active.errors:
-                        p_tag.insert(0, NavigableString(f"- {error}\n"))
-                        active_error = p_tag
+            active_error = scrapeError(URL, ('id', 'active-status-err-p'), info_forms.active.errors)
         elif info_forms.blacklist.data and info_forms.blacklist.validate(info_forms):
-            user_info.blacklisted = info_forms.blacklist.data
-        elif not info_forms.blacklist.validate(info_forms):
-            with requests.Session() as sess:
-                web = sess.get(URL)
-                soup = BeautifulSoup(web.content, 'html5lib')
-                p_blacklist_tag = soup.find_all('p', {'id':'blacklist-status-err-p'})
-                for p_tag in p_blacklist_tag:
-                    for error in info_forms.blacklist.errors:
-                        p_tag.insert(0, NavigableString(f"- {error}\n"))
-                        blacklist_error = p_tag
-        db.session.commit()
+            if info_forms.blacklist.data == "False":
+                data = False
+            else:
+                data = True
+            user_info.blacklisted = data
+            db.session.commit()
+        elif not info_forms.blacklist.validate(info_forms) and info_forms.blacklist.data:
+            blacklist_error = scrapeError(URL, ('id', 'blacklist-status-err-p'), info_forms.blacklist.errors)
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error)
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)

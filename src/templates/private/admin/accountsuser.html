@@ -90,7 +90,7 @@
                             <td> {{ article.title }}</td>
                             <td>{{ article.short_desc }}</td>
                             <td>{{ article.create_date }}</td>
-                            <td><a class="article-tbl-item-link" href="{{ url_for('articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
+                            <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
                             <td></td>
                             <td><input name="article-check-inner" type="checkbox" class="select-check inner-check" /></td>
                         </tr>
@@ -153,6 +153,29 @@
 </div>
 {% endblock %} {% block js %}
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script type="text/javascript">
+    (function() {
+        $('input[type=checkbox]#article-head-selectAll').click(function() {
+            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+            $("input[type=checkbox]#article-foot-selectAll").prop('checked', $(this).prop('checked'));
+        });
+        $('input[type=checkbox]#article-foot-selectAll').click(function() {
+            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
+            $("input[type=checkbox]#article-head-selectAll").prop('checked', $(this).prop('checked'));
+        });
+    })();
+
+    (function() {
+        $('input[type=checkbox]#role-head-selectAll').click(function() {
+            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+            $("input[type=checkbox]#role-foot-selectAll").prop('checked', $(this).prop('checked'));
+        });
+        $('input[type=checkbox]#role-foot-selectAll').click(function() {
+            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
+            $("input[type=checkbox]#role-head-selectAll").prop('checked', $(this).prop('checked'));
+        });
+    })();
+</script>
 <script type="text/javascript">
     function addHoverElement() {
         document.getElementsByName("info-txt-span").forEach(item => {
@@ -352,7 +375,7 @@
                     console.log("Form active, Will not proceed with hover effects.");
                 });
             }
-            $(".info-name").replaceWith($('<form id="edit-name-form" name="name-form" action="{{ request.url }}" method="POST">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.name.label }}' + '{{ info_forms.name }}' + '{{ info_forms.name_sbmt }}' + '<div id="minus-icn" class="close-edit-name-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>'));
+            $(".info-name").replaceWith($('<form id="edit-name-form" name="name-form" action="{{ request.url }}" method="POST">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.name.label }}' + '{{ info_forms.name }}' + '{{ info_forms.name_sbmt }}' + '<div id="minus-icn" class="close-edit-name-align close-edit-name-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>'));
             $("#minus-icn").click(function() {
                 $("form#edit-name-form").replaceWith($('<span id="order-1" name="info-txt-span" class="info-name">' + 'Name: {{ user.name }}' + '</span>'));
                 $(".edit-icon").each(function() {
@@ -406,7 +429,7 @@
                     console.log("Form active, Will not proceed with hover effects.");
                 });
             }
-            $(".info-email").replaceWith('<form id="edit-email-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.email.label }}' + '{{ info_forms.email }}' + '{{ info_forms.email_sbmt }}' + '<div id="minus-icn" class="close-edit-email-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
+            $(".info-email").replaceWith('<form id="edit-email-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.email.label }}' + '{{ info_forms.email }}' + '{{ info_forms.email_sbmt }}' + '<div id="minus-icn" class="close-edit-email-align close-edit-email-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
             $("#minus-icn").click(function() {
                 $("form#edit-email-form").replaceWith($('<span id="order-2" name="info-txt-span" class="info-email">' + 'Email: {{ user.email }}' + '</span>'));
                 $(".edit-icon").each(function() {
@@ -460,7 +483,7 @@
                     console.log("Form active, Will not proceed with hover effects.");
                 });
             }
-            $(".info-password").replaceWith('<form id="edit-pwd-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.password.label }}' + '{{ info_forms.password }}' + '{{ info_forms.password_sbmt }}' + '<div id="minus-icn" class="close-edit-pwd-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
+            $(".info-password").replaceWith('<form id="edit-pwd-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.password.label }}' + '{{ info_forms.password }}' + '{{ info_forms.password_sbmt }}' + '<div id="minus-icn" class="close-edit-pwd-align close-edit-pwd-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
             $("#minus-icn").click(function() {
                 $("form#edit-pwd-form").replaceWith($('<span id="order-3" name="info-txt-span" class="info-password">' + 'Password: ****' + '</span>'));
                 $(".edit-icon").each(function() {
@@ -514,7 +537,7 @@
                     console.log("Form active, Will not proceed with hover effects.");
                 });
             }
-            $(".info-active-status").replaceWith('<form id="edit-active-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.active.label }}' + '{{ info_forms.active }}' + '{{ info_forms.active_sbmt }}' + '<div id="minus-icn" class="close-edit-active-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
+            $(".info-active-status").replaceWith('<form id="edit-active-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.active.label }}' + '{{ info_forms.active }}' + '{{ info_forms.active_sbmt }}' + '<div id="minus-icn" class="close-edit-active-status-align close-edit-active-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
             $("#minus-icn").click(function() {
                 $("form#edit-active-status-form").replaceWith($('<span id="order-4" name="info-txt-span" class="info-active-status">' + 'Active Status: {{ user.active }}' + '</span>'));
                 $(".edit-icon").each(function() {
@@ -568,7 +591,7 @@
                     console.log("Form active, Will not proceed with hover effects.");
                 });
             }
-            $(".info-blacklist-status").replaceWith('<form id="edit-blacklist-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.blacklist.label }}' + '{{ info_forms.blacklist }}' + '{{ info_forms.blacklist_sbmt }}' + '<div id="minus-icn" class="close-edit-blacklist-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
+            $(".info-blacklist-status").replaceWith('<form id="edit-blacklist-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.blacklist.label }}' + '{{ info_forms.blacklist }}' + '{{ info_forms.blacklist_sbmt }}' + '<div id="minus-icn" class="close-edit-blacklist-status-align close-edit-blacklist-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
             $("#minus-icn").click(function() {
                 $("form#edit-blacklist-status-form").replaceWith($('<span id="order-6" name="info-txt-span" class="info-email">' + 'Blacklisted Status: {{ user.blacklisted }}' + '</span>'));
                 $(".edit-icon").each(function() {

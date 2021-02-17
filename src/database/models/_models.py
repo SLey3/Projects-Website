@@ -1,14 +1,10 @@
 # ------------------ Imports ------------------
-from flask_sqlalchemy import SQLAlchemy
 from flask_security import UserMixin, RoleMixin
+from flask_sqlalchemy import SQLAlchemy
 
-# ------------------ db Config ------------------
 db = SQLAlchemy()
-# ------------------ SQL classes  ------------------
-# class UserRoles(db.Model):
-#     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), primary_key=True)
-#     role_id = db.Column(db.Integer(), db.ForeignKey('role.id'), primary_key=True)
 
+# ------------------ SQL classes  ------------------
 class Role(db.Model, RoleMixin):
     __tablename__ = 'roles'
     id = db.Column(db.Integer(), primary_key=True)
@@ -17,7 +13,7 @@ class Role(db.Model, RoleMixin):
     
     def __repr__(self):
         return f"{self.name}"
-    
+  
 class User(db.Model, UserMixin):
     """
     User Model
@@ -33,6 +29,13 @@ class User(db.Model, UserMixin):
     blacklisted = db.Column(db.Boolean())
     roles = db.relationship('Role', primaryjoin="and_(User.id==Role.user_id)",
                             backref=db.backref('users'))
+        
+    def to_json(self):
+        data = {
+            "email": self.email,
+            "pwd": self.password
+        } 
+        return data
         
     def __repr__(self):
         return f"{self.name}"

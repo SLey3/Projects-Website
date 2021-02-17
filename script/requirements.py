@@ -135,7 +135,7 @@ elif sys.argv[1] == 'view':
             if sys.argv[2] == '-i':
                 view(False, True)
             else:
-                print(f"Unkown option: {sys.argv[2]}")
+                print(f"Unknown option: {sys.argv[2]}")
         else:
             if join([sys.argv[2], sys.argv[3]]) == "-i -v":
                 view(False, True, True)

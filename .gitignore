@@ -1,5 +1,29 @@
+# vscode folder
 .vscode/
-__pycache__
-*.pyc
+# python related files/folders
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+# Website Caches folders
+sess/
 .webassets-cache/
+
+# requirements.in
 requirements.in

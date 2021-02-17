@@ -136,4 +136,4 @@ class AccountManegementForms:
         blacklist = StringField('Blacklist Status: ', id='edit-blacklist-input', validators=[DataRequired("Field may not be empty"), ValidateBool()],
                                 render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input'})
         
-        blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status=sbmt-btn'})
+        blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status-sbmt-btn'})

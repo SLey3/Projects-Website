@@ -1,132 +1,77 @@
 # ------------------ Imports ------------------
-import sys
-sys.path.insert(0, '.')
-del sys
 from flask import (
-    Flask, render_template,
+    Blueprint, render_template,
     redirect, request,
-    url_for, abort
-)
-from src.forms import (
-    loginForm, registerForm,
-    articleForm, contactForm,
-    forgotForm, forgotRequestForm
-)
-from src.database.models import (
-    db, Article, User, Role
+    url_for, abort, jsonify
 )
 try:
-    from flask_sqlalchemy.orm.session import Session
+    from flask_sqlalchemy.orm.session import Session as SQLSession
 except ModuleNotFoundError:
-    from sqlalchemy.orm.session import Session
-from sqlalchemy.exc import OperationalError
-from passlib.hash import sha512_crypt
-from datetime import timedelta, datetime
+    from sqlalchemy.orm.session import Session as SQLSession
 from flask_login import (
     LoginManager, login_user, 
     logout_user, current_user
 )
 from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from flask_uploads import UploadSet, IMAGES
 from flask_security import (
     Security, SQLAlchemyUserDatastore, 
     roles_accepted, roles_required, 
     login_required
 )
-from src.dashboard import dash
-from werkzeug.utils import secure_filename
-from flask_uploads import UploadSet, IMAGES, configure_uploads
-from io import open as iopen
-from src.util import (
+from flask_assets import Environment, Bundle
+from util import (
     AlertUtil, is_valid_article_page, formatPhoneNumber, DateUtil
 )
-from src.util.helpers import EMAILS, date_re
-from flask_assets import Bundle, Environment
-from src.admin import admin
+from util.helpers import EMAILS, date_re
+from forms import (
+    loginForm, registerForm,
+    articleForm, contactForm,
+    forgotForm, forgotRequestForm
+)
+from database.models import (
+    db, Article, User, Role
+)
+from io import open as iopen
+from werkzeug.utils import secure_filename
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from sqlalchemy.exc import OperationalError
+from passlib.hash import sha512_crypt
+from datetime import datetime
+from src import app
 import base64
 import os
 
-# ------------------ path Config ------------------
-current_path = os.getcwd()
-if 'src' in current_path:
-    PATH = current_path
-else:
-    PATH = os.path.join(current_path, 'src')
-    
-del current_path
-del os
 
-# ------------------ app Config ------------------
-app = Flask(__name__, template_folder="templates", static_folder='static')
-app.config["SECRET_KEY"] = '\xe8\rP\xc9+\xca\xf16\x1b\xce\xe8\xb1\xa3E1\xf2F\xd9\xf4\x18\x92\xe7\x04>'
-app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
-app.config["ALERT_CODES_NUMBER_LIST"] = [0, 1, 2]
-app.config["ALERT_CODES_DICT"] = {
-    0: "Confirmation link expired. You must Register again.",
-    1: "Reset Link Expired.",
-    2: "Internal Server error. If this happens again contact the administrator."
-}
-app.config["ALERT_TYPES"] = [
-    'info',
-    'success',
-    'warning',
-    'error'
-]
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/users.sqlite3"
-app.config["SQLALCHEMY_BINDS"] = {
-                                    'articles': 'sqlite:///database/articles.sqlite3',
-                                    'blacklist': 'sqlite:///database/blacklist.sqlite3'
-                                }
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["RECAPTCHA_PUBLIC_KEY"] = "6LfrfNgZAAAAAKzTPtlo2zh9BYXVNfoVzEHeraZM"
-app.config["RECAPTCHA_PRIVATE_KEY"] = "6LfrfNgZAAAAAIFW8pX7L349lOaNam3ARg4nm1yP"
-app.config["MAIL_DEFAULT_SENDER"] = "noreplymyprojectsweb@gmail.com"
-app.config["MAIL_USERNAME"] = "noreplymyprojectsweb@gmail.com"
-app.config["MAIL_PASSWORD"] = "hFb5b4UcwovqTshinAv6exVHY2pUT4N5lY77XRVEfmPFaY98nA9NOsQULJY2IVR66YFIMH6dgtdx9o1VoLLBW4YYrjcjRC10a3v"
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 465
-app.config["MAIL_USE_SSL"] = True
-app.config["MAIL_USE_TLS "] = False
-app.config["UPLOADS_DEFAULT_DEST"] = f'{PATH}\\static\\assets\\uploads'
-app.config["SECURITY_PASSWORD_HASH"] = "sha512_crypt"
-app.config["SECURITY_FLASH_MESSAGES"] = False
-app.config["SECURITY_LOGIN_URL"] = "/auth/login" or "/auth/login/"
-app.config["SECURITY_LOGOUT_URL"] = "/auth/signout" or "/auth/signout/"
-app.config["SECURITY_LOGIN_USER_TEMPLATE"] = 'public/error_page/login_redirect/redirectlogin.html'
-app.permanent_session_lifetime = timedelta(days=5)
-app.register_blueprint(dash)
-app.register_blueprint(admin)
-app.add_template_global(current_user, 'current_user')
-app.add_template_global(request, 'request')
+# ------------------ Blueprint Config ------------------
+main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
 
 
-# ------------------ app Config: SQLAlchemy Config ------------------
-db.init_app(app)
-
-sql_sess = Session(autoflush=False)
-
-# ------------------ app Config: Flask_login Config ------------------
-login_manager = LoginManager(app)
-
-# ------------------ app Config: Flask_mail Config ------------------
-mail = Mail(app)
-
-urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
-
-# ------------------ app Config: Flask Uploads(Reuploaded) Config ------------------
+# ------------------ Library Configs ------------------
 img_set = UploadSet('images', IMAGES)
-configure_uploads(app, img_set)
-   
-# ------------------ app Config: Bundle Config ------------------ 
-assets = Environment(app)
 
-# ------------------ app Config: Bundle Config: Bundles ------------------ 
+mail = Mail()
+
+login_manager = LoginManager()
+
+assets = Environment()
+
+alert = AlertUtil()
+
+security = Security()
+
+# ------------------  SQLAlchemy Session Config ------------------
+sql_sess = SQLSession(autoflush=False)
+
+# ------------------ Serializer config ------------------
+urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+   
+# ------------------ Static Files Bundles ------------------ 
 
 js_main_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
                    filters='jsmin', output="js/main/dist/main.min.js") 
 
-edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/check-all.js',
-                                'js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/accounts/edit_profile/src/navalign.js',
+edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/accounts/edit_profile/src/navalign.js',
                                 filters='jsmin', output='js/ext/admin/accounts/edit_profile/dist/index.min.js')
 
 alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
@@ -159,37 +104,9 @@ assets.register('admin_main_accounts_css', admin_main_accounts_css_bundle)
 
 assets.register('admin_edit_accounts_css', admin_edit_profile_accounts_css_bundle)
 
-# ------------------ app Config: AlertUtil Config ------------------
-alert = AlertUtil(app)
-
-# ------------------ app Config: Security Config ------------------
+# ------------------ UserDatastore Config ------------------
     
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-
-security = Security(app, user_datastore, login_form=loginForm)
-
-# ------------------ error handlers ------------------
-@app.errorhandler(400)
-def no_articles(e):
-    """
-    returns 400 status code and 400 error page
-    """
-    return render_template('public/error_page/400/400.html'), 400
-
-@app.errorhandler(404)
-def page_not_found(e):
-    """
-    returns 404 status code and 404 error page
-    """
-    return render_template('public/error_page/404/404.html'), 404
-
-@app.errorhandler(500)
-def servererror(e):
-    """
-    returns 500 status code and redirects to HomePage
-    """
-    alert.setAlert('error', 2)
-    return redirect(url_for('homePage')), 500
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -201,8 +118,8 @@ def load_user(user_id):
 
 # ------------------ web pages ------------------
 
-@app.route('/login', methods=["GET", "POST"])
-@app.route('/login/', methods=["GET", "POST"])
+@main_app.route('/login', methods=["GET", "POST"])
+@main_app.route('/login/', methods=["GET", "POST"])
 def loginPage():
     """
     main front page
@@ -216,7 +133,7 @@ def loginPage():
         if user:
             if sha512_crypt.verify(form.password.data, user.password):
                 login_user(user)
-                return redirect(url_for("homePage"))
+                return jsonify(user.to_json())
         error = "Invalid Email or Password"
         return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
@@ -225,8 +142,8 @@ def loginPage():
         else:
             return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
-@app.route('/register', methods=['GET', 'POST'])
-@app.route('/register/', methods=['GET', 'POST'])
+@main_app.route('/register', methods=['GET', 'POST'])
+@main_app.route('/register/', methods=['GET', 'POST'])
 def registerPage():
     """
     Registration Page
@@ -261,8 +178,8 @@ def registerPage():
     else:
         return render_template("public/registerpage.html", form=form)
     
-@app.route('/confirm_recieved/<token>')  
-@app.route('/confirm_recieved/<token>/')  
+@main_app.route('/confirm_recieved/<token>')  
+@main_app.route('/confirm_recieved/<token>/')  
 def confirmation_recieved(token):
     """
     Confirmation and account creation page
@@ -283,8 +200,8 @@ def confirmation_recieved(token):
         alert.setAlert('error', 0)
         return redirect(url_for("homePage"))
     
-@app.route('/login/forgotpwd', methods=['GET', 'POST'])
-@app.route('/login/forgotpwd/', methods=['GET', 'POST'])
+@main_app.route('/login/forgotpwd', methods=['GET', 'POST'])
+@main_app.route('/login/forgotpwd/', methods=['GET', 'POST'])
 def initialForgotPage():
     """
     forgot password page.
@@ -320,8 +237,8 @@ def initialForgotPage():
     else:
         return render_template("public/forgot.html", field=form)
     
-@app.route('/login/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
-@app.route('/login/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
+@main_app.route('/login/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
+@main_app.route('/login/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
 def resetRequestRecieved(token, email):
     """
     Redirects to Reset Form link after validating token
@@ -348,8 +265,8 @@ def resetRequestRecieved(token, email):
         alert.setAlert('error', 1)
         return redirect(url_for("loginPage"))
     
-@app.route('/signout')
-@app.route('/signout/')
+@main_app.route('/signout')
+@main_app.route('/signout/')
 @login_required
 def signOut():
     """
@@ -360,8 +277,8 @@ def signOut():
     alert.setAlert('success', 'Succesfully signed out')
     return redirect(url_for("homePage"))
     
-@app.route('/')
-@app.route('/')
+@main_app.route('/')
+@main_app.route('/')
 def homePage():
     """
     website homepage
@@ -369,21 +286,21 @@ def homePage():
     alert_dict = alert.getAlert()
     return render_template("public/homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
-@app.route('/home')
-@app.route('/home/')
+@main_app.route('/home')
+@main_app.route('/home/')
 def redirectToHomePage():
     """
     redirects to homepage
     """
     return redirect(url_for('homePage'))
     
-@app.route('/about')
-@app.route('/about/')
+@main_app.route('/about')
+@main_app.route('/about/')
 def aboutPage():
     return render_template('public/aboutpage.html')
 
-@app.route('/articles/create_article', methods=['GET', 'POST'])
-@app.route('/articles/create_article/', methods=['GET', 'POST'])
+@main_app.route('/articles/create_article', methods=['GET', 'POST'])
+@main_app.route('/articles/create_article/', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'editor')
 def articleCreation():
@@ -418,8 +335,8 @@ def articleCreation():
     else:
         return render_template("public/articles/articleform.html", form=form)
     
-@app.route('/articles', methods=['GET', 'POST'])
-@app.route('/articles/', methods=['GET', 'POST'])
+@main_app.route('/articles', methods=['GET', 'POST'])
+@main_app.route('/articles/', methods=['GET', 'POST'])
 def article_home():
     try:
         articles = Article.query.all()
@@ -427,8 +344,8 @@ def article_home():
         abort(400)
     return render_template("public/articles/articlepage.html", articles=articles)
 
-@app.route('/articles/<string:id>')
-@app.route('/articles/<string:id>/')
+@main_app.route('/articles/<string:id>')
+@main_app.route('/articles/<string:id>/')
 @is_valid_article_page
 def articlePage(id):
     try:
@@ -437,8 +354,8 @@ def articlePage(id):
         abort(404)
     return render_template('articles/articleviewpage.html', article=article)
 
-@app.route('/contact', methods=['GET', 'POST'])
-@app.route('/contact/', methods=['GET', 'POST'])
+@main_app.route('/contact', methods=['GET', 'POST'])
+@main_app.route('/contact/', methods=['GET', 'POST'])
 def contact_us():
     form = contactForm()
     if request.method == 'POST' and form.validate_on_submit():
@@ -464,32 +381,11 @@ def contact_us():
     else:
         return render_template('public/contactpage.html', form=form)
 
-@app.route('/home/admin')
-@app.route('/home/admin/')   
+@main_app.route('/home/admin')
+@main_app.route('/home/admin/')   
 @roles_required('admin', 'verified')
 def adminPage():
     """
     Administrator Page
     """
     return redirect(url_for("admin.adminHomePage"))
-
-# ------------------ Website Starter ------------------
-if __name__ == '__main__':
-    from rich.console import Console
-    from rich.progress import Progress
-    from time import sleep
-    
-    console = Console()
-    
-    console.print("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]")
-    with Progress() as progress:
-        sql_database_task = progress.add_task("[cyan] Creating SQL Databases...", total=85)
-        
-        db.create_all(app=app)
-        while not progress.finished:
-            progress.update(sql_database_task, advance=1.5)
-            sleep(0.02)
-    console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
-    console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
-    sleep(1)
-    app.run(debug=True)

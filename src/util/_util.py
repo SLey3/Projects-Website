@@ -1,15 +1,18 @@
 # ------------------ Imports ------------------
-from flask import abort
+from flask import abort, Flask
 from functools import wraps
 from src.util.helpers import alertMessageType, InvalidType
-from typing import Dict, List
+from typing import (
+    Dict, List, Tuple, Any, Optional
+)
 from src.database.models import Article
 from warnings import warn
-from typing import Any
 from dataclasses import dataclass
 from datetime import datetime
 from re import Pattern
+from bs4 import BeautifulSoup, NavigableString
 import re
+import requests
 
 # ------------------ Utils ------------------
 class AlertUtil(object):
@@ -24,10 +27,23 @@ class AlertUtil(object):
     def __init__(self, app=None, in_blueprint: bool = False):
         if in_blueprint:
             from flask import current_app as context_app
+            
             self.context_app = context_app
             self.init_app(context_app, in_blueprint=True)
         else:
-           self.init_app(app)
+            if isinstance(app, type(None)):
+                pass
+            else:
+                self.config = app.config
+                if not (
+                            self.config.get("ALERT_CODES_NUMBER_LIST")
+                            or 
+                            self.config.get("ALERT_CODES_DICT")
+                            or 
+                            self.config.get("ALERT_TYPES")
+                        ):
+                            raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                            ALERT_TYPES was not found in the apps Config''')
             
         
     def init_app(self, app, in_blueprint: bool = False):
@@ -35,8 +51,7 @@ class AlertUtil(object):
         Initializes AlertUtil
         """
         if in_blueprint:
-            from src.webapp import app as webapp
-            with webapp.app_context():
+            with app.app_context():
                 if not hasattr(self, 'config'):
                     setattr(self, 'config', self.context_app.config)
                     if not (
@@ -199,3 +214,18 @@ class DateUtil:
                 new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
                 self.date = new_date
                 return new_date   
+            
+            
+def scrapeError(url: str, o: Tuple[str, str], field_err: List[str]) -> str:
+    """
+    Scrapes error from argument: url
+    """
+    with requests.Session() as sess:
+        web_page = sess.get(url)
+        soup = BeautifulSoup(web_page.content, 'html5lib')
+        p_tag = soup.find_all('p', {f"{o[0]}": f"{o[1]}"})
+        for p in p_tag:
+            for err in field_err:
+                p.insert(0, NavigableString(f"- {err}\n"))
+                error = p
+    return error 
