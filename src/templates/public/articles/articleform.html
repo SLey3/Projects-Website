@@ -1,16 +1,16 @@
 {% extends "public/layout.html" %} {% from "public/render/_render_form.html" import render_field %} {% block title %} MyProjects | Article Registration {% endblock %} {% block css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/articles_form.css')}}">
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet"> {% endblock %} {% block content %} {% include "public/web_util/_navbar.html" %}
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet"> {% endblock %} {% block content %}
 <div class="article-form">
-    <form action="{{ url_for('articleCreation') }}" method="POST" enctype="multipart/form-data">
+    <form id="article-form" action="{{ url_for('main_app.articleCreation') }}" method="POST" enctype="multipart/form-data">
         {{ form.csrf_token }}
         <h1>Create Your Article</h1>
         <div class="txtb">
-            <label>Title:</label> {{ render_field(form.title) }}
+            <label>Title:</label> {{ render_field(form.title, novalidate=True) }}
         </div>
         <div class="txtb">
-            <label>Author:</label> {{ render_field(form.author) }}
+            <label>Author:</label> {{ render_field(form.author, novalidate=True) }}
         </div>
         <div class="txtb">
             <label>Short Description:</label> {{ render_field(form.short_desc) }}
@@ -25,6 +25,8 @@
         <div class="submit-btn">
             <input type="submit" value="Submit Article" />
         </div>
+        <div class="submit-btn">
+            <button id="back-btn" formnovalidate href="{{ url_for('main_app.article_home') }}">Back</button> </div>
     </form>
 </div>
 {% endblock %} {% block js %}
@@ -48,5 +50,10 @@
             dialogsInBody: true
         });
     });
+</script>
+<script type="text/javascript">
+    $("#back-btn").click(function() {
+        document.getElementById("article-form").removeAttribute("method");
+    })
 </script>
 {% endblock %}

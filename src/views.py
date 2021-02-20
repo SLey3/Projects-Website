@@ -331,7 +331,7 @@ def articleCreation():
         db.session.add(new_article)
         db.session.commit()
         alert.setAlert('success', 'Article has been Created.')
-        return redirect(url_for("homePage"))
+        return redirect(url_for(".homePage"))
     else:
         return render_template("public/articles/articleform.html", form=form)
     

@@ -45,13 +45,13 @@ class articleForm(FlaskForm):
     """
     article form for website
     """
-    title = StringField("title", validators=[DataRequired("Title Entry required"), Length(min=5, max=100, message="Title must be between 5-100 characters")], 
+    title = StringField("title", 
                         render_kw={"placeholder":"Enter title"})
     
-    author = StringField("author", validators=[DataRequired("Author Entry required"), Length(min=3, max=100, message="Name must be between 3-100")],
+    author = StringField("author",
                          render_kw={"placeholder":"Enter Authors name"})
     
-    short_desc = StringField("short_description", validators=[DataRequired("Short Description Entry required")], 
+    short_desc = StringField("short_description", 
                              render_kw={'placeholder':"Enter Short Description"})
     front_image = FileField('front_img', id='front-image', validators=[FileAllowed(img_set, "Images only")])
 

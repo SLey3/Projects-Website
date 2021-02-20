@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css')}}"> {% assets "alert__css" %}
 <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %} {% endblock %} {% block content %}
 <div class="center-container">
-    <form action="{{ url_for( 'loginPage' ) }}" method="POST">
+    <form action="{{ url_for( 'main_app.loginPage' ) }}" method="POST">
         {{ form.csrf_token }}
         <h1>Login</h1>
         {% if error %}

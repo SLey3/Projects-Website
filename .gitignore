@@ -27,3 +27,6 @@ sess/
 
 # requirements.in
 requirements.in
+
+# env
+.env

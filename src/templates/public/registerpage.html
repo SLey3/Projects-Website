@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"> {% endblock %} {% block content %}
 
 <div class="center">
-    <form action="{{ url_for( 'registerPage' ) }}" method="POST">
+    <form action="{{ url_for( 'main_app.registerPage' ) }}" method="POST">
         {{ form.csrf_token }}
         <div class="header">
             <h1> Registration </h1>

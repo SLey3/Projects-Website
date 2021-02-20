@@ -11,7 +11,7 @@
                 <p>Email:- noreplymyprojectsweb@gmail.com</p>
             </div>
             <div class="col-md-6">
-                <form action="{{ url_for('contact_us') }}" method="POST">
+                <form action="{{ url_for('main_app.contact_us') }}" method="POST">
                     {{ form.csrf_token }}
                     <div class="form-group">
                         <label>First Name:</label> {{ render_field(form.first_name) }}

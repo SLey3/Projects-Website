@@ -47,6 +47,9 @@ src.views.security.init_app(app, src.views.user_datastore, login_form=loginForm)
 
 Session(app)
 
+if not os.path.isdir(os.path.join(app.root_path, 'static', 'sess')):
+    os.mkdir(os.path.join(app.root_path, 'static', 'sess'))
+
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
 def no_articles(e):
@@ -68,7 +71,7 @@ def servererror(e):
     returns 500 status code and redirects to HomePage
     """
     src.views.alert.setAlert('error', 2)
-    return redirect(url_for('homePage')), 500
+    return redirect(url_for('main_app.homePage')), 500
 
 
 # ------------------ favicon ------------------
@@ -99,3 +102,5 @@ if __name__ == '__main__':
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
     app.run(debug=True)        
+
+# %%
