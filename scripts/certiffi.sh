@@ -21,7 +21,7 @@ then
         echo "No expired files found" ;
     fi
 else
-    if [[ -f cert ]] && [[ -f key ]] ;
+    if [[ -f cert.pem ]] && [[ -f key.pem ]] ;
     then
         rm cert.pem -v ;
         rm key.pem -v ;
