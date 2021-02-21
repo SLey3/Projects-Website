@@ -30,3 +30,6 @@ requirements.in
 
 # env
 .env
+
+# certifficate
+*.pem

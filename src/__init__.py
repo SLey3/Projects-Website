@@ -101,6 +101,6 @@ if __name__ == '__main__':
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
-    app.run(debug=True)        
+    app.run(debug=True, ssl_context=('scripts/cert.pem', 'scripts/key.pem'))        
 
 # %%

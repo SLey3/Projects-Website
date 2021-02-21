@@ -108,6 +108,12 @@ class AccountManegementForms:
         """
         command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
         
+        
+    class roleDeleteAll(FlaskForm):
+        """
+        Submit Field that raises an alert before deleting all roles
+        """
+        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', 'value':'delete all'}) 
     class adminUserInfoForm(FlaskForm):
         """
         Creates Info Ediit form Inputs

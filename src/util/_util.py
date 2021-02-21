@@ -24,80 +24,40 @@ class AlertUtil(object):
     'message':''
     }
     
-    def __init__(self, app=None, in_blueprint: bool = False):
-        if in_blueprint:
-            from flask import current_app as context_app
-            
-            self.context_app = context_app
-            self.init_app(context_app, in_blueprint=True)
+    def __init__(self, app=None):
+        if isinstance(app, type(None)):
+            pass
         else:
-            if isinstance(app, type(None)):
-                pass
-            else:
-                self.config = app.config
-                if not (
-                            self.config.get("ALERT_CODES_NUMBER_LIST")
-                            or 
-                            self.config.get("ALERT_CODES_DICT")
-                            or 
-                            self.config.get("ALERT_TYPES")
-                        ):
-                            raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                            ALERT_TYPES was not found in the apps Config''')
+            self.init_app(app)
             
         
-    def init_app(self, app, in_blueprint: bool = False):
+    def init_app(self, app):
         """
         Initializes AlertUtil
         """
-        if in_blueprint:
-            with app.app_context():
-                if not hasattr(self, 'config'):
-                    setattr(self, 'config', self.context_app.config)
-                    if not (
-                        self.config.get("ALERT_CODES_NUMBER_LIST")
-                        or 
-                        self.config.get("ALERT_CODES_DICT")
-                        or 
-                        self.config.get("ALERT_TYPES")
-                    ):
-                        raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                        ALERT_TYPES was not found in the apps Config''')
-                else:
-                    if not (
-                        self.config.get("ALERT_CODES_NUMBER_LIST")
-                        or 
-                        self.config.get("ALERT_CODES_DICT")
-                        or 
-                        self.config.get("ALERT_TYPES")
-                    ):
-                        raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                        ALERT_TYPES was not found in the apps Config''')
-                self.context_app.extensions['AlertUtil'] = self
+        if not hasattr(self, 'config'):
+            setattr(self, 'config', app.config)
+            if not (
+                self.config.get("ALERT_CODES_NUMBER_LIST")
+                or 
+                self.config.get("ALERT_CODES_DICT")
+                or 
+                self.config.get("ALERT_TYPES")
+            ):
+                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                ALERT_TYPES was not found in the apps Config''')
         else:
-            if not hasattr(self, 'config'):
-                setattr(self, 'config', app.config)
-                if not (
-                    self.config.get("ALERT_CODES_NUMBER_LIST")
-                    or 
-                    self.config.get("ALERT_CODES_DICT")
-                    or 
-                    self.config.get("ALERT_TYPES")
-                ):
-                    raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                    ALERT_TYPES was not found in the apps Config''')
-            else:
-                if not (
-                    self.config.get("ALERT_CODES_NUMBER_LIST")
-                    or 
-                    self.config.get("ALERT_CODES_DICT")
-                    or 
-                    self.config.get("ALERT_TYPES")
-                ):
-                    raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                    ALERT_TYPES was not found in the apps Config''')
+            if not (
+                self.config.get("ALERT_CODES_NUMBER_LIST")
+                or 
+                self.config.get("ALERT_CODES_DICT")
+                or 
+                self.config.get("ALERT_TYPES")
+            ):
+                raise ValueError('''Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
+                                ALERT_TYPES was not found in the apps Config''')
                 
-            app.extensions['AlertUtil'] = self
+        app.extensions['AlertUtil'] = self
     
     def getConfigValue(self, configValue: str):
         try: 

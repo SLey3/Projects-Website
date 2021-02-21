@@ -20,16 +20,16 @@ from flask_security import (
     login_required
 )
 from flask_assets import Environment, Bundle
-from util import (
+from src.util import (
     AlertUtil, is_valid_article_page, formatPhoneNumber, DateUtil
 )
-from util.helpers import EMAILS, date_re
-from forms import (
+from src.util.helpers import EMAILS, date_re
+from src.forms import (
     loginForm, registerForm,
     articleForm, contactForm,
     forgotForm, forgotRequestForm
 )
-from database.models import (
+from src.database.models import (
     db, Article, User, Role
 )
 from io import open as iopen
@@ -91,7 +91,7 @@ admin_edit_profile_accounts_css_bundle = Bundle('styles/admin/accounts/edit_prof
                                                 'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
                                                 filters='cssmin', output='styles/admin/accounts/edit_profiles/dist/edit_profile.min.css')
 
-# ------------------ app Config: Bundle Config: Registration ------------------ 
+# ------------------  Bundle Config: Registration ------------------ 
 assets.register('main__js', js_main_bundle)
 
 assets.register('edit_prof_main_js', edit_profile_js_bundle)

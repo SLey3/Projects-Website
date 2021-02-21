@@ -61,8 +61,6 @@ def adminAccountsManegement(page):
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
 def adminAccountsUserManagement(user, page):
-    search_form = AccountManegementForms.tableSearchForm()
-    info_forms = AccountManegementForms.adminUserInfoForm()
     name_error = ""
     email_error = ""
     password_error = ""
@@ -106,7 +104,7 @@ def adminAccountsUserManagement(user, page):
             db.session.commit()
         elif not info_forms.blacklist.validate(info_forms) and info_forms.blacklist.data:
             blacklist_error = scrapeError(URL, ('id', 'blacklist-status-err-p'), info_forms.blacklist.errors)
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error)
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=AccountManegementForms.adminUserInfoForm(), roles_delete_form=AccountManegementForms.roleDeleteAll(), name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error)
     else:
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms)
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=AccountManegementForms.adminUserInfoForm(), roles_delete_form=AccountManegementForms.roleDeleteAll())
         

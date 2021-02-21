@@ -1,0 +1,12 @@
+# Standard files
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf diff=python
+*.txt eol=crlf
+
+# Binary files
+*.sqlite3 binary
+sess/* binary
+*.pyc    binary
+*.pyd    binary
+*.pyo    binary

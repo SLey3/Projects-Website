@@ -43,7 +43,9 @@
                         <tr>
                             <th>Role ID</th>
                             <th>Role Name</th>
-                            <th>Select <input id="role-head-selectAll" type="checkbox" class="select-check" /></th>
+                            <th>Select <input id="role-head-selectAll" type="checkbox" class="select-check" />
+                                <div id="delete-all-btn-container"></div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,7 +61,8 @@
                         <tr>
                             <th>Role ID</th>
                             <th>Role Name</th>
-                            <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" /></th>
+                            <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" />
+                            </th>
                         </tr>
                     </tfoot>
                 </table>
@@ -620,6 +623,29 @@
                     addHoverElement();
                 }
             });
+        });
+    })();
+</script>
+<script type="text/javascript">
+    function confirm_deletion() {
+        return confirm("Are you sure you want to delete ALL roles from {{ user.name }}?");
+    }
+    (function() {
+        $(document).ready(function() {
+            $("#role-head-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#delete-all-btn-container").append('<form><input onclick="confirm_deletion()" type="submit" value="delete all" /></form>');
+                } else {
+                    $("#delete-all-btn-container").empty()
+                }
+            });
+            $("#role-foot-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#delete-all-btn-container").append('<form onsubmit="return confirm("Are you sure you want to delete ALL roles from {{ user.name }}?")">{{ roles_delete_form.delete_all }}</form>');
+                } else {
+                    $("#delete-all-btn-container").empty();
+                }
+            })
         });
     })();
 </script>
