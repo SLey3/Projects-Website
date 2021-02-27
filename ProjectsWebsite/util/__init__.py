@@ -2,5 +2,5 @@
 web utilities
 """
 # ------------------ Imports ------------------
-from src.util._util import *
-import src.util.helpers
+from util._util import *
+import util.helpers

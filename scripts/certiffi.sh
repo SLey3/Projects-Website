@@ -37,9 +37,16 @@ openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 36
 echo "Certifficate created. Moving certifficates to correct folder"
 if [ "${PWD##*/}"  == "Projects_Website" ] ;
 then
-    python scripts/movecertiffi.py ;
+    cp cert.crt cert ;
+    rm cert.crt --verbose ;
+    cp key.pem cert ; 
+    rm key.pem --verbose ;
 else 
-    python movecertiffi.py ;
+    cd .. ;
+    cp cert.crt cert ;
+    rm cert.crt --verbose ;
+    cp key.pem cert ; 
+    rm key.pem --verbose ;
 fi
 
 echo "Certifficates moved"

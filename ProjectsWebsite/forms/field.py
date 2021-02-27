@@ -3,7 +3,7 @@ Custom Field for Website
 """
 # ------------------ Imports ------------------
 from wtforms import StringField
-from src.forms.widget import ButtonWidget
+from forms.widget import ButtonWidget
 
 # ------------------ Field ------------------
 class ButtonField(StringField):

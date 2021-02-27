@@ -7,8 +7,8 @@ from wtforms import (
 )
 from wtforms.fields.html5 import TelField, SearchField
 from flask_uploads import UploadSet, IMAGES
-from src.forms.validators import *
-from src.forms.field import ButtonField
+from forms.validators import *
+from forms.field import ButtonField
 
 # ------------------ img_set Config ------------------
 img_set = UploadSet('images', IMAGES)

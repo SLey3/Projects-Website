@@ -1,11 +1,11 @@
 # ------------------ Imports ------------------
 from flask import abort, Flask
 from functools import wraps
-from src.util.helpers import alertMessageType, InvalidType
+from util.helpers import alertMessageType, InvalidType
 from typing import (
     Dict, List, Tuple, Any, Optional
 )
-from src.database.models import Article
+from database.models import Article
 from warnings import warn
 from dataclasses import dataclass
 from datetime import datetime

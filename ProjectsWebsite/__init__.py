@@ -11,11 +11,26 @@ from flask_security import Security
 from flask_session import Session
 from flask_uploads import configure_uploads
 from datetime import timedelta
-from src.admin import admin
-from src.dashboard import dash
-from src.forms import loginForm
-from src.database.models import db
+from subprocess import Popen, PIPE, TimeoutExpired
+from admin import admin
+from dashboard import dash
+from forms import loginForm
+from database.models import db
+import ssl
 import os
+
+# ------------------ Check Directories ------------------
+if os.path.basename(os.getcwd()) == "Projects_Website":
+    directory_script = Popen(["sh", "./scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
+    directory_script.communicate()
+else:
+    directory_script = Popen(["sh", "../scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
+    directory_script.communicate()
+
+
+# ------------------ SSL ------------------
+context = ssl.SSLContext()
+context.load_cert_chain('cert/cert.crt', 'cert/key.pem')
 
 # ------------------ App Setup ------------------
 app = Flask(__name__, template_folder="templates", static_folder='static')
@@ -23,32 +38,29 @@ app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5, hours=12, minutes=6, seconds=59)
 app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
 app.config.from_pyfile("../.env")
-import src.views
+import views
 app.register_blueprint(dash)
 app.register_blueprint(admin)
-app.register_blueprint(src.views.main_app)
+app.register_blueprint(views.main_app)
 app.add_template_global(current_user, 'current_user')
 app.add_template_global(request, 'request')
 app.add_template_global(redirect, 'redirect')
 
 db.init_app(app)
 
-src.views.login_manager.init_app(app)
+views.login_manager.init_app(app)
 
-src.views.mail.init_app(app)
+views.mail.init_app(app)
 
-configure_uploads(app, src.views.img_set)
+configure_uploads(app, views.img_set)
 
-src.views.assets.init_app(app)
+views.assets.init_app(app)
 
-src.views.alert.init_app(app)
+views.alert.init_app(app)
 
-src.views.security.init_app(app, src.views.user_datastore, login_form=loginForm)
+views.security.init_app(app, views.user_datastore, login_form=loginForm)
 
 Session(app)
-
-if not os.path.isdir(os.path.join(app.root_path, 'static', 'sess')):
-    os.mkdir(os.path.join(app.root_path, 'static', 'sess'))
 
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
@@ -101,6 +113,4 @@ if __name__ == '__main__':
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
-    app.run(debug=True, ssl_context=('scripts/cert.pem', 'scripts/key.pem'))        
-
-# %%
+    app.run(debug=True, ssl_context=context)        

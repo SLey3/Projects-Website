@@ -31,5 +31,8 @@ requirements.in
 # env
 .env
 
-# certifficate
+# certificate files
 *.pem
+*.crt
+*.key
+cert/

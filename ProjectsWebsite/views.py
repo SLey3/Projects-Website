@@ -2,7 +2,7 @@
 from flask import (
     Blueprint, render_template,
     redirect, request,
-    url_for, abort, jsonify
+    url_for, abort
 )
 try:
     from flask_sqlalchemy.orm.session import Session as SQLSession
@@ -20,16 +20,16 @@ from flask_security import (
     login_required
 )
 from flask_assets import Environment, Bundle
-from src.util import (
+from util import (
     AlertUtil, is_valid_article_page, formatPhoneNumber, DateUtil
 )
-from src.util.helpers import EMAILS, date_re
-from src.forms import (
+from util.helpers import EMAILS, date_re
+from forms import (
     loginForm, registerForm,
     articleForm, contactForm,
     forgotForm, forgotRequestForm
 )
-from src.database.models import (
+from database.models import (
     db, Article, User, Role
 )
 from io import open as iopen
@@ -38,14 +38,12 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from sqlalchemy.exc import OperationalError
 from passlib.hash import sha512_crypt
 from datetime import datetime
-from src import app
 import base64
 import os
 
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
-
 
 # ------------------ Library Configs ------------------
 img_set = UploadSet('images', IMAGES)
@@ -62,9 +60,6 @@ security = Security()
 
 # ------------------  SQLAlchemy Session Config ------------------
 sql_sess = SQLSession(autoflush=False)
-
-# ------------------ Serializer config ------------------
-urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
    
 # ------------------ Static Files Bundles ------------------ 
 
@@ -108,6 +103,13 @@ assets.register('admin_edit_accounts_css', admin_edit_profile_accounts_css_bundl
     
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
+
+# ------------------ Application Import ------------------
+from ProjectsWebsite import app
+
+# ------------------ Serializer config ------------------
+urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -133,12 +135,12 @@ def loginPage():
         if user:
             if sha512_crypt.verify(form.password.data, user.password):
                 login_user(user)
-                return jsonify(user.to_json())
+                return redirect(url_for(""))
         error = "Invalid Email or Password"
         return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
         if current_user.is_authenticated:
-            return redirect(url_for("homePage"))
+            return redirect(url_for(".homePage"))
         else:
             return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
@@ -174,7 +176,7 @@ def registerPage():
         Link: {confirm_link}'''
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
-        return redirect(url_for("homePage"))
+        return redirect(url_for(".homePage"))
     else:
         return render_template("public/registerpage.html", form=form)
     
@@ -192,13 +194,13 @@ def confirmation_recieved(token):
         user_datastore.add_role_to_user(user_datastore.get_user(email), "verified")
         db.session.commit()
         alert.setAlert('success', 'Email Verified')
-        return redirect(url_for("homePage"))
+        return redirect(url_for(".homePage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
         User.query.filter_by(email=email_string).delete()
         db.session.commit()
         alert.setAlert('error', 0)
-        return redirect(url_for("homePage"))
+        return redirect(url_for(".homePage"))
     
 @main_app.route('/login/forgotpwd', methods=['GET', 'POST'])
 @main_app.route('/login/forgotpwd/', methods=['GET', 'POST'])
@@ -214,12 +216,12 @@ def initialForgotPage():
             if recipient_email != '' and form.submit.data == True:
                 form.back_button.raw_data.insert(0, '.')
             if recipient_email == '':
-                return redirect(url_for('loginPage'))
+                return redirect(url_for('.loginPage'))
             elif form.back_button.raw_data.pop(0) == '':
-                return redirect(url_for('loginPage'))
+                return redirect(url_for('.loginPage'))
             else:
                 alert.setAlert('warning', f"No Account found under {recipient_email}.")
-                return redirect(url_for("loginPage"))
+                return redirect(url_for(".loginPage"))
         
         if not form.submit.data:
             return redirect(url_for('loginPage')) 
@@ -233,7 +235,7 @@ def initialForgotPage():
         """
         mail.send(reset_msg)
         alert.setAlert('success', 'Reset Password Email has been sent.')
-        return redirect(url_for('homePage'))
+        return redirect(url_for('.homePage'))
     else:
         return render_template("public/forgot.html", field=form)
     
@@ -263,7 +265,7 @@ def resetRequestRecieved(token, email):
     
     except SignatureExpired:
         alert.setAlert('error', 1)
-        return redirect(url_for("loginPage"))
+        return redirect(url_for(".loginPage"))
     
 @main_app.route('/signout')
 @main_app.route('/signout/')
@@ -275,7 +277,7 @@ def signOut():
     logout_user()
     form = loginForm()
     alert.setAlert('success', 'Succesfully signed out')
-    return redirect(url_for("homePage"))
+    return redirect(url_for(".homePage"))
     
 @main_app.route('/')
 @main_app.route('/')
@@ -292,7 +294,7 @@ def redirectToHomePage():
     """
     redirects to homepage
     """
-    return redirect(url_for('homePage'))
+    return redirect(url_for('.homePage'))
     
 @main_app.route('/about')
 @main_app.route('/about/')
@@ -377,7 +379,7 @@ def contact_us():
         """
         mail.send(mail_msg)
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
-        return redirect(url_for('homePage'))
+        return redirect(url_for('.homePage'))
     else:
         return render_template('public/contactpage.html', form=form)
 

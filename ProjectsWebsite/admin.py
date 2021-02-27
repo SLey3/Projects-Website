@@ -3,12 +3,12 @@ from flask import (
     Blueprint, render_template, url_for,
     redirect, request
 )
-from src.database.models import db
+from database.models import db
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
-from src.database.models import User, Article
-from src.forms import AccountManegementForms
-from src.util import scrapeError
+from database.models import User, Article
+from forms import AccountManegementForms
+from util import scrapeError
 from passlib.hash import sha512_crypt
 from bs4 import BeautifulSoup, NavigableString
 from typing import Union
