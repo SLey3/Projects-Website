@@ -2,4 +2,4 @@
 widget for forms
 """
 # ------------------ Import ------------------
-from forms.widget._widget import *
+from ProjectsWebsite.forms.widget._widget import *

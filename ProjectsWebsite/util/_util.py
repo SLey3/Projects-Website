@@ -1,16 +1,20 @@
 # ------------------ Imports ------------------
-from flask import abort, Flask
+from flask import abort, jsonify
+from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from functools import wraps
-from util.helpers import alertMessageType, InvalidType
+from ProjectsWebsite.util.helpers import alertMessageType, InvalidType
 from typing import (
     Dict, List, Tuple, Any, Optional
 )
-from database.models import Article
-from warnings import warn
+from ProjectsWebsite.database.models import Article
 from dataclasses import dataclass
 from datetime import datetime
-from re import Pattern
 from bs4 import BeautifulSoup, NavigableString
+from six import reraise
+from sys import exc_info
+from requests.auth import HTTPDigestAuth
+from requests.exceptions import ConnectionError
+from re import Pattern
 import re
 import requests
 
@@ -174,14 +178,23 @@ class DateUtil:
                 new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
                 self.date = new_date
                 return new_date   
-            
-            
-def scrapeError(url: str, o: Tuple[str, str], field_err: List[str]) -> str:
+                       
+def scrapeError(url: str, o: Tuple[str, str], field_err: List[str], auth: Optional[Tuple[str, str]] = None) -> str:
     """
-    Scrapes error from argument: url
+    Scrapes input error from argument: url
     """
     with requests.Session() as sess:
-        web_page = sess.get(url)
+        if auth:
+            auth = HTTPDigestAuth(*auth)
+            try:
+                web_page = sess.get(url, auth=auth)
+            except ConnectionError:
+                reraise(*exc_info())
+        else:
+            try:
+                web_page = sess.get(url)
+            except ConnectionError:
+                reraise(*exc_info())
         soup = BeautifulSoup(web_page.content, 'html5lib')
         p_tag = soup.find_all('p', {f"{o[0]}": f"{o[1]}"})
         for p in p_tag:

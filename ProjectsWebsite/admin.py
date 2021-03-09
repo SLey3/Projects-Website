@@ -3,16 +3,14 @@ from flask import (
     Blueprint, render_template, url_for,
     redirect, request
 )
-from database.models import db
 from flask_login import login_required, confirm_login
 from flask_security import roles_required
-from database.models import User, Article
-from forms import AccountManegementForms
-from util import scrapeError
+from ProjectsWebsite.database.models import User, Article
+from ProjectsWebsite.forms import AccountManegementForms
+from ProjectsWebsite.util import scrapeError
+from ProjectsWebsite.modules import db
 from passlib.hash import sha512_crypt
-from bs4 import BeautifulSoup, NavigableString
 from typing import Union
-import requests
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
@@ -60,6 +58,8 @@ def adminAccountsManegement(page):
 
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
+@login_required
+@roles_required('admin')
 def adminAccountsUserManagement(user, page):
     name_error = ""
     email_error = ""
@@ -70,14 +70,15 @@ def adminAccountsUserManagement(user, page):
     pages = 3
     URL = f"http://127.0.0.1:5000/admin/management/accounts/edit_user/{user}/"
     user = str(user).replace('%20', ' ')
-    user_info = User.query.filter_by(name=user).first()
+    user_info = User.lookup(user)
+    info_forms = AccountManegementForms.adminUserInfoForm()
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
             user_info.name = info_forms.name.data
             user = info_forms.name.data
         elif not info_forms.name.validate(info_forms) and info_forms.name.data:
-            name_error = scrapeError(URL, ('id', 'name-err-p'), info_forms.name.errors)
+            name_error = scrapeError(URL, ('id', 'name-err-p'), info_forms.name.errors, ('ghub4127@gmail.com', 'admin123456'))
         elif info_forms.email.data and info_forms.email.validate(info_forms):
             user_info.email = info_forms.email.data
         elif not info_forms.email.validate(info_forms) and info_forms.email.data:
@@ -104,7 +105,7 @@ def adminAccountsUserManagement(user, page):
             db.session.commit()
         elif not info_forms.blacklist.validate(info_forms) and info_forms.blacklist.data:
             blacklist_error = scrapeError(URL, ('id', 'blacklist-status-err-p'), info_forms.blacklist.errors)
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=AccountManegementForms.adminUserInfoForm(), roles_delete_form=AccountManegementForms.roleDeleteAll(), name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error)
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=info_forms, roles_delete_form=AccountManegementForms.roleDeleteAll(), name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error)
     else:
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=AccountManegementForms.adminUserInfoForm(), roles_delete_form=AccountManegementForms.roleDeleteAll())
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=AccountManegementForms.tableSearchForm(), info_forms=info_forms, roles_delete_form=AccountManegementForms.roleDeleteAll())
         

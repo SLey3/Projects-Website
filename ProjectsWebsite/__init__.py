@@ -8,17 +8,24 @@ from flask import (
     )
 from flask_login import current_user
 from flask_security import Security
+from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
+from flask_debugtoolbar import DebugToolbarExtension
 from datetime import timedelta
 from subprocess import Popen, PIPE, TimeoutExpired
-from admin import admin
-from dashboard import dash
-from forms import loginForm
-from database.models import db
+from ProjectsWebsite.admin import admin
+from ProjectsWebsite.dashboard import dash
+from ProjectsWebsite.forms import loginForm
+from ProjectsWebsite.database.models import User, user_datastore
+from ProjectsWebsite.modules import (
+    assets, db, guard, login_manager,
+    mail, security, img_set
+)
+from ProjectsWebsite.util.utilmodule import alert
 import ssl
 import os
-
+import logging
 # ------------------ Check Directories ------------------
 if os.path.basename(os.getcwd()) == "Projects_Website":
     directory_script = Popen(["sh", "./scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
@@ -28,39 +35,51 @@ else:
     directory_script.communicate()
 
 
+# ------------------ Production Status ------------------
+# set true if website is in production, else set false if website is in development
+PRODUCTION = False
+
 # ------------------ SSL ------------------
 context = ssl.SSLContext()
-context.load_cert_chain('cert/cert.crt', 'cert/key.pem')
+context.load_cert_chain('cert/server.cert', 'cert/server.key')
 
 # ------------------ App Setup ------------------
 app = Flask(__name__, template_folder="templates", static_folder='static')
 app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5, hours=12, minutes=6, seconds=59)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
 app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
 app.config.from_pyfile("../.env")
-import views
+import ProjectsWebsite.views as views
 app.register_blueprint(dash)
 app.register_blueprint(admin)
 app.register_blueprint(views.main_app)
 app.add_template_global(current_user, 'current_user')
 app.add_template_global(request, 'request')
 app.add_template_global(redirect, 'redirect')
+app.register_error_handler(PraetorianError, 
+                           PraetorianError.build_error_handler(lambda e: logger.error(e.message)))
+app.debug = True
 
 db.init_app(app)
 
-views.login_manager.init_app(app)
+login_manager.init_app(app)
 
-views.mail.init_app(app)
+mail.init_app(app)
 
-configure_uploads(app, views.img_set)
+configure_uploads(app, img_set)
 
-views.assets.init_app(app)
+assets.init_app(app)
 
-views.alert.init_app(app)
+alert.init_app(app)
 
-views.security.init_app(app, views.user_datastore, login_form=loginForm)
+security.init_app(app, user_datastore, login_form=loginForm)
+
+guard.init_app(app, User)
 
 Session(app)
+
+if not PRODUCTION:
+    toolbar = DebugToolbarExtension(app)
 
 # ------------------ error handlers ------------------
 @app.errorhandler(400)
@@ -113,4 +132,4 @@ if __name__ == '__main__':
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
-    app.run(debug=True, ssl_context=context)        
+    app.run(host="localhost", port="5000")        

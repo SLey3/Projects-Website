@@ -6,12 +6,9 @@ from wtforms import (
     SubmitField
 )
 from wtforms.fields.html5 import TelField, SearchField
-from flask_uploads import UploadSet, IMAGES
-from forms.validators import *
-from forms.field import ButtonField
-
-# ------------------ img_set Config ------------------
-img_set = UploadSet('images', IMAGES)
+from ProjectsWebsite.modules import img_set
+from ProjectsWebsite.forms.validators import *
+from ProjectsWebsite.forms.field import ButtonField
 
 # ------------------ Forms------------------
 class loginForm(FlaskForm):

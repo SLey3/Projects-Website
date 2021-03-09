@@ -2,35 +2,38 @@
 from flask import (
     Blueprint, render_template,
     redirect, request,
-    url_for, abort
+    url_for, abort, jsonify
 )
 try:
     from flask_sqlalchemy.orm.session import Session as SQLSession
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session as SQLSession
 from flask_login import (
-    LoginManager, login_user, 
+    login_user, 
     logout_user, current_user
 )
-from flask_mail import Mail, Message
-from flask_uploads import UploadSet, IMAGES
+from flask_mail import Message
 from flask_security import (
-    Security, SQLAlchemyUserDatastore, 
     roles_accepted, roles_required, 
     login_required
 )
-from flask_assets import Environment, Bundle
-from util import (
-    AlertUtil, is_valid_article_page, formatPhoneNumber, DateUtil
+from flask_praetorian import auth_required
+from ProjectsWebsite.util import (
+    is_valid_article_page, formatPhoneNumber, DateUtil
 )
-from util.helpers import EMAILS, date_re
-from forms import (
+from ProjectsWebsite.util.helpers import EMAILS, date_re
+from ProjectsWebsite.util.utilmodule import alert
+from ProjectsWebsite.modules import (
+    db, img_set, mail, login_manager,
+    guard
+)
+from ProjectsWebsite.forms import (
     loginForm, registerForm,
     articleForm, contactForm,
     forgotForm, forgotRequestForm
 )
-from database.models import (
-    db, Article, User, Role
+from ProjectsWebsite.database.models import (
+    Article, User, Role, user_datastore
 )
 from io import open as iopen
 from werkzeug.utils import secure_filename
@@ -45,64 +48,9 @@ import os
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
 
-# ------------------ Library Configs ------------------
-img_set = UploadSet('images', IMAGES)
-
-mail = Mail()
-
-login_manager = LoginManager()
-
-assets = Environment()
-
-alert = AlertUtil()
-
-security = Security()
 
 # ------------------  SQLAlchemy Session Config ------------------
 sql_sess = SQLSession(autoflush=False)
-   
-# ------------------ Static Files Bundles ------------------ 
-
-js_main_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
-                   filters='jsmin', output="js/main/dist/main.min.js") 
-
-edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/accounts/edit_profile/src/navalign.js',
-                                filters='jsmin', output='js/ext/admin/accounts/edit_profile/dist/index.min.js')
-
-alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 
-                    'styles/alert_css/src/info.css', 'styles/alert_css/src/success.css',
-                    'styles/alert_css/src/warning.css', filters='cssmin', 
-                    output='styles/alert_css/dist/alerts.min.css')
-
-admin_home_css_bundle = Bundle('styles/admin/index/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
-                               'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css', 
-                               filters='cssmin', output='styles/admin/index/dist/index.min.css')
-
-admin_main_accounts_css_bundle = Bundle('styles/admin/accounts/main/src/index.css', 'styles/admin/util/scrollbar/scrollbar.css',
-                                  'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
-                                  filters='cssmin', output='styles/admin/accounts/main/dist/index.min.css')
-
-admin_edit_profile_accounts_css_bundle = Bundle('styles/admin/accounts/edit_profiles/src/edit_profile.css', 'styles/admin/util/scrollbar/scrollbar.css',
-                                                'styles/admin/util/navbar/navbar.css', 'styles/admin/util/management/management.css',
-                                                filters='cssmin', output='styles/admin/accounts/edit_profiles/dist/edit_profile.min.css')
-
-# ------------------  Bundle Config: Registration ------------------ 
-assets.register('main__js', js_main_bundle)
-
-assets.register('edit_prof_main_js', edit_profile_js_bundle)
-  
-assets.register('alert__css', alert_css_bundle)
-
-assets.register('admin_dashboard_css', admin_home_css_bundle)
-
-assets.register('admin_main_accounts_css', admin_main_accounts_css_bundle)
-
-assets.register('admin_edit_accounts_css', admin_edit_profile_accounts_css_bundle)
-
-# ------------------ UserDatastore Config ------------------
-    
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-
 
 # ------------------ Application Import ------------------
 from ProjectsWebsite import app
@@ -116,7 +64,7 @@ def load_user(user_id):
     """
     Gets the User
     """
-    return User.query.get(int(user_id))
+    return User.identify(int(user_id))
 
 # ------------------ web pages ------------------
 
@@ -131,11 +79,11 @@ def loginPage():
     alert_dict = alert.getAlert()
     
     if request.method == "POST" and form.validate_on_submit():
-        user = User.query.filter_by(email=form.username.data.lower()).first()
+        user = guard.authenticate(form.username.data, form.password.data)
         if user:
-            if sha512_crypt.verify(form.password.data, user.password):
-                login_user(user)
-                return redirect(url_for(""))
+            login_user(user)
+            ret = {"access_token": guard.encode_jwt_token(user)}
+            return (jsonify(ret), 200)
         error = "Invalid Email or Password"
         return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
@@ -151,26 +99,27 @@ def registerPage():
     Registration Page
     """
     form = registerForm()
-    if request.method == "POST" and form.validate_on_submit():
+    if request.method == "POST":
         with sql_sess.no_autoflush:
             user_datastore.find_or_create_role('admin')
             user_datastore.find_or_create_role('member')
             user_datastore.find_or_create_role('unverified')
             user_datastore.find_or_create_role('verified')
         current_date = datetime.now()
-        user_datastore.create_user(
+        new_user = User.create_user(
             name=form.name.data.capitalize(),
-            email=form.email.data.lower(),
-            password=sha512_crypt.hash(form.password.data),
+            username=form.email.data.lower(),
+            hashed_password=guard.hash_password(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             blacklisted=False,
-            roles=['member', 'unverified']
+            roles=['admin', 'member', 'unverified']
         )
+        db.session.add(new_user)
         db.session.commit()
         EMAILS.append(form.email.data)
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
-        confirm_link = 'http://127.0.0.1:5000' + url_for("confirmation_recieved", token=token, external=True)
+        confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
         verify_msg.body = f'''Thank you for registering, {form.name.data}! In order to complete the registration you must click on the link below.
         Link will expire in 30 minutes after this email has been sent.
         Link: {confirm_link}'''
@@ -189,15 +138,15 @@ def confirmation_recieved(token):
     """
     try:
         urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-        email = EMAILS.pop(0)
-        user_datastore.remove_role_from_user(user_datastore.get_user(email), 'unverified')
-        user_datastore.add_role_to_user(user_datastore.get_user(email), "verified")
+        email = "ghub4127@gmail.com"
+        User.remove_role(User, User.lookup(email), 'unverified')
+        User.add_role(User, User.lookup(email), "verified")
         db.session.commit()
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:
         email_string = EMAILS.pop(0)
-        User.query.filter_by(email=email_string).delete()
+        expired_user = User.lookup(email_string)
         db.session.commit()
         alert.setAlert('error', 0)
         return redirect(url_for(".homePage"))
@@ -211,7 +160,7 @@ def initialForgotPage():
     form = forgotRequestForm()
     if request.method == "POST":
         recipient_email = form.email.data
-        user = User.query.filter_by(email=recipient_email.lower()).first()
+        user = User.lookup(form.email.data)
         if isinstance(user, type(None)):
             if recipient_email != '' and form.submit.data == True:
                 form.back_button.raw_data.insert(0, '.')
@@ -251,8 +200,8 @@ def resetRequestRecieved(token, email):
         form = forgotForm()
         if request.method == 'POST':
             email = str(email).replace("%40", '@')
-            replacementPassword = sha512_crypt.hash(form.confirm_new_password.data)
-            user = User.query.filter_by(email=email).first()
+            replacementPassword = guard.hash_password(form.confirm_new_password.data)
+            user = User.lookup(email)
             if not sha512_crypt.verify(form.confirm_new_password.data, user.password):
                 user.password = replacementPassword
                 db.session.commit()
@@ -304,6 +253,7 @@ def aboutPage():
 @main_app.route('/articles/create_article', methods=['GET', 'POST'])
 @main_app.route('/articles/create_article/', methods=['GET', 'POST'])
 @login_required
+@auth_required
 @roles_accepted('admin', 'editor')
 def articleCreation():
     form = articleForm()

@@ -1,4 +1,4 @@
-read -n1 -p "Do you wish to proceed? [Y,N]" responce
+read -n1 -p "Do you wish to proceed? (Please make sure to remove the current certificate before proceeding) [Y,N]" responce
 
 if [[ $responce == "Y" || $responce == "y" ]] ; 
 then
@@ -12,19 +12,19 @@ echo "Removing expired certifficates..."
 
 if [ "${PWD##*/}"  == "Projects_Website" ] ;
 then 
-    if [[ -f $PWD/scripts/cert.pem ]] && [[ -f $PWD/scripts/key.pem ]] ;
+    if [[ -f $PWD/cert/server.cert ]] && [[ -f $PWD/cert/server.key ]] ;
     then
-        rm $PWD/scripts/cert.pem -v ;
-        rm $PWD/scripts/key.pem -v ;
+        rm $PWD/cert/server.cert -v ;
+        rm $PWD/cert/server.key -v ;
         echo "expired certifficates succefully removed" ;
     else
         echo "No expired files found" ;
     fi
 else
-    if [[ -f cert.pem ]] && [[ -f key.pem ]] ;
+    if [[ -f server.cert ]] && [[ -f server.key ]] ;
     then
-        rm cert.pem -v ;
-        rm key.pem -v ;
+        rm server.cert -v ;
+        rm server.key -v ;
         echo "expired certifficates succefully removed" ;
     else
         echo "No expired files found" ;
@@ -32,21 +32,21 @@ else
 fi
 
 
-openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
+openssl req  -nodes -new -x509  -keyout server.key -out server.cert
 
 echo "Certifficate created. Moving certifficates to correct folder"
 if [ "${PWD##*/}"  == "Projects_Website" ] ;
 then
-    cp cert.crt cert ;
-    rm cert.crt --verbose ;
-    cp key.pem cert ; 
-    rm key.pem --verbose ;
+    cp server.cert cert ;
+    rm server.cert --verbose ;
+    cp server.key cert ; 
+    rm server.key --verbose ;
 else 
     cd .. ;
-    cp cert.crt cert ;
-    rm cert.crt --verbose ;
-    cp key.pem cert ; 
-    rm key.pem --verbose ;
+    cp server.crt cert ;
+    rm server.crt --verbose ;
+    cp server.key cert ; 
+    rm server.key --verbose ;
 fi
 
 echo "Certifficates moved"

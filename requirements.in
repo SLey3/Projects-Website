@@ -20,3 +20,7 @@ idna
 beautifulsoup4
 requests==2.25.1
 Flask-Session
+
+flask-debugtoolbar
+flask-praetorian
+six==update
