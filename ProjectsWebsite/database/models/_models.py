@@ -1,6 +1,7 @@
 # ------------------ Imports ------------------
-from flask import jsonify
+from flask import jsonify, session
 from flask_security import RoleMixin, SQLAlchemyUserDatastore
+from flask_login import AnonymousUserMixin
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from six import string_types
 from ProjectsWebsite.modules import db
@@ -92,12 +93,25 @@ class User(db.Model, SQLAlchemyUserMixin):
         """
         return self.role_model.query.filter_by(name=role).first()
     
+    def has_role(self, role):
+        """
+        Checks if role is in the users role
+        """
+        return role in self.roles
+    
     def delete_user(self, user):
         """
         Deletes Specified User
         """
         db.session.delete(user)
        
+    @classmethod
+    def lookup_by_name(cls, name):
+        """
+        looks up user by name
+        """
+        return cls.query.filter_by(name=name).one_or_none()
+    
     def get_id(self):
         """
         for Flask-Login
@@ -109,8 +123,21 @@ class User(db.Model, SQLAlchemyUserMixin):
                        email=self.username,
                        password=self.hashed_password)
         
+    def is_authenticated(self):
+        """
+        returns if user is authenticated
+        """
+        return True
+        
     def __repr__(self):
         return self.name
+    
+
+class AnonymousUser(AnonymousUserMixin):
+    """
+    AnonymousUser class
+    """
+    pass
 
 class Article(db.Model):
     """

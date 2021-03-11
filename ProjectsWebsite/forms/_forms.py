@@ -110,7 +110,7 @@ class AccountManegementForms:
         """
         Submit Field that raises an alert before deleting all roles
         """
-        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', 'value':'delete all'}) 
+        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', "onclick":"confirm_deletion()", 'value':'delete all'}) 
     class adminUserInfoForm(FlaskForm):
         """
         Creates Info Ediit form Inputs

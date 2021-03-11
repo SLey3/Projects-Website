@@ -6,7 +6,6 @@ from flask import (
     Flask, request, render_template, 
     redirect, url_for, send_from_directory
     )
-from flask_login import current_user
 from flask_security import Security
 from flask_praetorian import PraetorianError
 from flask_session import Session
@@ -23,6 +22,7 @@ from ProjectsWebsite.modules import (
     mail, security, img_set
 )
 from ProjectsWebsite.util.utilmodule import alert
+from ProjectsWebsite.util import current_user
 import ssl
 import os
 import logging
@@ -132,4 +132,4 @@ if __name__ == '__main__':
     console.log("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     console.print("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     sleep(1)
-    app.run(host="localhost", port="5000")        
+    app.run()        

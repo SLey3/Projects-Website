@@ -17,12 +17,12 @@
                 <information id="prof-info" class="text-wrap">
                     <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
                     <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
-                    <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.email }}</span>
+                    <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
                     <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
                     <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
                     <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
                     <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
-                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
+                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.is_active }}</span>
                     <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
                     <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
                     <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
@@ -634,14 +634,14 @@
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append('<form><input onclick="confirm_deletion()" type="submit" value="delete all" /></form>');
+                    $("#delete-all-btn-container").append("<form method='POST'><input type='submit' onclick='confirm_deletion()' value='delete all' /></form>");
                 } else {
                     $("#delete-all-btn-container").empty()
                 }
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append('<form onsubmit="return confirm("Are you sure you want to delete ALL roles from {{ user.name }}?")">{{ roles_delete_form.delete_all }}</form>');
+                    $("#delete-all-btn-container").append("<form method='POST' onsubmit='return confirm('Are you sure you want to delete ALL roles from {{ user.name }}')'><input type='submit' onclick='confirm_deletion()' value='delete all' /></form>");
                 } else {
                     $("#delete-all-btn-container").empty();
                 }

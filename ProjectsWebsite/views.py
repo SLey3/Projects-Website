@@ -8,18 +8,14 @@ try:
     from flask_sqlalchemy.orm.session import Session as SQLSession
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session as SQLSession
-from flask_login import (
-    login_user, 
-    logout_user, current_user
-)
 from flask_mail import Message
 from flask_security import (
     roles_accepted, roles_required, 
     login_required
 )
-from flask_praetorian import auth_required
 from ProjectsWebsite.util import (
-    is_valid_article_page, formatPhoneNumber, DateUtil
+    is_valid_article_page, formatPhoneNumber, DateUtil,
+    current_user, login_user, logout_user, token_auth_required
 )
 from ProjectsWebsite.util.helpers import EMAILS, date_re
 from ProjectsWebsite.util.utilmodule import alert
@@ -78,19 +74,16 @@ def loginPage():
     
     alert_dict = alert.getAlert()
     
-    if request.method == "POST" and form.validate_on_submit():
+    if request.method == 'POST':
         user = guard.authenticate(form.username.data, form.password.data)
         if user:
-            login_user(user)
-            ret = {"access_token": guard.encode_jwt_token(user)}
-            return (jsonify(ret), 200)
+            token = guard.encode_jwt_token(user)
+            login_user(token, user)
+            return redirect(url_for(".homePage"))
         error = "Invalid Email or Password"
         return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
-        if current_user.is_authenticated:
-            return redirect(url_for(".homePage"))
-        else:
-            return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+        return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
 @main_app.route('/register', methods=['GET', 'POST'])
 @main_app.route('/register/', methods=['GET', 'POST'])
@@ -99,7 +92,7 @@ def registerPage():
     Registration Page
     """
     form = registerForm()
-    if request.method == "POST":
+    if request.method == 'POST':
         with sql_sess.no_autoflush:
             user_datastore.find_or_create_role('admin')
             user_datastore.find_or_create_role('member')
@@ -138,7 +131,7 @@ def confirmation_recieved(token):
     """
     try:
         urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-        email = "ghub4127@gmail.com"
+        email = EMAILS.pop(0)
         User.remove_role(User, User.lookup(email), 'unverified')
         User.add_role(User, User.lookup(email), "verified")
         db.session.commit()
@@ -218,14 +211,12 @@ def resetRequestRecieved(token, email):
     
 @main_app.route('/signout')
 @main_app.route('/signout/')
-@login_required
 def signOut():
     """
     Signs out of the site
     """
     logout_user()
-    form = loginForm()
-    alert.setAlert('success', 'Succesfully signed out')
+    alert.setAlert('success', 'Successfully signed out')
     return redirect(url_for(".homePage"))
     
 @main_app.route('/')
@@ -250,11 +241,11 @@ def redirectToHomePage():
 def aboutPage():
     return render_template('public/aboutpage.html')
 
+
 @main_app.route('/articles/create_article', methods=['GET', 'POST'])
 @main_app.route('/articles/create_article/', methods=['GET', 'POST'])
-@login_required
-@auth_required
-@roles_accepted('admin', 'editor')
+@roles_accepted("admin", "editor")
+@token_auth_required
 def articleCreation():
     form = articleForm()
     if request.method == "POST" and form.validate_on_submit():

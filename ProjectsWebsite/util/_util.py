@@ -1,17 +1,22 @@
 # ------------------ Imports ------------------
-from flask import abort, jsonify
-from flask_praetorian.user_mixins import SQLAlchemyUserMixin
+from flask import abort, jsonify, g, session, current_app, request
 from functools import wraps
 from ProjectsWebsite.util.helpers import alertMessageType, InvalidType
 from typing import (
     Dict, List, Tuple, Any, Optional
 )
 from ProjectsWebsite.database.models import Article
+from ProjectsWebsite.modules import guard, login_manager
+try:
+    from werkzeug import LocalProxy
+except ImportError:
+    from werkzeug.local import LocalProxy
 from dataclasses import dataclass
 from datetime import datetime
 from bs4 import BeautifulSoup, NavigableString
 from six import reraise
 from sys import exc_info
+from base64 import b64encode, b64decode
 from requests.auth import HTTPDigestAuth
 from requests.exceptions import ConnectionError
 from re import Pattern
@@ -79,6 +84,7 @@ class AlertUtil(object):
             raise InvalidType(f"{alertType} is an Invalid Type")
         self.alert_dict['type'] = alertType
         self.alert_dict['message'] = msg
+        return True
     
     def getAlert(self) -> Dict[str, str]:
         """
@@ -117,12 +123,12 @@ def is_valid_article_page(func):
         404 http code
     """
     @wraps(func)
-    def validator(id):
+    def validator(*args, **kwargs):
         articles = Article.query.all()
         for article in articles:
             article_id_number = str(article.id)
             if id == article_id_number:
-                return func(id)
+                return func(*args, **kwargs)
         return abort(404)
     return validator
 
@@ -179,26 +185,87 @@ class DateUtil:
                 self.date = new_date
                 return new_date   
                        
-def scrapeError(url: str, o: Tuple[str, str], field_err: List[str], auth: Optional[Tuple[str, str]] = None) -> str:
+def scrapeError(url: str, o: Tuple[str, str], field_err: List[str], auth: Optional[bool] = False) -> str:
     """
     Scrapes input error from argument: url
     """
     with requests.Session() as sess:
         if auth:
-            auth = HTTPDigestAuth(*auth)
-            try:
-                web_page = sess.get(url, auth=auth)
-            except ConnectionError:
-                reraise(*exc_info())
+            token = b64decode(session["token"])
+            token = str(token, encoding="utf-8")
+            web_page = sess.get(url, params={"token":token})
         else:
-            try:
-                web_page = sess.get(url)
-            except ConnectionError:
-                reraise(*exc_info())
+            web_page = sess.get(url)
         soup = BeautifulSoup(web_page.content, 'html5lib')
         p_tag = soup.find_all('p', {f"{o[0]}": f"{o[1]}"})
+        print("P tag:", p_tag)
         for p in p_tag:
+            print(p)
             for err in field_err:
+                print(err)
                 p.insert(0, NavigableString(f"- {err}\n"))
                 error = p
-    return error 
+                print(error)
+                return error
+
+
+current_user = LocalProxy(lambda: _get_user())
+
+def _get_user():
+    from ProjectsWebsite.database.models import User, AnonymousUser
+    
+    if "_user_id" not in session:
+        if hasattr(g, "_cached_user"):
+            del(g._cached_user)
+        return AnonymousUser
+    if not hasattr(g, "_cached_user"):
+        try:
+            setattr(g, "_cached_user", User.identify(session["_user_id"]))
+        except:
+            session.clear()
+            return AnonymousUser
+    return g._cached_user
+
+def token_auth_required(f):
+    """
+    checks if token is in the session
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "token" in session:
+            token = b64decode(session["token"])
+            token = str(token, encoding="utf-8")
+            try:
+                data = guard.extract_jwt_token(token)
+            except:
+                return abort(403)
+            return f(*args, **kwargs)
+        elif "token" in request.args:
+            token = request.args.get("token")
+            try:
+                data = guard.extract_jwt_token(token)
+            except:
+                return abort(403)
+            return f(*args, **kwargs)
+        else:
+            return abort(403)
+    return decorated
+
+def login_user(token, user):
+    """
+    Logs in user
+    """
+    session["_id"] = login_manager._session_identifier_generator()
+    session["_user_id"] = user.identity
+    session["_fresh"] = True
+    session["token"] = b64encode(bytes(token, encoding="utf-8"))
+    return True
+
+def logout_user():
+    """
+    Logs out user if user is logged in
+    """
+    if "_user_id" in session:
+        for key in list(session.keys()):
+            session.pop(key, None)
+    return True
