@@ -1,3 +1,7 @@
 [submodule "openssl"]
     path=ext/openssl
     url=https://github.com/openssl/openssl.git
+
+[submodule "lighthouse"]
+    path=ext/lighthouse
+    url=https://github.com/GoogleChrome/lighthouse.git

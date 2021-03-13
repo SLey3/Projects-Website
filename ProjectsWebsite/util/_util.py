@@ -5,7 +5,6 @@ from ProjectsWebsite.util.helpers import alertMessageType, InvalidType
 from typing import (
     Dict, List, Tuple, Any, Optional
 )
-from ProjectsWebsite.database.models import Article
 from ProjectsWebsite.modules import guard, login_manager
 try:
     from werkzeug import LocalProxy
@@ -14,11 +13,8 @@ except ImportError:
 from dataclasses import dataclass
 from datetime import datetime
 from bs4 import BeautifulSoup, NavigableString
-from six import reraise
-from sys import exc_info
 from base64 import b64encode, b64decode
-from requests.auth import HTTPDigestAuth
-from requests.exceptions import ConnectionError
+from http import cookiejar
 from re import Pattern
 import re
 import requests
@@ -122,6 +118,7 @@ def is_valid_article_page(func):
     Returns:
         404 http code
     """
+    from ProjectsWebsite.database.models import Article
     @wraps(func)
     def validator(*args, **kwargs):
         articles = Article.query.all()
@@ -189,24 +186,20 @@ def scrapeError(url: str, o: Tuple[str, str], field_err: List[str], auth: Option
     """
     Scrapes input error from argument: url
     """
-    with requests.Session() as sess:
-        if auth:
-            token = b64decode(session["token"])
-            token = str(token, encoding="utf-8")
-            web_page = sess.get(url, params={"token":token})
-        else:
-            web_page = sess.get(url)
-        soup = BeautifulSoup(web_page.content, 'html5lib')
-        p_tag = soup.find_all('p', {f"{o[0]}": f"{o[1]}"})
-        print("P tag:", p_tag)
-        for p in p_tag:
-            print(p)
-            for err in field_err:
-                print(err)
-                p.insert(0, NavigableString(f"- {err}\n"))
-                error = p
-                print(error)
-                return error
+    if auth:
+        token = b64decode(session["token"])
+        token = str(token, encoding="utf-8")
+        print(url)
+        web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, params={"token":token}, allow_redirects=False)
+    else:
+        web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, allow_redirects=False)
+    soup = BeautifulSoup(web_page.content, 'html5lib')
+    p_tag = soup.find_all('p', {f"{o[0]}": f"{o[1]}"})
+    for p in p_tag:
+        for err in field_err:
+            p.insert(0, NavigableString(f"- {err}\n"))
+            error = p
+            return error
 
 
 current_user = LocalProxy(lambda: _get_user())
@@ -238,14 +231,14 @@ def token_auth_required(f):
             try:
                 data = guard.extract_jwt_token(token)
             except:
-                return abort(403)
+                return 403
             return f(*args, **kwargs)
         elif "token" in request.args:
             token = request.args.get("token")
             try:
                 data = guard.extract_jwt_token(token)
             except:
-                return abort(403)
+                return 403
             return f(*args, **kwargs)
         else:
             return abort(403)
@@ -268,4 +261,46 @@ def logout_user():
     if "_user_id" in session:
         for key in list(session.keys()):
             session.pop(key, None)
+    if "_permanent" in session:
+        session.pop("_permanent", None)
+    if "_fresh" in session:
+        session.pop("_fresh", None) 
     return True
+
+class staticproperty(property):
+    """
+    Makes Classmethod with property possible
+    """
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
+    
+class AnonymousUserMixin(object):
+    """
+    AnonymouseUserMixin
+    """
+    @staticproperty
+    def is_authenticated(cls):
+        return False
+    
+    @staticproperty
+    def is_active(cls):
+        return False
+
+    @staticproperty
+    def is_anonymous(cls):
+        return True
+
+    def get_id(self):
+        return
+    
+
+def generate_err_request_url(account_name: str) -> str:
+    """
+    Utility for admin to generate the url for any admin accounts management errors
+    Returns:
+        generated url
+    """
+    base_url = "http://127.0.0.1:5000/admin/management/accounts/edit_user/{}/"
+    account_name.replace(" ", "%20")
+    url = base_url.format(account_name)
+    return url

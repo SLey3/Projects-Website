@@ -7,7 +7,7 @@ from flask_login import confirm_login
 from flask_security import roles_required
 from ProjectsWebsite.database.models import User, Article
 from ProjectsWebsite.forms import AccountManegementForms
-from ProjectsWebsite.util import scrapeError, token_auth_required
+from ProjectsWebsite.util import scrapeError, token_auth_required, generate_err_request_url
 from ProjectsWebsite.modules import db
 from passlib.hash import sha512_crypt
 from typing import Union
@@ -59,7 +59,6 @@ def adminAccountsManegement(page):
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
 @token_auth_required
-@roles_required('admin')
 def adminAccountsUserManagement(user, page):
     name_error = ""
     email_error = ""
@@ -68,9 +67,9 @@ def adminAccountsUserManagement(user, page):
     blacklist_error = ""
     page: int = page
     pages = 3
-    URL = f"http://127.0.0.1:5000/admin/management/accounts/edit_user/{user}/"
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
+    URL = generate_err_request_url(user)
     info_forms = AccountManegementForms.adminUserInfoForm()
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
     if request.method == "POST":
@@ -78,6 +77,7 @@ def adminAccountsUserManagement(user, page):
             user_info.name = info_forms.name.data
             user = info_forms.name.data
         elif not info_forms.name.validate(info_forms) and info_forms.name.data:
+            print(URL)
             print(info_forms.name.errors)
             name_error = scrapeError(URL, ('id', 'name-err-p'), info_forms.name.errors, True)
             print(name_error)

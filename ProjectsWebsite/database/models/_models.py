@@ -1,10 +1,10 @@
 # ------------------ Imports ------------------
 from flask import jsonify, session
 from flask_security import RoleMixin, SQLAlchemyUserDatastore
-from flask_login import AnonymousUserMixin
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from six import string_types
 from ProjectsWebsite.modules import db
+from ProjectsWebsite.util import AnonymousUserMixin
 
 # ------------------ SQL classes  ------------------
 class Role(db.Model, RoleMixin):
@@ -123,6 +123,7 @@ class User(db.Model, SQLAlchemyUserMixin):
                        email=self.username,
                        password=self.hashed_password)
         
+    @property
     def is_authenticated(self):
         """
         returns if user is authenticated

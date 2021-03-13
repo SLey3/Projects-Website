@@ -83,6 +83,8 @@ def loginPage():
         error = "Invalid Email or Password"
         return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
     else:
+        if current_user.is_authenticated:
+            return redirect(url_for('.homePage'))
         return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
 @main_app.route('/register', methods=['GET', 'POST'])

@@ -23,9 +23,11 @@ from ProjectsWebsite.modules import (
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user
+from http.client import HTTPConnection as reqlogConnection
 import ssl
 import os
 import logging
+
 # ------------------ Check Directories ------------------
 if os.path.basename(os.getcwd()) == "Projects_Website":
     directory_script = Popen(["sh", "./scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
@@ -38,6 +40,17 @@ else:
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
 PRODUCTION = False
+
+
+
+# ------------------ Loggers ------------------
+requests_logger = logging.getLogger("urllib3")
+requests_logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+requests_logger.addHandler(ch)
+reqlogConnection.debuglevel = 1
+
 
 # ------------------ SSL ------------------
 context = ssl.SSLContext()
