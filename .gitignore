@@ -30,6 +30,9 @@ requirements.in
 
 # env
 .env
+Pipfile
+Pipfile.*
+ProjectEnv/
 
 # certificate files
 *.pem

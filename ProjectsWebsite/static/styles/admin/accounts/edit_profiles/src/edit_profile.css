@@ -224,6 +224,46 @@
     left: 28rem;
 }
 
+.delete-all-btn {
+    margin: 1rem 1rem 1rem 1rem;
+    border: none;
+    background: none;
+    color: rgb(128, 128, 128);
+    transition: 0.5s ease-in-out;
+}
+
+.delete-all-btn:hover {
+    color: rgb(0, 255, 255);
+    font-style: italic;
+}
+
+#role-add-btn {
+    position: relative;
+    bottom: 1.5rem;
+    left: 5.1rem;
+    cursor: pointer;
+}
+
+#role-add-btn-icn.fa.fa-plus-square-o {
+    transition: 0.5s;
+}
+
+#role-add-btn-icn.fa.fa-plus-square-o:hover {
+    color: rgb(0, 255, 255);
+}
+
+#add-back-btn {
+    cursor: pointer;
+}
+
+#add-back-btn-icn.fa.fa-minus-square-o {
+    transition: 0.5s;
+}
+
+#add-back-btn-icn.fa.fa-minus-square-o:hover {
+    color: rgb(0, 255, 255);
+}
+
 span[name="sep"].title-header-sep-align {
     position: absolute;
     width: 55%;

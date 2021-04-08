@@ -17,7 +17,7 @@ class loginForm(FlaskForm):
     """
     username = StringField("username", validators=[
         InputRequired(message="Username field should not be blank"), 
-        Length(min=3, max=50, message="Email length must be at most 50 characters"), Email(message="This must be an Email", check_deliverability=True)])
+        Length(min=3, max=50, message="Email length must be at most 50 characters"), Email(message="This must be an Email", check_deliverability=True)], render_kw={"autocomplete":"off"})
     password = PasswordField("password", validators=[InputRequired("Password field should not be blank"), 
                                                      Length(min=8, max=99, message='''length should be between 8-99 characters''')])
     
@@ -93,7 +93,7 @@ class forgotRequestForm(FlaskForm):
     
     submit = SubmitField(id='sbmt-btn', render_kw={'value':'Send'})
     
-    back_button = ButtonField('Back to Login', id='btn-redirect', render_kw={'href': '/', 'onclick':'NoValidateInput()'})
+    back_button = ButtonField('Back to Login', id='btn-redirect', render_kw={'href': '/'})
     
 class AccountManegementForms:
     """
@@ -106,37 +106,44 @@ class AccountManegementForms:
         command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
         
         
-    class roleDeleteAll(FlaskForm):
+    class roleForm(FlaskForm):
         """
         Submit Field that raises an alert before deleting all roles
         """
-        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', "onclick":"confirm_deletion()", 'value':'delete all'}) 
+        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', 'value':'delete all'}) 
+        
+        add_role = StringField(id="add-role-input", validators=[DataRequired("Field cannot be empty"), ValidateRole()], render_kw={'class':'add-role-form-input', 'placeholder':'Enter Role', 'autocomplete':'off'})
+        
+        add_role_sbmt = SubmitField(id="add-role-sbmt", render_kw={'class':'add-role-sbmt-btn', 'value':'Add'})
+        
+        delete_role = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', render_kw={'class':'inner-delete-btn', 'data-role-type':""})
+        
     class adminUserInfoForm(FlaskForm):
         """
         Creates Info Ediit form Inputs
         """
         name = StringField('Name: ', id='edit-name-input', validators=[DataRequired("Name Entry required"), Length(min=3, max=30, message="Name length must be between 3-30 characters")], 
-                           render_kw={'placeholder':'Edit name...', 'class':'name-input'})
+                           render_kw={'placeholder':'Edit name...', 'class':'name-input', 'autocomplete':'off'})
         
         name_sbmt = SubmitField(id='name-sbmt-btn', render_kw={'value':'Submit', 'class':'name-sbmt-btn'})
         
         email = StringField('Email: ', id='edit-email-input', validators=[DataRequired("Field may not be blank"), Email("This must be an email", check_deliverability=True), 
-                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], render_kw={'placeholder': 'Edit email...', 'class': 'email-input'})
+                                             Length(min=3, max=50, message="Email length must be at most 50 characters")], render_kw={'placeholder': 'Edit email...', 'class': 'email-input', 'autocomplete':'off'})
         
         email_sbmt = SubmitField(id='email-sbmt-btn', render_kw={'value':'Submit', 'class':'email-sbmt-btn'})
         
         password = PasswordField('Password: ', id='edit-pwd-input', validators=[DataRequired("Field may not be blank"), 
                                                                               Length(min=8, max=99, message="length should be between 8-99 characters")], 
-                                 render_kw={'placeholder': 'Edit password...', 'class':'pwd-input'})
+                                 render_kw={'placeholder': 'Edit password...', 'class':'pwd-input', 'autocomplete':'off'})
         
         password_sbmt = SubmitField(id='pwd-sbmt-btn', render_kw={'value':'Submit', 'class':'pwd-sbmt-btn'})
         
         active = StringField('Active Status: ', id='edit-active-input', validators=[DataRequired("Field may not be blank"), ValidateBool()], 
-                             render_kw={'placeholder':'Edit active status...', 'class':'active-status-input'})
+                             render_kw={'placeholder':'Edit active status...', 'class':'active-status-input', 'autocomplete':'off'})
         
         active_sbmt = SubmitField(id='active-status-sbmt-btn', render_kw={'value':'Submit', 'class':'active-status-sbmt-btn'})
         
         blacklist = StringField('Blacklist Status: ', id='edit-blacklist-input', validators=[DataRequired("Field may not be empty"), ValidateBool()],
-                                render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input'})
+                                render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input', 'autocomplete':'off'})
         
         blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status-sbmt-btn'})

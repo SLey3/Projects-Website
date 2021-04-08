@@ -22,7 +22,7 @@
                     <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
                     <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
                     <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
-                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.is_active }}</span>
+                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
                     <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
                     <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
                     <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
@@ -43,8 +43,12 @@
                         <tr>
                             <th>Role ID</th>
                             <th>Role Name</th>
-                            <th>Select <input id="role-head-selectAll" type="checkbox" class="select-check" />
+                            <th>
+                                <p id="role-select-all-txt" class="table-txt">Select</p> <input id="role-head-selectAll" type="checkbox" class="select-check" />
                                 <div id="delete-all-btn-container"></div>
+                                <div id="add-role-btn-container">
+                                    <div id="role-add-btn" onclick="addRoleExpand()"><i id="role-add-btn-icn" class="fa fa-plus-square-o" aria-hidden="true" aria-label="add-Role" title="add-Role"></i></div>{% if add_role_error %} {{ add_role_error | safe }} {% else %}
+                                    <p id="add-role-err-p" class="add-role-err err-txt"></p> {% endif %}</div>
                             </th>
                         </tr>
                     </thead>
@@ -53,7 +57,7 @@
                         <tr>
                             <td>{{ role.id }}</td>
                             <td>{{ role.name }}</td>
-                            <td><input name="role-check-inner" type="checkbox" class="select-check inner-check" /></td>
+                            <td><input id="{{ role.name }}-role-checkbox" name="role-check-inner" type="checkbox" class="select-check inner-check" /></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -634,18 +638,94 @@
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form method='POST'><input type='submit' onclick='confirm_deletion()' value='delete all' /></form>");
+                    $("#delete-all-btn-container").append("<form id='delete-all-form' method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
                 } else {
                     $("#delete-all-btn-container").empty()
                 }
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form method='POST' onsubmit='return confirm('Are you sure you want to delete ALL roles from {{ user.name }}')'><input type='submit' onclick='confirm_deletion()' value='delete all' /></form>");
+                    $("#delete-all-btn-container").append("<form method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
                 } else {
                     $("#delete-all-btn-container").empty();
                 }
             })
+        });
+    })();
+</script>
+<script type="text/javascript">
+    function addRoleCollapse() {
+        $(document).ready(function() {
+            $("#add-back-btn").click(function() {
+                console.log("I'm clicked!");
+                $("#role-head-selectAll").attr('type', 'checkbox');
+                $("#role-select-all-txt").empty();
+                $("#role-select-all-txt").append("Select");
+                $("#add-role-btn-container").empty();
+                $("#add-role-btn-container").append("<div id='role-add-btn' onclick='addRoleExpand()'><i id='role-add-btn-icn' class='fa fa-plus-square-o' aria-hidden='true' aria-label='add-Role' title='add-Role'></i></div>");
+            });
+        });
+    }
+
+    function addRoleExpand() {
+        $(document).ready(function() {
+            $("#role-add-btn").click(function() {
+                $("#role-head-selectAll").attr('type', 'hidden');
+                $("#role-select-all-txt").empty();
+                $("#role-select-all-txt").append("Add Role");
+                $("#add-role-btn-container").empty();
+                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ request.url }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
+            });
+        });
+    }
+</script>
+<script type="text/javascript">
+    (function() {
+        $(document).ready(function() {
+            $('input[name="role-check-inner"]').each(function() {
+                $(this).click(function() {
+                    if ($(this).prop('checked')) {
+                        if (this.id == "admin-role-checkbox") {
+                            $(this).remove();
+                        } else if (this.id == "member-role-checkbox") {
+                            $(this).after(function() {
+                                return "<form id='member-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="member-role-delete-btn") }}' + '</form>';
+                            });
+                            $("#member-role-delete-btn").attr("data-role-type", "member");
+                            '{% set value = "member" %}';
+                        } else if (this.id == "verified-role-checkbox") {
+                            $(this).after(function() {
+                                return "<form id='verified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="verified-role-delete-btn") }}' + '</form>';
+                            });
+                            $("#verified-role-delete-btn").attr("data-role-type", "verified");
+                            '{% set value = "verified" %}';
+                        } else if (this.id == "unverified-role-checkbox") {
+                            $(this).after(function() {
+                                return "<form id='unverified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="unverified-role-delete-btn") }}' + '</form>';
+                            });
+                            $("#unverified-role-delete-btn").attr("data-role-type", "unverified");
+                            '{% set value = "unverified" %}';
+                        } else if (this.id == "editor-role-checkbox") {
+                            $(this).after(function() {
+                                return "<form id='editor-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="editor-role-delete-btn") }}' + '</form>';
+                            });
+                            $("#editor-role-delete-btn").attr("data-role-type", "editor");
+                            '{% set value = "editor" %}';
+                        }
+                        '{% do role_form.delete_role.render_kw.update({"data-role-type": value }) %}';
+                    } else {
+                        if (this.id == "member-role-checkbox") {
+                            $(this).nextAll().remove();
+                        } else if (this.id == "verified-role-checkbox") {
+                            $(this).nextAll().remove();
+                        } else if (this.id == "unverified-role-checkbox") {
+                            $(this).nextAll().remove();
+                        } else if (this.id == "editor-role-checkbox") {
+                            $(this).nextAll().remove();
+                        }
+                    }
+                });
+            });
         });
     })();
 </script>

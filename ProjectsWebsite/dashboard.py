@@ -5,8 +5,7 @@ from flask import (
     render_template,
     abort
 )
-from flask_security import roles_required, roles_accepted
-from flask_login import login_required
+from ProjectsWebsite.util import (roles_accepted, roles_required, token_auth_required)
 
 # ------------------ Blueprint Config ------------------
 dash = Blueprint('dashboard', __name__, static_folder='static', template_folder="templates/private", url_prefix='/dashboard')
@@ -15,8 +14,7 @@ dash = Blueprint('dashboard', __name__, static_folder='static', template_folder=
 
 @dash.route('/')
 @roles_accepted('member', 'admin')
-@roles_required('verified')
-@login_required
+@token_auth_required
 def dashboard():
     """
     redirects to dashboard home
@@ -26,19 +24,17 @@ def dashboard():
 @dash.route('/home')
 @dash.route('/home/')
 @roles_accepted('member', 'admin')
-@roles_required('verified')
-@login_required
+@token_auth_required
 def dashboardHome():
     """
     Dashboard of the website
     """
-    return abort(404)
+    return "<h1 id='development-warning'>Pase is under development</h1>"
 
 @dash.route('/create_article')
 @dash.route('/create_article/')
 @dash.route('/home/create_article/')
 @roles_accepted('admin', 'editor')
-@roles_required('verified')
-@login_required
+@token_auth_required
 def create_article_redirect():
     return redirect(url_for("articleCreation"))

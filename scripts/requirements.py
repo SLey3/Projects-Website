@@ -70,7 +70,7 @@ def install():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')   
     print("Installing modules...")
-    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--user', '--no-warn-script-location'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)   
+    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)   
     print("Successfully installed modules")
     
 

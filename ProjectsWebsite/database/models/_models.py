@@ -1,10 +1,9 @@
 # ------------------ Imports ------------------
 from flask import jsonify, session
-from flask_security import RoleMixin, SQLAlchemyUserDatastore
+from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
-from six import string_types
 from ProjectsWebsite.modules import db
-from ProjectsWebsite.util import AnonymousUserMixin
+from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin
 
 # ------------------ SQL classes  ------------------
 class Role(db.Model, RoleMixin):
@@ -21,89 +20,23 @@ class User(db.Model, SQLAlchemyUserMixin):
     User Model
     """
     __tablename__ = 'user'
-    role_model = Role()
     
     id = db.Column("id", db.Integer, primary_key=True)
     name = db.Column("name", db.String(100))
     username = db.Column("username", db.String(100), unique=True)
     hashed_password = db.Column("hashed_password", db.String(255))
-    is_active = db.Column("is_active", db.Boolean())
+    active = db.Column("active", db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     created_at = db.Column("date", db.String(30))
     blacklisted = db.Column(db.Boolean())
     roles = db.relationship('Role', primaryjoin="and_(User.id==Role.user_id)",
                             backref=db.backref('users'))
     
-    def _put(self, model):
-        db.session.add(model)
-        return model
-    
-    def _prepare_user_and_role_args(self, user, role):
-        if isinstance(user, string_types):
-            user = self.lookup(user)
-        if isinstance(role, string_types):
-            role = self.find_role(self, role)
-        return user, role
-    
-    def _prepare_user_account(self, **kwargs):
-        kwargs.setdefault('is_active', True)
-        roles = kwargs.get('roles', [])
-        for i, role in enumerate(roles):
-            rn = role.name if isinstance(role, type(self.role_model)) else role
-            roles[i] = self.find_role(self, rn)
-        kwargs['roles'] = roles
-        return kwargs
-    
-    @classmethod    
-    def create_user(cls, **kwargs):
-        """
-        creates new user in the users sql database
-        """
-        kwargs = cls._prepare_user_account(cls, **kwargs)
-        user = cls(**kwargs)
-        return cls._put(cls, user)
-    
-    def add_role(self, user, role):
-        """
-        Adds role to specified user
-        """
-        added = False
-        user, role = self._prepare_user_and_role_args(self, user, role)
-        if role not in user.roles:
-            added = True
-            user.roles.append(role)
-        self._put(self, user)
-        return added
-    
-    def remove_role(self, user, role):
-        """
-        Remove role from specified user
-        """
-        removed = False
-        user, role = self._prepare_user_and_role_args(self, user, role)
-        if role in user.roles:
-            removed = True
-            user.roles.remove(role)
-        self._put(self, user)
-        return removed
-    
-    def find_role(self, role):
-        """
-        finds role specified
-        """
-        return self.role_model.query.filter_by(name=role).first()
-    
     def has_role(self, role):
         """
         Checks if role is in the users role
         """
         return role in self.roles
-    
-    def delete_user(self, user):
-        """
-        Deletes Specified User
-        """
-        db.session.delete(user)
        
     @classmethod
     def lookup_by_name(cls, name):
@@ -112,6 +45,33 @@ class User(db.Model, SQLAlchemyUserMixin):
         """
         return cls.query.filter_by(name=name).one_or_none()
     
+    @classmethod
+    def activate(cls, email):
+        """
+        Activates user
+        """
+        user = cls.lookup(email)
+        if user.active:
+            return False
+        else:
+            user.active = True
+            db.session.add(user)
+            db.session.commit()
+            return True
+        
+    @classmethod
+    def deactivate(cls, email):
+        """
+        deactivates user
+        """
+        user = cls.lookup(email)
+        if user.active:
+            user.active = False
+            db.session.add(user)
+            db.session.commit()
+            return True
+        return False
+            
     def get_id(self):
         """
         for Flask-Login
@@ -129,7 +89,7 @@ class User(db.Model, SQLAlchemyUserMixin):
         returns if user is authenticated
         """
         return True
-        
+
     def __repr__(self):
         return self.name
     
@@ -165,7 +125,6 @@ class Blacklist(db.Model):
     blacklisted_person = db.Column("person", db.String(100), unique=True, nullable=False)
     date_blacklisted = db.Column("date", db.String(30))
     
-    
 
-# ------------------ datastore  ------------------
+# ------------------ user_datastore  ------------------
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

@@ -20,10 +20,20 @@ date_re = re.compile(r'''[^a-zA-Z] # No word characters allowed
 
 bool_re = re.compile(r'True|False')
 
-class InvalidType(ValueError):
+class InvalidType(Exception):
     """
     Raised when theres an Invalid type
     """
-    def __init__(self, *args):
-        self.args = args
-        super().__init__(*self.args)
+    def __init__(self, msg):
+        super().__init__(msg)
+        
+class OperationError(Exception):
+    """
+    Raised when a backend Operation goes wrong
+    """
+    def __init__(self, msg, exc_type):
+        self.msg = msg
+        self.exc_type = exc_type
+        super().__init__(msg)
+    def __str__(self):
+        return "{exc} --> {msg}".format(exc=self.exc_type, msg=self.msg)

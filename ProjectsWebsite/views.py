@@ -9,13 +9,10 @@ try:
 except ModuleNotFoundError:
     from sqlalchemy.orm.session import Session as SQLSession
 from flask_mail import Message
-from flask_security import (
-    roles_accepted, roles_required, 
-    login_required
-)
 from ProjectsWebsite.util import (
     is_valid_article_page, formatPhoneNumber, DateUtil,
-    current_user, login_user, logout_user, token_auth_required
+    current_user, login_user, logout_user, token_auth_required, 
+    roles_required, roles_accepted
 )
 from ProjectsWebsite.util.helpers import EMAILS, date_re
 from ProjectsWebsite.util.utilmodule import alert
@@ -37,6 +34,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from sqlalchemy.exc import OperationalError
 from passlib.hash import sha512_crypt
 from datetime import datetime
+from traceback import format_exc
 import base64
 import os
 
@@ -63,9 +61,7 @@ def load_user(user_id):
     return User.identify(int(user_id))
 
 # ------------------ web pages ------------------
-
-@main_app.route('/login', methods=["GET", "POST"])
-@main_app.route('/login/', methods=["GET", "POST"])
+@main_app.route('/login/', methods=['GET', 'POST'])
 def loginPage():
     """
     main front page
@@ -87,12 +83,12 @@ def loginPage():
             return redirect(url_for('.homePage'))
         return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
-@main_app.route('/register', methods=['GET', 'POST'])
 @main_app.route('/register/', methods=['GET', 'POST'])
 def registerPage():
     """
     Registration Page
     """
+    global email
     form = registerForm()
     if request.method == 'POST':
         with sql_sess.no_autoflush:
@@ -101,7 +97,7 @@ def registerPage():
             user_datastore.find_or_create_role('unverified')
             user_datastore.find_or_create_role('verified')
         current_date = datetime.now()
-        new_user = User.create_user(
+        new_user = user_datastore.create_user(
             name=form.name.data.capitalize(),
             username=form.email.data.lower(),
             hashed_password=guard.hash_password(form.password.data),
@@ -109,9 +105,8 @@ def registerPage():
             blacklisted=False,
             roles=['admin', 'member', 'unverified']
         )
-        db.session.add(new_user)
-        db.session.commit()
-        EMAILS.append(form.email.data)
+        user_datastore.commit()
+        email = yield email
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
@@ -124,29 +119,42 @@ def registerPage():
     else:
         return render_template("public/registerpage.html", form=form)
     
-@main_app.route('/confirm_recieved/<token>')  
 @main_app.route('/confirm_recieved/<token>/')  
 def confirmation_recieved(token):
     """
     Confirmation and account creation page
     :param token: Email token
     """
+    global email
+    email = "".join(email)
     try:
         urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-        email = EMAILS.pop(0)
-        User.remove_role(User, User.lookup(email), 'unverified')
-        User.add_role(User, User.lookup(email), "verified")
-        db.session.commit()
+        user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
+        user_datastore.add_role_to_user(User.lookup(email), "verified")
+        user_datastore.commit()
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:
-        email_string = EMAILS.pop(0)
-        expired_user = User.lookup(email_string)
-        db.session.commit()
-        alert.setAlert('error', 0)
+        notice_user = User.lookup(email)
+        notice_msg = Message('Account Validation Warning', recipients=[notice_user.email])
+        notice_msg.html = f'''
+        Dear {notice_user.name},
+        We regret to inform you that your account may expire at around 0 to 1 hour due to confirmation token have expired
+        Contact support if you want to make sure that your account won't automatically be deleted at: {url_for('.contact_us')} (<i>Notice:</i>
+        <b>Support may be offline at any given time and may not reply fast enough. If this is the case and the 0 to 1 hour period is up then create an account again</b>).
+        
+        From,
+        
+        MyProjects Support Automated Service
+        
+        <hr>
+        <i>If you have any questions, feel free to contact us at: <a href="{url_for(".contact_us")}">Contact Us</a></i>
+        '''
+        mail.send(notice_msg)
+        
+        
         return redirect(url_for(".homePage"))
     
-@main_app.route('/login/forgotpwd', methods=['GET', 'POST'])
 @main_app.route('/login/forgotpwd/', methods=['GET', 'POST'])
 def initialForgotPage():
     """
@@ -158,16 +166,11 @@ def initialForgotPage():
         user = User.lookup(form.email.data)
         if isinstance(user, type(None)):
             if recipient_email != '' and form.submit.data == True:
-                form.back_button.raw_data.insert(0, '.')
-            if recipient_email == '':
-                return redirect(url_for('.loginPage'))
-            elif form.back_button.raw_data.pop(0) == '':
-                return redirect(url_for('.loginPage'))
-            else:
                 alert.setAlert('warning', f"No Account found under {recipient_email}.")
                 return redirect(url_for(".loginPage"))
-        
-        if not form.submit.data:
+            elif recipient_email == '' and form.back_button.data:
+                return redirect(url_for('.loginPage'))
+        if not form.submit.data and form.back_button.data:
             return redirect(url_for('loginPage')) 
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
@@ -183,7 +186,6 @@ def initialForgotPage():
     else:
         return render_template("public/forgot.html", field=form)
     
-@main_app.route('/login/forgotpwd/<token>/<email>', methods=['GET', 'POST'])
 @main_app.route('/login/forgotpwd/<token>/<email>/', methods=['GET', 'POST']) 
 def resetRequestRecieved(token, email):
     """
@@ -197,7 +199,7 @@ def resetRequestRecieved(token, email):
             email = str(email).replace("%40", '@')
             replacementPassword = guard.hash_password(form.confirm_new_password.data)
             user = User.lookup(email)
-            if not sha512_crypt.verify(form.confirm_new_password.data, user.password):
+            if not guard.authenticate(user, form.confirm_new_password.data):
                 user.password = replacementPassword
                 db.session.commit()
                 alert.setAlert('success', 'Password has been Successfully reset.')
@@ -210,9 +212,9 @@ def resetRequestRecieved(token, email):
     except SignatureExpired:
         alert.setAlert('error', 1)
         return redirect(url_for(".loginPage"))
-    
-@main_app.route('/signout')
+
 @main_app.route('/signout/')
+@token_auth_required
 def signOut():
     """
     Signs out of the site
@@ -222,7 +224,6 @@ def signOut():
     return redirect(url_for(".homePage"))
     
 @main_app.route('/')
-@main_app.route('/')
 def homePage():
     """
     website homepage
@@ -230,7 +231,6 @@ def homePage():
     alert_dict = alert.getAlert()
     return render_template("public/homepage.html", alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
-@main_app.route('/home')
 @main_app.route('/home/')
 def redirectToHomePage():
     """
@@ -238,13 +238,10 @@ def redirectToHomePage():
     """
     return redirect(url_for('.homePage'))
     
-@main_app.route('/about')
 @main_app.route('/about/')
 def aboutPage():
     return render_template('public/aboutpage.html')
 
-
-@main_app.route('/articles/create_article', methods=['GET', 'POST'])
 @main_app.route('/articles/create_article/', methods=['GET', 'POST'])
 @roles_accepted("admin", "editor")
 @token_auth_required
@@ -280,26 +277,25 @@ def articleCreation():
     else:
         return render_template("public/articles/articleform.html", form=form)
     
-@main_app.route('/articles', methods=['GET', 'POST'])
 @main_app.route('/articles/', methods=['GET', 'POST'])
 def article_home():
     try:
         articles = Article.query.all()
-    except OperationalError:
-        abort(400)
+    except Exception:
+        exc = format_exc()
+        print(exc)
     return render_template("public/articles/articlepage.html", articles=articles)
 
-@main_app.route('/articles/<string:id>')
 @main_app.route('/articles/<string:id>/')
 @is_valid_article_page
 def articlePage(id):
     try:
         article = Article.query.filter_by(id=id).first()
-    except OperationalError:
-        abort(404)
+    except Exception:
+        exc = format_exc()
+        print(exc)
     return render_template('articles/articleviewpage.html', article=article)
 
-@main_app.route('/contact', methods=['GET', 'POST'])
 @main_app.route('/contact/', methods=['GET', 'POST'])
 def contact_us():
     form = contactForm()
@@ -326,7 +322,6 @@ def contact_us():
     else:
         return render_template('public/contactpage.html', form=form)
 
-@main_app.route('/home/admin')
 @main_app.route('/home/admin/')   
 @roles_required('admin', 'verified')
 def adminPage():

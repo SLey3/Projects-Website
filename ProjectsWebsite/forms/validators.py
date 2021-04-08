@@ -52,3 +52,18 @@ def ValidateBool(python_bool: bool = True):
                 raise ValidationError("Input is not a bool.")
     
     return _validatebool
+
+
+def ValidateRole():
+    """
+    validates role
+    """
+    def _validaterole(form, field):
+        if len(field.data) >= 7:
+            raise ValidationError("Length of Role may not be 7+ characters long")
+        from ProjectsWebsite.database.models import Role
+        if Role.is_role(field.data):
+            pass
+        else:
+            raise ValidationError(f"{field.data} is not a valid role.")
+    return _validaterole        

@@ -11,7 +11,7 @@
         <div class="form-sbmt">
             {{ render_field( field.submit )}}
             <div class="bckbtn">
-                {{ render_field( field.back_button )}}
+                {{ field.back_button(onclick="NoValidateInput()") }}
             </div>
         </div>
     </form>
