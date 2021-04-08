@@ -62,6 +62,7 @@ context.load_cert_chain('cert/server.cert', 'cert/server.key')
 
 # ------------------ App Setup ------------------
 app = Flask(__name__, template_folder="templates", static_folder='static')
+app.config["FLASK_SKIP_DOTENV"] = 1
 app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
 app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
@@ -104,6 +105,7 @@ if not PRODUCTION:
     
 def create_app(env_dir=None):
     app = Flask(__name__, template_folder="templates", static_folder='static')
+    app.config["FLASK_SKIP_DOTENV"] = 1
     app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
     app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
@@ -148,7 +150,7 @@ def create_app(env_dir=None):
     ch.setLevel(logging.DEBUG)
     requests_logger.addHandler(ch)
     reqlogConnection.debuglevel = 1
-    return app, db
+    return app
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)
@@ -197,14 +199,14 @@ class appExitHandler(object):
     def __enter__(self):
         return self
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if exc_type is KeyboardInterrupt:
-            self.threadTest-NetConnection_event.set()
-            return True
-        return exc_type is None
-        
-schedule.every(1).hour.do(checkExpireRegistrationCodes)
+        rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
+        self.thread_event.set()
+        rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
+        return True
+    
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':
+    schedule.every(1).hour.do(checkExpireRegistrationCodes)
     rprint("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]") 
     db.create_all(app=app)
     rprint("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")

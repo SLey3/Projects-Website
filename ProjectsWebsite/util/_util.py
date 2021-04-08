@@ -31,16 +31,16 @@ def checkExpireRegistrationCodes():
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
     from ProjectsWebsite.views import urlSerializer
     from ProjectsWebsite.database.models import user_datastore, User
-    with open(f"{current_app.static_folder}/unverified/unverified-log.txt", 'r', encoding="utf-8") as f:
+    with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r', encoding="utf-8") as f:
         lines = f.readlines()
         f.close()
         if lines == []:
             return None
     for line in lines:
         user = line[line.find("(")+1:line.rfind(")")]
-        parenthesis_length = len(user) + 2
+        parenthesis_length = len(user) + 3
         token = line[parenthesis_length:]
-        with open(f"{current_app.static_folder}/unverified/unverified-log.txt", 'w', encoding="utf-8") as f:
+        with open(f"{current_app.static_folder}\\unverified\\unverified-log.txt", 'w', encoding="utf-8") as f:
             try:
                 urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
             except SignatureExpired:
@@ -86,11 +86,13 @@ def runSchedulerInspect():
             """
             runs thread if cease_operation.is_set() returns false
             """
+            rprint("[black][Schedule][/black][bold green]Starting operation[/bold green]")
             while not cease_operation.is_set():
                 schedule.run_pending()
                 sleep(1)
     thread = tokenCheckThread()
-    rprint("[black][Schedule Thread][/black][bold green]Starting Schedule Thread...[/bold green]")
+    thread.daemon = True
+    rprint("[black][Schedule][/black][red]Starting Schedule Thread...[/red]")
     thread.start()
     return cease_operation
 
@@ -318,12 +320,11 @@ def roles_accepted(*roles):
     def _wrapper(f):
         @wraps(f)
         def decorator(*args, **kwargs):
-            perms = [Permission(RoleNeed(role)) for role in roles]
-            for perm in perms:
-                if not perm.can():
-                    if not current_user.is_authenticated:
-                        return abort(401)
-                    return abort(403)
+            perm = Permission(*[RoleNeed(role) for role in roles])
+            if not current_user.is_authenticated:
+                return abort(401)
+            if perm.can():
+                return f(*args, **kwargs)
             return f(*args, **kwargs)
         return decorator
     return _wrapper

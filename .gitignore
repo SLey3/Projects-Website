@@ -39,3 +39,6 @@ ProjectEnv/
 *.crt
 *.key
 cert/
+
+# unverified log dir
+unverified/

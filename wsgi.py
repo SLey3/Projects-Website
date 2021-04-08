@@ -1,13 +1,15 @@
 # ------------------ Imports ------------------
-from ProjectsWebsite import create_app
-from ProjectsWebsite.util import initializeSchedulerInspect, checkExpireRegistrationCodes
+from ProjectsWebsite import create_app, appExitHandler
+from ProjectsWebsite.util import runSchedulerInspect, checkExpireRegistrationCodes
+from ProjectsWebsite.util.utilmodule import alert
+from ProjectsWebsite.modules import db
 from flask import render_template, redirect, url_for, send_from_directory
 from rich import print as rprint
 import os
 import schedule
 
 # ------------------ Wsgi App ------------------
-app, db = create_app("../.env")
+app = create_app("../.env")
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)
@@ -51,15 +53,11 @@ def favicon():
 
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':
+    schedule.every(1).hour.do(checkExpireRegistrationCodes)
     rprint("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]") 
     db.create_all(app=app)
     rprint("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     rprint("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
-    try:
-        cease_schedule_operation = initializeSchedulerInspect()
+    cease_schedule_operation = runSchedulerInspect()
+    with appExitHandler(cease_schedule_operation):
         app.run()
-    except KeyboardInterrupt:
-        rprint("[black][Schedule Thread][/black][bold red]Stopping Scheduler operations...[/bold red]")
-        cease_schedule_operation.set()
-        rprint("[black][Schedule Thread][/black][bold green]Stopping Scheduler operations successfully stopped[/bold green]")
-        raise 

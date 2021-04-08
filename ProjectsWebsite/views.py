@@ -2,7 +2,7 @@
 from flask import (
     Blueprint, render_template,
     redirect, request,
-    url_for, abort, jsonify
+    url_for, abort, current_app
 )
 try:
     from flask_sqlalchemy.orm.session import Session as SQLSession
@@ -103,10 +103,12 @@ def registerPage():
             hashed_password=guard.hash_password(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             blacklisted=False,
-            roles=['admin', 'member', 'unverified']
+            roles=['member', 'unverified']
         )
         user_datastore.commit()
-        email = yield email
+        def yield_email(email):
+            yield email
+        email = yield_email(form.email.data.lower())
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
@@ -115,6 +117,17 @@ def registerPage():
         Link: {confirm_link}'''
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r+', encoding="utf-8") as f:
+            line = f"({form.email.data.lower()}) {token}"
+            lines = f.readlines()
+            if lines == []:
+                f.write(line)
+                f.close()
+            else:
+                lines.append(line)
+                for line in lines:
+                    f.write(line)
+                    f.close()     
         return redirect(url_for(".homePage"))
     else:
         return render_template("public/registerpage.html", form=form)
@@ -132,6 +145,15 @@ def confirmation_recieved(token):
         user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
         user_datastore.add_role_to_user(User.lookup(email), "verified")
         user_datastore.commit()
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r+', encoding="utf-8") as f:
+            lines = f.readlines()
+            for line in lines:
+                potential_email = line[line.find("(")+1:line.rfind(")")]
+                if potential_email == email:
+                    lines.remove(line)
+                    for line in lines:
+                        f.write(lines)
+                        f.close()
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:
@@ -141,7 +163,7 @@ def confirmation_recieved(token):
         Dear {notice_user.name},
         We regret to inform you that your account may expire at around 0 to 1 hour due to confirmation token have expired
         Contact support if you want to make sure that your account won't automatically be deleted at: {url_for('.contact_us')} (<i>Notice:</i>
-        <b>Support may be offline at any given time and may not reply fast enough. If this is the case and the 0 to 1 hour period is up then create an account again</b>).
+        <b>Support may be offline at any given time and may not reply fast enough. If this is the case and the 0 to 1 hour period is up then create an account again at:</b><a href="{url_for(".registerPage")}">Register</a>").
         
         From,
         
