@@ -29,7 +29,7 @@ def dashboardHome():
     """
     Dashboard of the website
     """
-    return "<h1 id='development-warning'>Pase is under development</h1>"
+    return "<h1 id='development-warning'>Page is under development</h1>"
 
 @dash.route('/create_article')
 @dash.route('/create_article/')

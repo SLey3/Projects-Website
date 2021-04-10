@@ -31,44 +31,44 @@ def checkExpireRegistrationCodes():
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
     from ProjectsWebsite.views import urlSerializer
     from ProjectsWebsite.database.models import user_datastore, User
-    with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r', encoding="utf-8") as f:
+    with open(f"{current_app.static_folder}\\unverified\\unverified-log.txt", 'r+', encoding="utf-8") as f:
         lines = f.readlines()
         f.close()
         if lines == []:
             return None
-    for line in lines:
-        user = line[line.find("(")+1:line.rfind(")")]
-        parenthesis_length = len(user) + 3
-        token = line[parenthesis_length:]
-        with open(f"{current_app.static_folder}\\unverified\\unverified-log.txt", 'w', encoding="utf-8") as f:
-            try:
-                urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-            except SignatureExpired:
-                lines.remove(line)
-                expired_user = User.lookup(user)
-                expired_msg = Message("Account Deleted", recipients=[user])
-                expired_msg.html = f'''
-                Dear {expired_user.name},
-                Your current account in MyProjects has not been verified and your verification link has expired. 
-                You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.
-                
-                From,
-                
-                MyProjects Support Automated Service
-                
-                <hr>
-                <i>If you have any questions, feel free to contact us at: <a href="{url_for("main_app.contact_us")}">Contact Us</a></i>
-                '''
-                mail.send(expired_msg)
-                user_datastore.delete_user(user)
-                user_datastore.commit()
-                f.writelines(lines)
-                f.close()
-            except Exception as e:
-                raise OperationError("urlSerializer args or kwargs caused the current operation to fail.", "itsdangerous.URLSafeTimedSerializer") from e
-            else:
-                f.writelines(lines)
-                f.close()
+        for line in lines:
+            user = line[line.find("(")+1:line.rfind(")")]
+            parenthesis_length = len(user) + 3
+            token = line[parenthesis_length:]
+        try:
+            urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
+        except SignatureExpired:
+            lines.remove(line)
+            expired_user = User.lookup(user)
+            expired_msg = Message("Account Deleted", recipients=[user])
+            expired_msg.html = f'''
+            Dear {expired_user.name},
+            Your current account in MyProjects has not been verified and your verification link has expired. 
+            You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.
+            
+            From,
+            
+            MyProjects Support Automated Service
+            
+            <hr>
+            <i>If you have any questions, feel free to contact us at: <a href="{url_for("main_app.contact_us")}">Contact Us</a></i>
+            '''
+            mail.send(expired_msg)
+            user_datastore.delete_user(user)
+            user_datastore.commit()
+            f.writelines(lines)
+            f.close()
+        except Exception as e:
+            raise OperationError("urlSerializer args or kwargs caused the current operation to fail.", "itsdangerous.URLSafeTimedSerializer") from e
+        else:
+            for line in lines:
+                f.writelines(line)
+            f.close()
                 
 
 def runSchedulerInspect():
@@ -95,6 +95,63 @@ def runSchedulerInspect():
     rprint("[black][Schedule][/black][red]Starting Schedule Thread...[/red]")
     thread.start()
     return cease_operation
+
+
+
+class unverfiedLogUtil:
+    """
+    Utilities for managing the unverified token log file.
+    
+    The encoding kwarg for `open()` has been provided by default for each function.
+    """
+    def __init__(self):
+        self.encoding = "utf-8"
+    
+    def addContent(self, *line_content, **openKwargs):
+        """
+        adds an unverfied member email and token in the unverfied log
+        
+        Format:
+            (email) token
+        """
+        openKwargs.setdefault("encoding", self.encoding)
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+            line = f"({line_content[0]}) {line_content[1]}"
+            lines = f.readlines()
+            if lines == []:
+                f.write(line)
+                f.close()
+            else:
+                lines.append(line)
+                f.writelines(lines)
+                f.close()
+        
+    def removeContent(self, content_identifier: str, **openKwargs):
+        """
+        removes line matching :param content_identifier: from the log
+        
+        :param content_identifier: : email string
+        """
+        openKwargs.setdefault("encoding", self.encoding)
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+            lines = f.readlines()
+            self.content = lines
+            for line in lines:
+                potential_email = line[line.find("(")+1:line.rfind(")")]
+                if potential_email == content_identifier:
+                    lines.remove(line)
+                    f.writelines(lines)
+                    f.close()
+           
+    def __eq__(self, other):
+        if hasattr(self, "content"):
+            if isinstance(self.content, list):
+                for c in self.content:
+                    if c == content:
+                        return True
+                return False
+            return False
+        raise NotImplementedError("__eq__ not implemented at the moment")
 
 class AlertUtil(object):
     """
@@ -325,7 +382,7 @@ def roles_accepted(*roles):
                 return abort(401)
             if perm.can():
                 return f(*args, **kwargs)
-            return f(*args, **kwargs)
+            return abort(403)
         return decorator
     return _wrapper
 

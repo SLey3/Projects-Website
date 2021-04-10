@@ -12,7 +12,7 @@ from flask_mail import Message
 from ProjectsWebsite.util import (
     is_valid_article_page, formatPhoneNumber, DateUtil,
     current_user, login_user, logout_user, token_auth_required, 
-    roles_required, roles_accepted
+    roles_required, roles_accepted, unverfiedLogUtil
 )
 from ProjectsWebsite.util.helpers import EMAILS, date_re
 from ProjectsWebsite.util.utilmodule import alert
@@ -51,6 +51,10 @@ from ProjectsWebsite import app
 
 # ------------------ Serializer config ------------------
 urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
+# ------------------ unverLog init ------------------
+unverlog = unverfiedLogUtil()
+
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -112,22 +116,23 @@ def registerPage():
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
-        verify_msg.body = f'''Thank you for registering, {form.name.data}! In order to complete the registration you must click on the link below.
-        Link will expire in 30 minutes after this email has been sent.
-        Link: {confirm_link}'''
+        verify_msg.html = f'''Dear {form.name.data}, <br>
+        
+        Thank you for registering! In order to complete the registration you must click on the link below.
+        Link will expire in <b>30</b> minutes after this email has been sent.
+        Link: <a href="{confirm_link}">Confirm Account</a>
+        <br>
+        <br>
+        From,
+        <br>
+        MyProjects Support Automated Service
+        
+        <hr>
+        <i>If you have any questions, feel free to contact us at: <a href="{request.url_root}">Contact Us</a></i>
+        '''
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r+', encoding="utf-8") as f:
-            line = f"({form.email.data.lower()}) {token}"
-            lines = f.readlines()
-            if lines == []:
-                f.write(line)
-                f.close()
-            else:
-                lines.append(line)
-                for line in lines:
-                    f.write(line)
-                    f.close()     
+        unverlog.addContent(form.email.data.lower(), token, mode="r+")  
         return redirect(url_for(".homePage"))
     else:
         return render_template("public/registerpage.html", form=form)
@@ -145,15 +150,7 @@ def confirmation_recieved(token):
         user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
         user_datastore.add_role_to_user(User.lookup(email), "verified")
         user_datastore.commit()
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", 'r+', encoding="utf-8") as f:
-            lines = f.readlines()
-            for line in lines:
-                potential_email = line[line.find("(")+1:line.rfind(")")]
-                if potential_email == email:
-                    lines.remove(line)
-                    for line in lines:
-                        f.write(lines)
-                        f.close()
+        unverlog.removeContent(email, 'r+')
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:

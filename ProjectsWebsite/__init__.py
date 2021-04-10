@@ -31,6 +31,7 @@ import ssl
 import os
 import logging
 import schedule
+import signal
 
 # ------------------ Check Directories ------------------
 if os.path.basename(os.getcwd()) == "Projects_Website":
@@ -191,18 +192,23 @@ def favicon():
     web logo
     """
     return send_from_directory(os.path.join(app.root_path, 'static', 'assets', 'favicon'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
+    
 # ------------------ Exit handler ------------------
 class appExitHandler(object):
-    def __init__(self, sched_operation_cease_event):
-        self.thread_event = sched_operation_cease_event
     def __enter__(self):
+        schedule.every(1).hour.do(checkExpireRegistrationCodes)
+        self.thread_event = runSchedulerInspect()
+        def _signal_handler(signal, frame):
+            from sys import exit
+            rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
+            self.thread_event.set()
+            rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
+            return exit(0)
+        signal.signal(signal.SIGINT, _signal_handler)
         return self
+
     def __exit__(self, exc_type, exc_value, exc_tb):
-        rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
-        self.thread_event.set()
-        rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
-        return True
+        return exc_type is None
     
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':
@@ -211,6 +217,5 @@ if __name__ == '__main__':
     db.create_all(app=app)
     rprint("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     rprint("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
-    cease_schedule_operation = runSchedulerInspect()
-    with appExitHandler(cease_schedule_operation):
+    with appExitHandler():
         app.run()

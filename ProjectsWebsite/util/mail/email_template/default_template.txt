@@ -1,0 +1,12 @@
+Dear {name}, <br>
+
+{body}
+
+<br>
+<br>
+From,
+<br>
+{sender}
+
+<hr>
+<i>If you have any questions, feel free to contact us at: <a href="{contacturl}">Contact Us</a></i>
