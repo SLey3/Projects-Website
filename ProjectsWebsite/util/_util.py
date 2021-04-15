@@ -3,7 +3,7 @@ from flask import abort, g, session, current_app, request, url_for
 from flask_security import RoleMixin as _role_mixin
 from flask_principal import Permission, RoleNeed
 from flask_mail import Message
-from functools import wraps
+from functools import wraps, partialmethod
 from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
 from typing import (
     Dict, List, Tuple, Any, Optional
@@ -13,8 +13,6 @@ try:
     from werkzeug import LocalProxy
 except ImportError:
     from werkzeug.local import LocalProxy
-from dataclasses import dataclass
-from datetime import datetime
 from bs4 import BeautifulSoup, NavigableString
 from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
@@ -96,8 +94,6 @@ def runSchedulerInspect():
     thread.start()
     return cease_operation
 
-
-
 class unverfiedLogUtil:
     """
     Utilities for managing the unverified token log file.
@@ -142,7 +138,7 @@ class unverfiedLogUtil:
                     lines.remove(line)
                     f.writelines(lines)
                     f.close()
-           
+       
     def __eq__(self, other):
         if hasattr(self, "content"):
             if isinstance(self.content, list):
@@ -278,14 +274,44 @@ def formatPhoneNumber(phone_number: str) -> str:
     formatted_phone_number = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", f"{int(clean_phone_number[:-1])}") + clean_phone_number[-1]
     return formatted_phone_number
 
-
-
-@dataclass(eq=False)
 class DateUtil:
     """
     DateUtil for Correcting and Validating Date
     """
-    date: Any
+    def __init__(self, date):
+        self.date = date
+    
+    def _subDate(self, re_sub_pattern: Pattern, reversed_sub: bool, datetime_date: bool):
+        """
+        Corrects Date to correct format
+        """
+        if datetime_date:
+            if reversed_sub:
+                new_day = "{year}-{month}-{day}".format(year=self.date.year, month=self.date.month, day=self.date.day)
+                self.date = new_day
+                return new_day
+            new_day = "{month}/{day}/{year}".format(month=self.date.month, day=self.date.day, year=self.date.year)
+            self.date = new_day
+            return new_day
+        else:
+            if self.validateDate(re_sub_pattern):
+                return self.date
+            else:
+                if reversed_sub:
+                    new_date = re.sub(r"(\d{1,2})/(\d{1,2}/(\d{2,4})", r"\3-\1-\2", self.date)
+                    self.date = new_date
+                    return new_date
+                new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+                self.date = new_date
+                return new_date 
+            
+    subDate = partialmethod(_subDate, reversed_sub=False, datetime_date=False) 
+    
+    reversedSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=False)
+    
+    datetimeSubDate = partialmethod(_subDate, reversed_sub=False, datetime_date=True)
+    
+    reversedDatetimeSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=True)
         
     def validateDate(self, re_pattern: Pattern):
         """
@@ -297,26 +323,7 @@ class DateUtil:
             return False
         else:
             return True
-         
-    def subDate(self, re_sub_pattern: Pattern, reversed_sub: bool = False):
-        """
-        Corrects Date to correct format
-        """
-        if isinstance(self.date, datetime):
-            self.date = "{month}/{day}/{year}".format(month=self.date.month, day=self.date.day, year=self.date.year)
-            return self.date
-        else:
-            if self.validateDate(re_sub_pattern):
-                return self.date
-            else:
-                if reversed_sub:
-                    new_date = re.sub(r"(\d{1,2})/(\d({1,2})/(\d{2,4})", r"\3-\1-\2", self.date)
-                    self.date = new_date
-                    return new_date
-                new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
-                self.date = new_date
-                return new_date   
-                       
+                              
 def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: Optional[bool] = False) -> str:
     """
     Scrapes input error from argument: url

@@ -278,7 +278,7 @@ def articleCreation():
                 img = str(base64.b64encode(image.read()), 'utf-8')
         current_date = datetime.now()
         date_util = DateUtil(current_date)
-        creation_date = date_util.subDate(date_re)
+        creation_date = date_util.datetimeSubDate(date_re)
         del current_date
         body = request.form["editordata"]         
         new_article = Article(
