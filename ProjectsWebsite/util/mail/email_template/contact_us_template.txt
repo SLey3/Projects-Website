@@ -1,0 +1,15 @@
+<b>Contact</b>:
+<br>
+Name: {name}
+<br>
+Inquiry Selection: <b>{inquiry_selection}</b>
+<br>
+Email: <i>{email}</i>
+<br>
+Telephone Number: <i>{tel}</i>
+<br>
+<hr>
+<br>
+<u><b>Message:</b></u>
+<br>
+{msg}

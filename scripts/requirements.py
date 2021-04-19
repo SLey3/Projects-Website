@@ -1,13 +1,45 @@
-# Imports 
+# Imports
+from subprocess import PIPE, TimeoutExpired
+from re import sub
 import sys
 import os 
 import subprocess
-from shlex import join
-from subprocess import PIPE, TimeoutExpired
-from re import compile
+import click
 
 # Command Utils
-def update_requirements_file(add_install=False):
+@click.group()
+def cli():
+    pass
+
+def moduleInstall():
+    if os.path.basename(os.getcwd()) == 'script':
+        os.chdir('..')   
+    click.secho("Installing modules...", fg="yellow")
+    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)   
+    click.secho("Successfully installed modules", fg="green", underline=True)
+    
+def install_lighthouse():
+    click.secho("Installing lighthouse...", fg="yellow")
+    os.system("npm install -g lighthouse")
+    click.secho("lighthouse installed", fg="green")
+
+def installCallback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    moduleInstall()
+    ctx.exit()
+    
+def lighthouseInstallCallback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    install_lighthouse()
+    ctx.exit()
+    
+
+@click.command(help="Updates Requirements file")
+@click.option("--install", expose_value=False, is_flag=True, callback=installCallback, help="install all modules")
+@click.option("--install-lighthouse", expose_value=False, is_flag=True, callback=lighthouseInstallCallback, help="install lighthouse from npm")
+def update():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')
     command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr, encoding="utf-8")
@@ -16,173 +48,96 @@ def update_requirements_file(add_install=False):
     except TimeoutExpired:
         command.kill()
         
-    print("requirements file updated")
+    click.secho("requirements file updated", fg="green")
     
-    if add_install:
-        install()
-    
-
-def add_to_in_file(module, module_version = None, update=False, module_install=False):
-    if module_version:
+@click.command(help="Adds specified module to in file")
+@click.argument("module", nargs=1, type=str, required=True)
+@click.option("--version", nargs=1, default=None)
+def add_to_in_file(module, version):
+    click.secho(f"Adding {module} to requirements.in...", fg="yellow")
+    if version:
         if os.path.basename(os.getcwd()) == 'script':
             os.chdir('..')
         with open('requirements.in', 'a', encoding='utf-8') as r:
-            r.write(f"\n{module}=={module_version}")
+            r.write(f"\n{module}=={version}")
     else:
         if os.path.basename(os.getcwd()) == 'script':
             os.chdir('..')
         with open('requirements.in', 'a', encoding='utf-8') as r:
             r.write(f"\n{module}")
-    if update:
-        print("updating requirements file...")
-        if module_install:
-            update_requirements_file(True)
-        else:
-            update_requirements_file()
-    if module_install:
-        install()
+    click.secho(f"Module {module} has been added to requirements.in", fg="green")
     
-def uninstall_module(module):
+    
+def un_install():
+    if os.path.basename(os.getcwd()) == 'script':
+        os.chdir('..')
+    with open('requirements.in', 'r', encoding='utf-8') as r:
+        lines = r.readlines()
+    for line in lines:
+        sub_line = sub(r"==[0-9.]+", '', line)
+        if sub_line == "click":
+            continue
+        else:
+            click.secho(f"Uninstalling: {sub_line}...", fg="yellow")
+            subprocess.run(['pip', 'uninstall', sub_line, '-y'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            click.secho(f"Successfully uninstalled: {sub_line}", fg="green")
+    
+def uninstallCallback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.secho("Uninstalling all modules...", fg="red", underline=True, bold=True)
+    un_install()    
+    click.secho("Operation Sucessful", fg="green")
+    ctx.exit()
+    
+def uninstallLighthouseCallback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.secho("Uninstalling lighthouse...")
+    os.system("npm uninstall -g lighthouse")
+    click.secho("Successfully uninstalled lighthouse")
+    ctx.exit()
+    
+@click.command(help="uninstalls specified module")
+@click.argument("module", nargs=-1, type=str, required=False)    
+@click.option("-A", "-a", expose_value=False, is_flag=True, callback=uninstallCallback, help="Uninstalls all modules")
+@click.option("--lighthouse", expose_value=False, is_flag=True, callback=uninstallLighthouseCallback, help="Uninstalls lighthouse with npm")
+def uninstall(module):
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')
     with open('requirements.in', 'r', encoding="utf-8") as r:
         lines = r.readlines()
     with open('requirements.in', 'w', encoding="utf-8") as r:
         for line in lines:
-            if line.strip('\n') != module:
+            if line.strip() not in module:
                 r.write(line)
-    update_requirements_file()
-    command = subprocess.Popen(["pip", "uninstall", module, "-y"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
-    try:
-        outs, errs = command.communicate(timeout=7)
-    except TimeoutExpired:
-        command.kill()
-    print(f"succefully uninstalled: {module}")
-            
-def un_install():
-    if os.path.basename(os.getcwd()) == 'script':
-        os.chdir('..')
-    print("Uninstalling modules...")
-    subprocess.run(['pip', 'uninstall', '-r', 'requirements.txt', '-y'], stdin=sys.stdout, stdout=sys.stdin, stderr=sys.stderr)
-    print("Modules successfully uninstalled")
-    
-def install():
-    if os.path.basename(os.getcwd()) == 'script':
-        os.chdir('..')   
-    print("Installing modules...")
-    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)   
-    print("Successfully installed modules")
-    
+    for m in module:
+        click.secho(f"Uninstalling: {m}...", fg="red")
+        command = subprocess.Popen(["pip", "uninstall", m, "-y"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
+        try:
+            outs, errs = command.communicate(timeout=7)
+        except TimeoutExpired:
+            command.kill()
+        click.secho(f"Successfully uninstalled: {m}", fg="green")
 
-def view(in_terminal=True, in_file=False, in_vscode=False):
+
+
+@click.command(help="view the requirements.txt file")
+def view():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')   
-    if in_terminal:
-        print("Opening file in terminal...")
-        print("-----------------------------")
-        with open('requirements.txt', 'r', encoding="utf-8") as r:
-            lines = r.readlines()
-        for line in lines:
-            print(line)
-    if in_file:
-        print("Opening file outside of terminal...")
-        if in_vscode:
-            try:
-                subprocess.run(["code", "requirements.txt"])
-            except FileNotFoundError:
-                sys.exit(os.system("code requirements.txt"))
-        try:
-            subprocess.run(["start", "requirements.txt"])
-        except FileNotFoundError:
-            sys.exit(os.system("start requirements.txt"))
-            
-def install_lighthouse():
-    print("Installing lighthouse....")
-    os.system("npm install -g lighthouse")
-    print("lighthouse installed")
-   
-def help():
-    print("""Commands:
-             update: Updates requirements.txt
-             add: Adds module name and version(optional) to requirements.in | Args: ( module: Name of Module | version (optional): Version of the module | update (optional): updates requirements file | -i (optional): installs module specified ) 
-             alluninstall: Uninstalls all modules
-             uninstall: Uninstalls specified module and removes it from requirements.txt | Arg: (module: Name of Module)
-             install: Installs all modules
-             help: loads this help descriptions
-             view: view requirements file | Args (-i (optional): opens requirements.txt file outside of the terminal | -v (optional | Usage: -i -v): opens requirements.txt file in vscode)
-             lighthouse: installs lighthouse as a global module using npm
-             """) 
+        
+    with open('requirements.txt', 'r', encoding="utf-8") as r:
+        lines = r.readlines()
+        
+    for line in lines:
+        click.echo(line)
     
-# Command script
-if sys.argv[1] == 'update':
-    update_requirements_file()
-elif sys.argv[1] == 'add':
-    try:
-        sys.argv[2]
-    except IndexError:
-        print("Module name is required or -i required")
-    else:
-        if sys.argv[2] == "-i":
-            try:
-                if sys.argv[4] == "update":
-                    add_to_in_file(sys.argv[3], update=True, module_install=True)
-                
-                try:
-                    if sys.argv[5] == "update":
-                        add_to_in_file(sys.argv[3], sys.argv[4], True, True)
-                except IndexError:
-                    pass
-            except IndexError:
-                add_to_in_file(sys.argv[3], module_install=True)
-            finally:
-                print(f"{sys.argv[3]} has been added to requirements.in")
-        else:
-            try:
-                if sys.argv[4] == "update":
-                    add_to_in_file(sys.argv[2], update=True)
-                elif sys.argv[5] == "update":
-                    add_to_in_file(sys.argv[2], sys.argv[3], True)
-            except IndexError:
-                try:
-                    add_to_in_file(sys.argv[2], sys.argv[3])
-                except IndexError:
-                    add_to_in_file(sys.argv[2])
-            finally:
-                print(f"{sys.argv[2]} has been added to requirements.in")
-elif sys.argv[1] == 'alluninstall':
-    un_install()
-elif sys.argv[1] == 'uninstall':
-    try:
-        sys.argv[2]
-    except IndexError:
-        print("Module name required")
-    else:
-        uninstall_module(sys.argv[2])
-elif sys.argv[1] == 'install':
-    install()
-    
-elif sys.argv[1] == 'view':
-    try:
-        sys.argv[2]
-    except IndexError:
-        view()
-    else:
-        try:
-            sys.argv[3]
-        except IndexError:
-            if sys.argv[2] == '-i':
-                view(False, True)
-            else:
-                print(f"Unknown option: {sys.argv[2]}")
-        else:
-            if join([sys.argv[2], sys.argv[3]]) == "-i -v":
-                view(False, True, True)
-            else:
-                print(f"Unkown option: {join([sys.argv[2], sys.argv[3]])}")
-elif sys.argv[1] == 'lighthouse':
-    install_lighthouse()
-elif sys.argv[1] == 'help':
-    help()
-else:
-    print(f"Unknown command: {sys.argv[1]}")
+# Command Script
+if __name__ == "__main__":
+    cli.add_command(update, "update")
+    cli.add_command(add_to_in_file, "add")
+    cli.add_command(uninstall, "uninstall")
+    cli.add_command(view)
+    cli()
     
