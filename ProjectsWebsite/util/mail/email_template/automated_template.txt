@@ -1,4 +1,9 @@
-Dear {name}, <br>
+Dear 
+<pre> 
+    {name}
+</pre>
+, 
+<br>
 
 {body}
 
@@ -9,4 +14,6 @@ From,
 MyProjects Support Automated Service
 
 <hr>
-<i>If you have any questions, feel free to contact us at: <a href="{contacturl}">Contact Us</a></i>
+<i>If you have any questions, feel free to contact us at: <a href="
+{contacturl}
+">Contact Us</a></i>

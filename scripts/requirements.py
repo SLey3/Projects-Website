@@ -1,7 +1,6 @@
 # Imports
 from subprocess import PIPE, TimeoutExpired
 from re import sub
-import sys
 import os 
 import subprocess
 import click
@@ -15,7 +14,7 @@ def moduleInstall():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')   
     click.secho("Installing modules...", fg="yellow")
-    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)   
+    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=PIPE, stdout=PIPE, stderr=PIPE)   
     click.secho("Successfully installed modules", fg="green", underline=True)
     
 def install_lighthouse():
@@ -42,7 +41,7 @@ def lighthouseInstallCallback(ctx, param, value):
 def update():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')
-    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr, encoding="utf-8")
+    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding="utf-8")
     try:
         outs, errs = command.communicate(timeout=9)
     except TimeoutExpired:
@@ -113,7 +112,7 @@ def uninstall(module):
                 r.write(line)
     for m in module:
         click.secho(f"Uninstalling: {m}...", fg="red")
-        command = subprocess.Popen(["pip", "uninstall", m, "-y"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
+        command = subprocess.Popen(["pip", "uninstall", m, "-y"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         try:
             outs, errs = command.communicate(timeout=7)
         except TimeoutExpired:

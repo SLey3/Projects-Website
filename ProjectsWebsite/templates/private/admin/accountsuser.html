@@ -689,30 +689,24 @@
                             $(this).remove();
                         } else if (this.id == "member-role-checkbox") {
                             $(this).after(function() {
-                                return "<form id='member-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="member-role-delete-btn") }}' + '</form>';
+                                return "<form id='member-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(**{"id":"member-role-delete-btn", "data-role-type":"member"})}}' + '</form>';
                             });
-                            $("#member-role-delete-btn").attr("data-role-type", "member");
-                            '{% set value = "member" %}';
                         } else if (this.id == "verified-role-checkbox") {
                             $(this).after(function() {
                                 return "<form id='verified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="verified-role-delete-btn") }}' + '</form>';
                             });
                             $("#verified-role-delete-btn").attr("data-role-type", "verified");
-                            '{% set value = "verified" %}';
                         } else if (this.id == "unverified-role-checkbox") {
                             $(this).after(function() {
                                 return "<form id='unverified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="unverified-role-delete-btn") }}' + '</form>';
                             });
                             $("#unverified-role-delete-btn").attr("data-role-type", "unverified");
-                            '{% set value = "unverified" %}';
                         } else if (this.id == "editor-role-checkbox") {
                             $(this).after(function() {
                                 return "<form id='editor-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="editor-role-delete-btn") }}' + '</form>';
                             });
                             $("#editor-role-delete-btn").attr("data-role-type", "editor");
-                            '{% set value = "editor" %}';
                         }
-                        '{% do role_form.delete_role.render_kw.update({"data-role-type": value }) %}';
                     } else {
                         if (this.id == "member-role-checkbox") {
                             $(this).nextAll().remove();

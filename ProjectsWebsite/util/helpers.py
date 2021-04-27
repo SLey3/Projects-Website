@@ -9,8 +9,6 @@ import re
 
 alertMessageType = Union[str, int]
 
-EMAILS = []
-
 email_re = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
 date_re = re.compile(r'''[^a-zA-Z] # No word characters allowed

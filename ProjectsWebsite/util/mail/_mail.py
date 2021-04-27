@@ -5,20 +5,21 @@ from ProjectsWebsite.util.mail.filter import letterFilter
 import os.path as path
 
 # ------------------ Mail Utility ------------------
+__all__ = ["automatedMail", "defaultMail", "formatContact"]
+
 BASE_PATH = path.join(path.abspath('.'), "email_template")
 
-def _insert_content(letter: List[str], recipient:str, content: str, sender: Optional[str] = None) -> List[str]:
+def _insert_content(letter: List[str], recipient: str, content: str, sender: Optional[str] = None) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
-        if char == r"Dear{name},":
-            char.replace(r"{name}", recipient)
-            letter[i] = char
-        elif char == r"{body}":
+        if char == r"{name}":
             char = char.replace(r"{name}", recipient)
             letter[i] = char
+        elif char == r"{body}":
+            char = char.replace(r"{body}", content)
+            letter[i] = char
         elif char == r"{contacturl}":
-            with current_app.app_context():
-                char = char.replace(r"{contacturl}", url_for("main_app.contact_us"))
+            char = char.replace(r"{contacturl}", "127.0.0.1:5000/contact_us")
             letter[i] = char
         if isinstance(sender, str):
             if char == r"{sender}":
@@ -59,19 +60,19 @@ def defaultMail(recipient_name: str, body: str, sender: str):
     """
     with open("ProjectsWebsite/util/mail/email_template/default_template.txt") as d:
         letter = d.readlines()
-    print(letter)
     filtered_letter = letterFilter(letter)
-    letter = _insert_content(filtered_letter, recipient_name, body, sender)
-    mail = "".join(char for char in letter)
+    new_letter = _insert_content(filtered_letter, recipient_name, body, sender)
+    mail = "".join(char for char in new_letter)
     return mail
 
-def formatContact(**kwargs):
+def formatContact(**contactkwds):
     """
     formats Contact Us email
     """
     with open("ProjectsWebsite/util/mail/email_template/contact_us_template.txt", 'r', encoding="utf-8") as c:
         contact = c.readlines()
     filtered_contact = letterFilter(contact)
-    contact = _format_contact(filtered_contact, **kwargs)
+    contactkwds.setdefault("letter", filtered_contact)
+    contact = _format_contact(**contactkwds)
     mail = "".join(char for char in contact)
     return mail

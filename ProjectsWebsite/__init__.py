@@ -44,7 +44,7 @@ else:
 
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
-PRODUCTION = False
+PRODUCTION = True
 
 
 
@@ -69,7 +69,6 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
 app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
 app.config["ALERT_CODES_DICT"] = load(open(os.path.join(app.root_path, "static", "assets", "json", "errors.json")))
 app.config.from_pyfile("../.env")
-app.jinja_options["extensions"].append('jinja2.ext.do')
 import ProjectsWebsite.views as views
 app.register_blueprint(dash)
 app.register_blueprint(admin)

@@ -14,7 +14,8 @@ from ProjectsWebsite.util import (
     current_user, login_user, logout_user, token_auth_required, 
     roles_required, roles_accepted, unverfiedLogUtil
 )
-from ProjectsWebsite.util.helpers import EMAILS, date_re
+from ProjectsWebsite.util.mail import automatedMail, formatContact
+from ProjectsWebsite.util.helpers import date_re
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.modules import (
     db, img_set, mail, login_manager,
@@ -116,20 +117,10 @@ def registerPage():
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
         verify_msg = Message('Confirm Account', recipients=[form.email.data])
         confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
-        verify_msg.html = f'''Dear {form.name.data}, <br>
-        
-        Thank you for registering! In order to complete the registration you must click on the link below.
-        Link will expire in <b>30</b> minutes after this email has been sent.
-        Link: <a href="{confirm_link}">Confirm Account</a>
-        <br>
-        <br>
-        From,
-        <br>
-        MyProjects Support Automated Service
-        
-        <hr>
-        <i>If you have any questions, feel free to contact us at: <a href="{request.url_root}">Contact Us</a></i>
-        '''
+        verify_msg.html = automatedMail(form.name.data, f'''
+                                        Thank you for registering! In order to complete the registration you must click on the link below. <br>
+                                        Link will expire in <b>30</b> minutes after this email has been sent. <br>
+                                        Link: <a href="{confirm_link}">Confirm Account</a>''')
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
         unverlog.addContent(form.email.data.lower(), token, mode="r+")  
@@ -156,22 +147,13 @@ def confirmation_recieved(token):
     except SignatureExpired:
         notice_user = User.lookup(email)
         notice_msg = Message('Account Validation Warning', recipients=[notice_user.email])
-        notice_msg.html = f'''
-        Dear {notice_user.name},
-        We regret to inform you that your account may expire at around 0 to 1 hour due to confirmation token have expired
-        Contact support if you want to make sure that your account won't automatically be deleted at: {url_for('.contact_us')} (<i>Notice:</i>
-        <b>Support may be offline at any given time and may not reply fast enough. If this is the case and the 0 to 1 hour period is up then create an account again at:</b><a href="{url_for(".registerPage")}">Register</a>").
-        
-        From,
-        
-        MyProjects Support Automated Service
-        
-        <hr>
-        <i>If you have any questions, feel free to contact us at: <a href="{url_for(".contact_us")}">Contact Us</a></i>
-        '''
+        notice_msg.html = automatedMail(notice_user.name, 
+                                        f'''
+                                        We regret to inform you that your account may expire at around 0 to 1 hour due to confirmation token have expired. <br>
+                                        Contact support if you want to make sure that your account won't automatically be deleted at: {url_for('.contact_us')} (<i>Notice:</i>
+                                        <b>Support may be offline at any given time and may not reply fast enough. If this is the case and the 0 to 1 hour period is up then create an account again at:</b><a href="{url_for(".registerPage")}">Register</a>").
+                                        ''')
         mail.send(notice_msg)
-        
-        
         return redirect(url_for(".homePage"))
     
 @main_app.route('/login/forgotpwd/', methods=['GET', 'POST'])
@@ -194,11 +176,9 @@ def initialForgotPage():
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
         reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
         reset_msg = Message('Reset Password', recipients=[recipient_email])
-        reset_msg.body = f"""
-        Dear User,
-        You have requested to reset your password. Follow the link below to reset your password.
-        Reset Password: {reset_url}
-        """
+        reset_msg.html = automatedMail(user.name, 
+                                f'''You have requested to reset your password. Follow the link below to reset your password.
+                                    <br> Reset Password: {reset_url}''')
         mail.send(reset_msg)
         alert.setAlert('success', 'Reset Password Email has been sent.')
         return redirect(url_for('.homePage'))
@@ -325,16 +305,7 @@ def contact_us():
         tel = formatPhoneNumber(form.mobile.data)
         msg = form.message.data
         mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
-        mail_msg.body = f"""
-        Contact:
-        Name: {name}
-        Inquiry Selection: {inquiry_selection}
-        Email: {email}
-        Telephone Number: {tel}
-        -------------------------------------------------------------
-        Message:
-        {msg}
-        """
+        mail_msg.html = formatContact(name=name, inquiry_selection=inquiryselection, email=email, tel=tel, msg=msg)
         mail.send(mail_msg)
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('.homePage'))

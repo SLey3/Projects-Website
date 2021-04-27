@@ -1,0 +1,4 @@
+1) find fix for data-role-type
+2) fix spacing problems for "edit_user" editing symbol 
+3) Create managing controls for Articles Made by: ... section 
+4) start working on other admin management pages (e.g. article management, github page, and Web Settings, and possibly a mail section)

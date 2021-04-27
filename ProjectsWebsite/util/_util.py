@@ -3,8 +3,9 @@ from flask import abort, g, session, current_app, request, url_for
 from flask_security import RoleMixin as _role_mixin
 from flask_principal import Permission, RoleNeed
 from flask_mail import Message
-from functools import wraps, partialmethod
+from functools import wraps, partialmethod, partial
 from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
+from ProjectsWebsite.util.mail import automatedMail
 from typing import (
     Dict, List, Tuple, Any, Optional
 )
@@ -13,11 +14,13 @@ try:
     from werkzeug import LocalProxy
 except ImportError:
     from werkzeug.local import LocalProxy
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup as _beautifulsoup, NavigableString
 from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
 from rich import print as rprint
 from time import sleep
+from shlex import split, join
+from collections import namedtuple
 from re import Pattern
 import re
 import requests
@@ -25,6 +28,31 @@ import schedule
 import threading
 
 # ------------------ Utils ------------------
+__all__ = [
+    "checkExpireRegistrationCodes", 
+    "runSchedulerInspect", 
+    "unverfiedLogUtil", 
+    "AlertUtil",
+    "is_valid_article_page",
+    "formatPhoneNumber",
+    "DateUtil",
+    "scrapeError",
+    "scrapeDataType",
+    "current_user",
+    "roles_required",
+    "roles_accepted",
+    "token_auth_required",
+    "login_user",
+    "logout_user",
+    "generate_err_request_url",
+    "AnonymousUserMixin",
+    "RoleMixin"
+]
+
+
+BeautifulSoup = partial(_beautifulsoup, features='html5lib')
+del _beautifulsoup
+
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
     from ProjectsWebsite.views import urlSerializer
@@ -44,18 +72,9 @@ def checkExpireRegistrationCodes():
             lines.remove(line)
             expired_user = User.lookup(user)
             expired_msg = Message("Account Deleted", recipients=[user])
-            expired_msg.html = f'''
-            Dear {expired_user.name},
-            Your current account in MyProjects has not been verified and your verification link has expired. 
-            You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.
-            
-            From,
-            
-            MyProjects Support Automated Service
-            
-            <hr>
-            <i>If you have any questions, feel free to contact us at: <a href="{url_for("main_app.contact_us")}">Contact Us</a></i>
-            '''
+            expired_msg.html = automatedMail(expired_user.name, f'''
+                                             Your current account in MyProjects has not been verified and your verification link has expired. 
+                                            You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.''')
             mail.send(expired_msg)
             user_datastore.delete_user(user)
             user_datastore.commit()
@@ -324,7 +343,7 @@ class DateUtil:
         else:
             return True
                               
-def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: Optional[bool] = False) -> str:
+def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: bool = False) -> str:
     """
     Scrapes input error from argument: url
     """
@@ -334,18 +353,108 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
         web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, params={"token":token}, allow_redirects=False)
     else:
         web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, allow_redirects=False)
-    soup = BeautifulSoup(web_page.content, 'html5lib')
+    soup = BeautifulSoup(web_page.content)
     elem_tag = soup.find_all(f'{elem}', {f"{attr[0]}": f"{attr[1]}"})
     for i in elem_tag:
         for err in field_err:
             i.insert(0, NavigableString(f"- {err}\n"))
             error = i
             return error
+        
+def findelement(content, attr={}):
+    result = None
+    class FrozenResultDict:
+        def __init__(self, content):
+            attr_fields = [] 
+            attr_values = []
+            attrs = re.search(r"<button.*?>", content).group()
+            if not isinstance(attrs, str):
+                attrs = str(attrs, encoding="utf-8")
+            parsed_attrs = attrs.replace("=", " ").replace('"', " ").replace("<button", " ").replace(">", " ")
+            split_attrs = split(parsed_attrs)
+            for attr in split_attrs:
+                i = split_attrs.index(attr)
+                if(i % 2 == 0):
+                    if attr == "class":
+                        attr = "Class"
+                        attr_fields.append(attr)
+                    elif "-" in attr:
+                        attr = attr.replace("-", "_")
+                        attr_fields.append(attr)
+                    else:
+                        attr_fields.append(attr)
+                else:
+                    attr_values.append(attr)
+            fields = join(attr_fields)
+            ResultDict = namedtuple("ResultDict", fields)
+            self.ResultDict = ResultDict(*attr_values)
+                
+            
+        def _immutable(self):
+            raise TypeError('FrozenResultDict is immutable')
+        
+        def __setitem__(self, key):
+            return self._immutable()
+        def __delitem__(self, key):
+            return self._immutable()
+        def __getitem__(self, key: str):
+            if key == "class":
+                key = key.capitalize()
+            if "-" in key:
+                key = key.replace("-", "_")
+            return self.ResultDict.__getattribute__(key)
+        def __hash__(self):
+            return id(self)
+        def __iter__(self):
+            return iter(self.ResultDict)
+        def __len__(self):
+            return len(self.ResultDict)
+        def __repr__(self):
+            return f"<FrozenResultDict: {repr(self.ResultDict)}>"
+        def __str__(self):
+            items = self.ResultDict._asdict()
+            return f"<FrozenResultDict: {items}>"
+            
+    if isinstance(content, bytes):
+        html = str(content, encoding="utf-8")
+    else:
+        html = content
+    if attr != {}:
+        regex_string = r'''<button '''
+        for k, i in zip(attr.keys(), list(attr.values())):
+            regex_string += r'{k}="{i}".*?'.format(k=k, i=i)
+        regex_string += ">"
+        try:
+            re_result = re.search(regex_string, html).group()
+            result = FrozenResultDict(re_result)
+        except AttributeError:
+            result = re.search(regex_string, html)
+        finally:
+            return result
+    else:
+        result = re.search(r"<button.*?>(.*?)</button>", html).group()
+        return result
+        
 
+def scrapeDataType(url: str):
+    """
+    Scrapes data-role-type from requested url (only to be used in edit_user pages)
+    """
+    token = b64decode(session["token"])
+    token = str(token, encoding="utf-8")
+    web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, params={"token":token}, allow_redirects=False)
+    elem_tag_result = findelement(web_page.content, {"class":"inner-delete-btn"})
+    try:
+        elem_tag_result["data-role-type"]
+    except Exception as e:
+        raise OperationError("ResultDict can not parse NoneType", "findelement.ResultDict") from e
+    else:
+        return elem_tag_result["data-role-type"]
+    return elem_tag_result
 
-current_user = LocalProxy(lambda: _get_user())
+current_user = LocalProxy(lambda: get_user())
 
-def _get_user():
+def get_user():
     from ProjectsWebsite.database.models import User, AnonymousUser
     
     if "_user_id" not in session:
