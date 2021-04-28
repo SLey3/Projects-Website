@@ -52,6 +52,7 @@
                             </th>
                         </tr>
                     </thead>
+                    <input id="data-role-type-container" type="hidden" data-role-type="None">
                     <tbody>
                         {% for role in user.roles %}
                         <tr>
@@ -695,17 +696,17 @@
                             $(this).after(function() {
                                 return "<form id='verified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="verified-role-delete-btn") }}' + '</form>';
                             });
-                            $("#verified-role-delete-btn").attr("data-role-type", "verified");
+                            $("#data-role-type-container").attr("data-role-type", "verified");
                         } else if (this.id == "unverified-role-checkbox") {
                             $(this).after(function() {
                                 return "<form id='unverified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="unverified-role-delete-btn") }}' + '</form>';
                             });
-                            $("#unverified-role-delete-btn").attr("data-role-type", "unverified");
+                            $("#data-role-type-container").attr("data-role-type", "unverified");
                         } else if (this.id == "editor-role-checkbox") {
                             $(this).after(function() {
                                 return "<form id='editor-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="editor-role-delete-btn") }}' + '</form>';
                             });
-                            $("#editor-role-delete-btn").attr("data-role-type", "editor");
+                            $("#data-role-type-container").attr("data-role-type", "editor");
                         }
                     } else {
                         if (this.id == "member-role-checkbox") {

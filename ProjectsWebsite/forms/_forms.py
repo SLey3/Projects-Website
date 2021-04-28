@@ -116,7 +116,7 @@ class AccountManegementForms:
         
         add_role_sbmt = SubmitField(id="add-role-sbmt", render_kw={'class':'add-role-sbmt-btn', 'value':'Add'})
         
-        delete_role = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', render_kw={'class':'inner-delete-btn', 'data-role-type':""})
+        delete_role = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', render_kw={'class':'inner-delete-btn'})
         
     class adminUserInfoForm(FlaskForm):
         """

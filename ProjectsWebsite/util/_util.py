@@ -367,10 +367,10 @@ def findelement(content, attr={}):
         def __init__(self, content):
             attr_fields = [] 
             attr_values = []
-            attrs = re.search(r"<button.*?>", content).group()
+            attrs = re.search(r"<input.*?>", content).group()
             if not isinstance(attrs, str):
                 attrs = str(attrs, encoding="utf-8")
-            parsed_attrs = attrs.replace("=", " ").replace('"', " ").replace("<button", " ").replace(">", " ")
+            parsed_attrs = attrs.replace("=", " ").replace('"', " ").replace("<input", " ").replace(">", " ")
             split_attrs = split(parsed_attrs)
             for attr in split_attrs:
                 i = split_attrs.index(attr)
@@ -402,7 +402,8 @@ def findelement(content, attr={}):
                 key = key.capitalize()
             if "-" in key:
                 key = key.replace("-", "_")
-            return self.ResultDict.__getattribute__(key)
+            item = getattr(self.ResultDict, key)
+            return item
         def __hash__(self):
             return id(self)
         def __iter__(self):
@@ -410,20 +411,17 @@ def findelement(content, attr={}):
         def __len__(self):
             return len(self.ResultDict)
         def __repr__(self):
-            return f"<FrozenResultDict: {repr(self.ResultDict)}>"
-        def __str__(self):
-            items = self.ResultDict._asdict()
-            return f"<FrozenResultDict: {items}>"
+            return f"<FrozenResultDict: {repr(self.ResultDict)}>""
             
     if isinstance(content, bytes):
         html = str(content, encoding="utf-8")
     else:
         html = content
     if attr != {}:
-        regex_string = r'''<button '''
-        for k, i in zip(attr.keys(), list(attr.values())):
-            regex_string += r'{k}="{i}".*?'.format(k=k, i=i)
-        regex_string += ">"
+        regex_string = r'''<input'''
+        for key, value in zip(attr.keys(), list(attr.values())):
+            regex_string += ' {key}="{value}"'.format(key=key, value=value)
+        regex_string += r".*?>"
         try:
             re_result = re.search(regex_string, html).group()
             result = FrozenResultDict(re_result)
@@ -432,7 +430,7 @@ def findelement(content, attr={}):
         finally:
             return result
     else:
-        result = re.search(r"<button.*?>(.*?)</button>", html).group()
+        result = re.search(r"<input.*? />", html).group()
         return result
         
 
@@ -443,11 +441,11 @@ def scrapeDataType(url: str):
     token = b64decode(session["token"])
     token = str(token, encoding="utf-8")
     web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, params={"token":token}, allow_redirects=False)
-    elem_tag_result = findelement(web_page.content, {"class":"inner-delete-btn"})
+    elem_tag_result = findelement(web_page.content, {"id":"data-role-type-container", "type":"hidden"})
     try:
         elem_tag_result["data-role-type"]
     except Exception as e:
-        raise OperationError("ResultDict can not parse NoneType", "findelement.ResultDict") from e
+        raise OperationError("DataType Operation failed due to re.search returning NoneType", "scrapeDateType -> findelement") from e
     else:
         return elem_tag_result["data-role-type"]
     return elem_tag_result
