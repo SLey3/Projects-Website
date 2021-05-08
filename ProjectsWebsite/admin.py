@@ -6,7 +6,7 @@ from flask import (
 from flask_login import confirm_login
 from ProjectsWebsite.database.models import User, Article, Role, user_datastore
 from ProjectsWebsite.forms import AccountManegementForms
-from ProjectsWebsite.util import scrapeError as _scrapeError, scrapeDataType as _scrapeDataType, token_auth_required, generate_err_request_url, logout_user, roles_required
+from ProjectsWebsite.util import scrapeError as _scrapeError, token_auth_required, generate_err_request_url, logout_user, roles_required
 from ProjectsWebsite.util.mail import defaultMail
 from ProjectsWebsite.modules import db, guard
 from functools import partial
@@ -64,15 +64,14 @@ def adminAccountsManegement(page):
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
 @token_auth_required
 def adminAccountsUserManagement(user, page):
-    name_error = email_error = password_error = active_error = blacklist_error = add_role_error = ""
+    name_error = ""; email_error = ""; password_error = ""; active_error = ""; blacklist_error = ""; add_role_error = ""
     page: int = page
     pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
     URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
     scrapeError = partial(_scrapeError, URL, 'p', auth=True)
-    scrapeDataType = partial(_scrapeDataType, URL)
-    info_forms, search_form, role_form = (AccountManegementForms.adminUserInfoForm(), AccountManegementForms.tableSearchForm(), AccountManegementForms.roleForm())
+    info_forms, search_form, role_form, delete_role_forms = (AccountManegementForms.adminUserInfoForm(), AccountManegementForms.tableSearchForm(), AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms())
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
@@ -117,10 +116,18 @@ def adminAccountsUserManagement(user, page):
             user_datastore.commit()
         elif not role_form.add_role.validate(role_form) and role_form.add_role.data:
             add_role_error = scrapeError(('id', 'add-role-err-p'), role_form.add_role.errors)
-        elif role_form.delete_role.data:
-            data_type = scrapeDataType()
-            print(data_type)
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error, add_role_error=add_role_error)
+        elif delete_role_forms.member_field.data:
+            user_datastore.remove_role_from_user(user, "member")
+            user_datastore.commit()
+        elif delete_role_forms.verified_field.data:
+            user_datastore.remove_role_from_user(user, "verified")
+            user_datastore.commit()
+        elif delete_role_forms.unverified_field.data:
+            user_datastore.remove_role_from_user(user, "unverified")
+            user_datastore.commit()
+        elif delete_role_forms.editor_field.data:
+            user_datastore.remove_role_from_user(user, "editor")
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error, add_role_error=add_role_error)
     else:
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form)
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms)
         

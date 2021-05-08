@@ -3,6 +3,8 @@ from typing import List
 from copy import deepcopy
 
 # ------------------ Filter ------------------
+__all__ = ["letterFilter"]
+
 def letterFilter(template: List[str]) -> List[str]:
     """
     filters "escape newline" from the letter template

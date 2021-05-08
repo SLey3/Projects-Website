@@ -105,6 +105,7 @@ def registerPage():
         new_user = user_datastore.create_user(
             name=form.name.data.capitalize(),
             username=form.email.data.lower(),
+            email=form.email.data.lower(),
             hashed_password=guard.hash_password(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             blacklisted=False,

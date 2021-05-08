@@ -77,7 +77,7 @@ app.add_template_global(current_user, 'current_user')
 app.add_template_global(request, 'request')
 app.add_template_global(redirect, 'redirect')
 app.register_error_handler(PraetorianError, 
-                           PraetorianError.build_error_handler(lambda e: logger.error(e.message)))
+                           PraetorianError.build_error_handler(lambda e: logging.error(e.message)))
 app.debug = True
 
 app.env = "development"

@@ -23,6 +23,7 @@ class User(db.Model, SQLAlchemyUserMixin):
     
     id = db.Column("id", db.Integer, primary_key=True)
     name = db.Column("name", db.String(100))
+    email = db.Column("email", db.String(100))
     username = db.Column("username", db.String(100), unique=True)
     hashed_password = db.Column("hashed_password", db.String(255))
     active = db.Column("active", db.Boolean())

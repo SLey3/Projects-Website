@@ -1,6 +1,5 @@
 # ------------------ Imports ------------------
 from ProjectsWebsite import create_app, appExitHandler
-from ProjectsWebsite.util import scrapeDataType
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.modules import db
 from flask import render_template, redirect, url_for, send_from_directory, render_template_string
@@ -49,11 +48,6 @@ def favicon():
     web logo
     """
     return send_from_directory(os.path.join(app.root_path, 'static', 'assets', 'favicon'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-@app.route("/api")
-def api():
-    responce = scrapeDataType(r"http://127.0.0.1:5000/admin/management/accounts/edit_user/Sergio%20ley/")
-    return render_template_string(f"<xmp>{responce}</xmp>")
 
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':

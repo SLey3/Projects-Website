@@ -37,7 +37,6 @@ __all__ = [
     "formatPhoneNumber",
     "DateUtil",
     "scrapeError",
-    "scrapeDataType",
     "current_user",
     "roles_required",
     "roles_accepted",
@@ -52,6 +51,7 @@ __all__ = [
 
 BeautifulSoup = partial(_beautifulsoup, features='html5lib')
 del _beautifulsoup
+del partial
 
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
@@ -360,101 +360,11 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
             i.insert(0, NavigableString(f"- {err}\n"))
             error = i
             return error
-        
-def findelement(content, attr={}):
-    result = None
-    class FrozenResultDict:
-        def __init__(self, content):
-            attr_fields = [] 
-            attr_values = []
-            attrs = re.search(r"<input.*?>", content).group()
-            if not isinstance(attrs, str):
-                attrs = str(attrs, encoding="utf-8")
-            parsed_attrs = attrs.replace("=", " ").replace('"', " ").replace("<input", " ").replace(">", " ")
-            split_attrs = split(parsed_attrs)
-            for attr in split_attrs:
-                i = split_attrs.index(attr)
-                if(i % 2 == 0):
-                    if attr == "class":
-                        attr = "Class"
-                        attr_fields.append(attr)
-                    elif "-" in attr:
-                        attr = attr.replace("-", "_")
-                        attr_fields.append(attr)
-                    else:
-                        attr_fields.append(attr)
-                else:
-                    attr_values.append(attr)
-            fields = join(attr_fields)
-            ResultDict = namedtuple("ResultDict", fields)
-            self.ResultDict = ResultDict(*attr_values)
-                
-            
-        def _immutable(self):
-            raise TypeError('FrozenResultDict is immutable')
-        
-        def __setitem__(self, key):
-            return self._immutable()
-        def __delitem__(self, key):
-            return self._immutable()
-        def __getitem__(self, key: str):
-            if key == "class":
-                key = key.capitalize()
-            if "-" in key:
-                key = key.replace("-", "_")
-            item = getattr(self.ResultDict, key)
-            return item
-        def __hash__(self):
-            return id(self)
-        def __iter__(self):
-            return iter(self.ResultDict)
-        def __len__(self):
-            return len(self.ResultDict)
-        def __repr__(self):
-            return f"<FrozenResultDict: {repr(self.ResultDict)}>""
-            
-    if isinstance(content, bytes):
-        html = str(content, encoding="utf-8")
-    else:
-        html = content
-    if attr != {}:
-        regex_string = r'''<input'''
-        for key, value in zip(attr.keys(), list(attr.values())):
-            regex_string += ' {key}="{value}"'.format(key=key, value=value)
-        regex_string += r".*?>"
-        try:
-            re_result = re.search(regex_string, html).group()
-            result = FrozenResultDict(re_result)
-        except AttributeError:
-            result = re.search(regex_string, html)
-        finally:
-            return result
-    else:
-        result = re.search(r"<input.*? />", html).group()
-        return result
-        
 
-def scrapeDataType(url: str):
-    """
-    Scrapes data-role-type from requested url (only to be used in edit_user pages)
-    """
-    token = b64decode(session["token"])
-    token = str(token, encoding="utf-8")
-    web_page = requests.request('GET', url, headers={'User-Agent': f"{request.user_agent}"}, params={"token":token}, allow_redirects=False)
-    elem_tag_result = findelement(web_page.content, {"id":"data-role-type-container", "type":"hidden"})
-    try:
-        elem_tag_result["data-role-type"]
-    except Exception as e:
-        raise OperationError("DataType Operation failed due to re.search returning NoneType", "scrapeDateType -> findelement") from e
-    else:
-        return elem_tag_result["data-role-type"]
-    return elem_tag_result
+current_user = LocalProxy(lambda: _get_user())
 
-current_user = LocalProxy(lambda: get_user())
-
-def get_user():
+def _get_user():
     from ProjectsWebsite.database.models import User, AnonymousUser
-    
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del(g._cached_user)

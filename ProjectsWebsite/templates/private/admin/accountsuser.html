@@ -52,13 +52,17 @@
                             </th>
                         </tr>
                     </thead>
-                    <input id="data-role-type-container" type="hidden" data-role-type="None">
                     <tbody>
                         {% for role in user.roles %}
                         <tr>
                             <td>{{ role.id }}</td>
                             <td>{{ role.name }}</td>
-                            <td><input id="{{ role.name }}-role-checkbox" name="role-check-inner" type="checkbox" class="select-check inner-check" /></td>
+                            <td>
+                                <form id="inner-delete-role-form" method="POST">
+                                    {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
+                                    {{ delete_role_forms.editor_field }} {% endif %}
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -679,50 +683,6 @@
             });
         });
     }
-</script>
-<script type="text/javascript">
-    (function() {
-        $(document).ready(function() {
-            $('input[name="role-check-inner"]').each(function() {
-                $(this).click(function() {
-                    if ($(this).prop('checked')) {
-                        if (this.id == "admin-role-checkbox") {
-                            $(this).remove();
-                        } else if (this.id == "member-role-checkbox") {
-                            $(this).after(function() {
-                                return "<form id='member-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(**{"id":"member-role-delete-btn", "data-role-type":"member"})}}' + '</form>';
-                            });
-                        } else if (this.id == "verified-role-checkbox") {
-                            $(this).after(function() {
-                                return "<form id='verified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="verified-role-delete-btn") }}' + '</form>';
-                            });
-                            $("#data-role-type-container").attr("data-role-type", "verified");
-                        } else if (this.id == "unverified-role-checkbox") {
-                            $(this).after(function() {
-                                return "<form id='unverified-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="unverified-role-delete-btn") }}' + '</form>';
-                            });
-                            $("#data-role-type-container").attr("data-role-type", "unverified");
-                        } else if (this.id == "editor-role-checkbox") {
-                            $(this).after(function() {
-                                return "<form id='editor-role-del' method='POST' action='{{ request.url }}'>" + '{{ role_form.delete_role(id="editor-role-delete-btn") }}' + '</form>';
-                            });
-                            $("#data-role-type-container").attr("data-role-type", "editor");
-                        }
-                    } else {
-                        if (this.id == "member-role-checkbox") {
-                            $(this).nextAll().remove();
-                        } else if (this.id == "verified-role-checkbox") {
-                            $(this).nextAll().remove();
-                        } else if (this.id == "unverified-role-checkbox") {
-                            $(this).nextAll().remove();
-                        } else if (this.id == "editor-role-checkbox") {
-                            $(this).nextAll().remove();
-                        }
-                    }
-                });
-            });
-        });
-    })();
 </script>
 {% assets "edit_prof_main_js" %}
 <script src="{{ ASSET_URL }}"></script>
