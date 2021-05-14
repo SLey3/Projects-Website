@@ -2,7 +2,7 @@
 from flask import (
     Blueprint, render_template,
     redirect, request,
-    url_for, abort, current_app
+    url_for, current_app
 )
 try:
     from flask_sqlalchemy.orm.session import Session as SQLSession
@@ -27,18 +27,13 @@ from ProjectsWebsite.forms import (
     forgotForm, forgotRequestForm
 )
 from ProjectsWebsite.database.models import (
-    Article, User, Role, user_datastore
+    Article, User, user_datastore
 )
-from io import open as iopen
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from sqlalchemy.exc import OperationalError
-from passlib.hash import sha512_crypt
 from datetime import datetime
 from traceback import format_exc
 import base64
-import os
-
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
@@ -55,7 +50,6 @@ urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ unverLog init ------------------
 unverlog = unverfiedLogUtil()
-
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -109,7 +103,7 @@ def registerPage():
             hashed_password=guard.hash_password(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             blacklisted=False,
-            roles=['member', 'unverified']
+            roles=['admin', 'member', 'unverified']
         )
         user_datastore.commit()
         def yield_email(email):
@@ -142,7 +136,7 @@ def confirmation_recieved(token):
         user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
         user_datastore.add_role_to_user(User.lookup(email), "verified")
         user_datastore.commit()
-        unverlog.removeContent(email, 'r+')
+        unverlog.removeContent(email, mode='r+')
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:
@@ -255,7 +249,7 @@ def articleCreation():
         else:
             filename = secure_filename(img_file.filename)
             img_set.save(img_file, name=f"{filename}")
-            with iopen(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb') as image:
+            with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb', encoding="utf-8") as image:
                 img = str(base64.b64encode(image.read()), 'utf-8')
         current_date = datetime.now()
         date_util = DateUtil(current_date)
@@ -306,7 +300,7 @@ def contact_us():
         tel = formatPhoneNumber(form.mobile.data)
         msg = form.message.data
         mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
-        mail_msg.html = formatContact(name=name, inquiry_selection=inquiryselection, email=email, tel=tel, msg=msg)
+        mail_msg.html = formatContact(name=name, inquiry_selection=inquiry_selection, email=email, tel=tel, msg=msg)
         mail.send(mail_msg)
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('.homePage'))

@@ -4,7 +4,7 @@ from flask import (
     redirect, request
 )
 from flask_login import confirm_login
-from ProjectsWebsite.database.models import User, Article, Role, user_datastore
+from ProjectsWebsite.database.models import User, Article, user_datastore
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.util import scrapeError as _scrapeError, token_auth_required, generate_err_request_url, logout_user, roles_required
 from ProjectsWebsite.util.mail import defaultMail
@@ -117,16 +117,17 @@ def adminAccountsUserManagement(user, page):
         elif not role_form.add_role.validate(role_form) and role_form.add_role.data:
             add_role_error = scrapeError(('id', 'add-role-err-p'), role_form.add_role.errors)
         elif delete_role_forms.member_field.data:
-            user_datastore.remove_role_from_user(user, "member")
+            user_datastore.remove_role_from_user(user_info, "member")
             user_datastore.commit()
         elif delete_role_forms.verified_field.data:
-            user_datastore.remove_role_from_user(user, "verified")
+            user_datastore.remove_role_from_user(user_info, "verified")
             user_datastore.commit()
         elif delete_role_forms.unverified_field.data:
-            user_datastore.remove_role_from_user(user, "unverified")
+            # TODO: make sure that the user is removed from the unverfied-logs.txt file
+            user_datastore.remove_role_from_user(user_info, "unverified")
             user_datastore.commit()
         elif delete_role_forms.editor_field.data:
-            user_datastore.remove_role_from_user(user, "editor")
+            user_datastore.remove_role_from_user(user_info, "editor")
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error, add_role_error=add_role_error)
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms)

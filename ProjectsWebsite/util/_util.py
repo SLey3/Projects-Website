@@ -7,7 +7,7 @@ from functools import wraps, partialmethod, partial
 from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
 from ProjectsWebsite.util.mail import automatedMail
 from typing import (
-    Dict, List, Tuple, Any, Optional
+    Dict, List, Tuple, Optional
 )
 from ProjectsWebsite.modules import guard, login_manager, db, mail
 try:
@@ -19,8 +19,6 @@ from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
 from rich import print as rprint
 from time import sleep
-from shlex import split, join
-from collections import namedtuple
 from re import Pattern
 import re
 import requests
@@ -150,23 +148,14 @@ class unverfiedLogUtil:
         openKwargs.setdefault("encoding", self.encoding)
         with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
             lines = f.readlines()
-            self.content = lines
+            print(lines)
             for line in lines:
                 potential_email = line[line.find("(")+1:line.rfind(")")]
+                print(potential_email)
                 if potential_email == content_identifier:
                     lines.remove(line)
                     f.writelines(lines)
                     f.close()
-       
-    def __eq__(self, other):
-        if hasattr(self, "content"):
-            if isinstance(self.content, list):
-                for c in self.content:
-                    if c == content:
-                        return True
-                return False
-            return False
-        raise NotImplementedError("__eq__ not implemented at the moment")
 
 class AlertUtil(object):
     """
@@ -292,7 +281,6 @@ def formatPhoneNumber(phone_number: str) -> str:
     clean_phone_number = re.sub('[^0-9]+', '', phone_number)
     formatted_phone_number = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", f"{int(clean_phone_number[:-1])}") + clean_phone_number[-1]
     return formatted_phone_number
-
 class DateUtil:
     """
     DateUtil for Correcting and Validating Date
@@ -371,7 +359,7 @@ def _get_user():
         return AnonymousUser
     if not hasattr(g, "_cached_user"):
         try:
-            setattr(g, "_cached_user", User.identify(session["_user_id"]))
+            g._cached_user = User.identify(session["_user_id"])
         except:
             session.clear()
             return AnonymousUser
