@@ -1,5 +1,4 @@
 1) Finish Account Management Dashboard
-    a) Make removing unverified role also removes the user from the unverified logs
-    b) fix spacing problems for "edit_user" editing symbol 
-    c) Create managing controls for Articles Made by: ... section 
+    a) fix spacing problems for "edit_user" editing symbol 
+    b) Create managing controls for Articles Made by: ... section 
 2) start working on other admin management pages (e.g. article management, github page, and Web Settings, and possibly a mail section)
