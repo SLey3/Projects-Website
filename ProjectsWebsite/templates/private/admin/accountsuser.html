@@ -58,7 +58,7 @@
                             <td>{{ role.id }}</td>
                             <td>{{ role.name }}</td>
                             <td>
-                                <form id="inner-delete-role-form" method="POST">
+                                <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
                                     {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
                                     {{ delete_role_forms.editor_field }} {% endif %}
                                 </form>
@@ -91,8 +91,17 @@
                             <th>Article Desc</th>
                             <th>Created In:</th>
                             <th>Article Link </th>
-                            <th id="srch-upper-cell">Search: {{ search_form.command }} <button id="article-srch-btn" class="article-search-btn"><i class="fa fa-search" aria-hidden="true"></i></button></th>
-                            <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" /></th>
+                            <th id="srch-upper-cell">
+                                <form id="article-srch-form" method="POST">
+                                    <p>
+                                        Search:
+                                    </p>
+                                    {{ search_form.command }} {{ search_form.command_sbmt }}
+                                </form>
+                            </th>
+                            <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" />
+                                <div id="article-delete-all-container"></div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,7 +113,11 @@
                             <td>{{ article.create_date }}</td>
                             <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
                             <td></td>
-                            <td><input name="article-check-inner" type="checkbox" class="select-check inner-check" /></td>
+                            <td>
+                                <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
+                                    {{ delete_article_forms.delete_article }}
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -168,22 +181,18 @@
 <script type="text/javascript">
     (function() {
         $('input[type=checkbox]#article-head-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#article-foot-selectAll").prop('checked', $(this).prop('checked'));
         });
         $('input[type=checkbox]#article-foot-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#article-head-selectAll").prop('checked', $(this).prop('checked'));
         });
     })();
 
     (function() {
         $('input[type=checkbox]#role-head-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#role-foot-selectAll").prop('checked', $(this).prop('checked'));
         });
         $('input[type=checkbox]#role-foot-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#role-head-selectAll").prop('checked', $(this).prop('checked'));
         });
     })();
@@ -637,21 +646,38 @@
 </script>
 <script type="text/javascript">
     function confirm_deletion() {
-        return confirm("Are you sure you want to delete ALL roles from {{ user.name }}?");
+        if (confirm("Are you sure you want to delete ALL roles from {{ user.name }}?")) {
+            $("#delete-all-role-form").submit();
+        } else {
+            return false
+        }
+
     }
     (function() {
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form id='delete-all-form' method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all() }}' + "</form>");
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn-icn").css("cursor", "default");
+                    $("#role-add-btn").css("cursor", "default");
                 } else {
+                    $("#role-add-btn-icn").css("opacity", 1);
+                    $("#role-add-btn-icn").css("cursor", "pointer");
+                    $("#role-add-btn").css("cursor", "pointer");
                     $("#delete-all-btn-container").empty()
                 }
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn").css("cursor", "default");
+                    $("#role-add-btn-icn").css("cursor", "default");
                 } else {
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn").css("cursor", "pointer");
+                    $("#role-add-btn-icn").css("cursor", "pointer");
                     $("#delete-all-btn-container").empty();
                 }
             })
@@ -662,7 +688,6 @@
     function addRoleCollapse() {
         $(document).ready(function() {
             $("#add-back-btn").click(function() {
-                console.log("I'm clicked!");
                 $("#role-head-selectAll").attr('type', 'checkbox');
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Select");
@@ -679,10 +704,37 @@
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Add Role");
                 $("#add-role-btn-container").empty();
-                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ request.url }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
+                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
             });
         });
     }
+</script>
+<script type="text/javascript">
+    function confirm_deletion() {
+        if (confirm("Are you sure you want to delete ALL articles from {{ user.name }}?")) {
+            $("#delete-all-article-form").submit();
+        } else {
+            return false;
+        }
+    }
+    (function() {
+        $(document).ready(function() {
+            $("#article-head-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                } else {
+                    $("#article-delete-all-container").empty();
+                }
+            });
+            $("#article-foot-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                } else {
+                    $("#article-delete-all-container").empty();
+                }
+            });
+        });
+    })();
 </script>
 {% assets "edit_prof_main_js" %}
 <script src="{{ ASSET_URL }}"></script>

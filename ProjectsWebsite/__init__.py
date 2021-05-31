@@ -6,47 +6,34 @@ from flask import (
     Flask, request, render_template, 
     redirect, url_for, send_from_directory
     )
-from flask_security import Security
 from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
 from flask_debugtoolbar import DebugToolbarExtension
 from datetime import timedelta
-from subprocess import Popen, PIPE, TimeoutExpired
 from ProjectsWebsite.admin import admin
 from ProjectsWebsite.dashboard import dash
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.database.models import User, user_datastore
 from ProjectsWebsite.modules import (
     assets, db, guard, login_manager,
-    mail, security, img_set
+    mail, security, img_set, #search
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, runSchedulerInspect, checkExpireRegistrationCodes
 from http.client import HTTPConnection as reqlogConnection
-from threading import Event
 from json import load
 from rich import print as rprint
+from tempfile import mkdtemp
 import ssl
-import os
 import logging
 import schedule
 import signal
-
-# ------------------ Check Directories ------------------
-if os.path.basename(os.getcwd()) == "Projects_Website":
-    directory_script = Popen(["sh", "./scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
-    directory_script.communicate()
-else:
-    directory_script = Popen(["sh", "../scripts/checkdirs.sh"], stdin=PIPE, stdout=PIPE, stderr=PIPE) 
-    directory_script.communicate()
-
+import os
 
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
-PRODUCTION = True
-
-
+PRODUCTION = False
 
 # ------------------ Loggers ------------------
 requests_logger = logging.getLogger("urllib3")
@@ -64,10 +51,14 @@ context.load_cert_chain('cert/server.cert', 'cert/server.key')
 # ------------------ App Setup ------------------
 app = Flask(__name__, template_folder="templates", static_folder='static')
 app.config["FLASK_SKIP_DOTENV"] = 1
-app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
+app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
-app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
-app.config["ALERT_CODES_DICT"] = load(open(os.path.join(app.root_path, "static", "assets", "json", "errors.json")))
+app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
+app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
+app.config["MSEARCH_PRIMARY_KEY"] = "id"
+app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
+app.config["MSEARCH_BACKEND"] = 'whoosh'
+app.config["MSEARCH_LOGGER"] = logging.DEBUG
 app.config.from_pyfile("../.env")
 import ProjectsWebsite.views as views
 app.register_blueprint(dash)
@@ -88,6 +79,8 @@ login_manager.init_app(app)
 
 mail.init_app(app)
 
+# search.init_app(app)
+
 configure_uploads(app, img_set)
 
 assets.init_app(app)
@@ -106,10 +99,14 @@ if not PRODUCTION:
 def create_app(env_dir=None):
     app = Flask(__name__, template_folder="templates", static_folder='static')
     app.config["FLASK_SKIP_DOTENV"] = 1
-    app.config["UPLOADS_DEFAULT_DEST"] = f'{app.root_path}\\static\\assets\\uploads'
+    app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
-    app.config["SESSION_FILE_DIR"] = f'{app.root_path}\\static\\sess'
-    app.config["ALERT_CODES_DICT"] = load(open(os.path.join(app.root_path, "static", "assets", "json", "errors.json")))
+    app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
+    app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
+    app.config["MSEARCH_PRIMARY_KEY"] = "id"
+    app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
+    app.config["MSEARCH_BACKEND"] = 'whoosh'
+    app.config["MSEARCH_LOGGER"] = logging.DEBUG
     app.config.from_pyfile(env_dir)
     import ProjectsWebsite.views as views
     app.register_blueprint(dash)
@@ -129,6 +126,8 @@ def create_app(env_dir=None):
     login_manager.init_app(app)
 
     mail.init_app(app)
+        
+    # search.init_app(app)
 
     configure_uploads(app, img_set)
 

@@ -1,9 +1,12 @@
 # ------------------ Imports ------------------
-from flask import jsonify, session
+from flask import jsonify
 from flask_security import SQLAlchemyUserDatastore
+from wtforms import Form
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin
+from ProjectsWebsite.forms.field import ButtonField
+# from ProjectsWebsite.modules import search
 
 # ------------------ SQL classes  ------------------
 class Role(db.Model, RoleMixin):
@@ -106,7 +109,11 @@ class Article(db.Model):
     Article Model
     """
     __tablename__ = 'article'
+    
     __bind_key__ = 'articles'
+    
+    __searchable__ = ["title", "author"]
+    
     id = db.Column("id", db.Integer, primary_key=True)
     title = db.Column("title", db.String(100))
     author = db.Column("author", db.String(100))
@@ -115,13 +122,24 @@ class Article(db.Model):
     title_img = db.Column(db.String(500))
     body = db.Column("body", db.String(900))
     
+    @classmethod
+    def delete(cls, id):
+        return cls.query.filter(cls.id == id).delete()
     
+    @classmethod
+    def delete_all(cls, author):
+        return cls.query.filter(cls.author == author).delete()
+        
 class Blacklist(db.Model):
     """
     Blacklist Model
     """
     __tablename__ = 'blacklist'
+    
     __bind_key__ = 'blacklist'
+    
+    __searchable__ = ["blacklisted_person", "date_blacklisted"]
+    
     id = db.Column("id", db.Integer(), primary_key=True)
     blacklisted_person = db.Column("person", db.String(100), unique=True, nullable=False)
     date_blacklisted = db.Column("date", db.String(30))
@@ -129,3 +147,7 @@ class Blacklist(db.Model):
 
 # ------------------ user_datastore  ------------------
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+
+# ------------------ search database class setup  ------------------
+# search.create_index(Article)
+# search.create_index(Blacklist)

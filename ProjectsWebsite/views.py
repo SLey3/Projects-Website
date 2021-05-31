@@ -118,7 +118,7 @@ def registerPage():
                                         Link: <a href="{confirm_link}">Confirm Account</a>''')
         mail.send(verify_msg)
         alert.setAlert('success', 'Registration Succesful. Check your email for confirmation link.')
-        unverlog.addContent(form.email.data.lower(), token, mode="r+")  
+        unverlog.addContent(form.email.data.lower(), token)  
         return redirect(url_for(".homePage"))
     else:
         return render_template("public/registerpage.html", form=form)
@@ -136,7 +136,7 @@ def confirmation_recieved(token):
         user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
         user_datastore.add_role_to_user(User.lookup(email), "verified")
         user_datastore.commit()
-        unverlog.removeContent(email, mode='r+')
+        unverlog.removeContent(email)
         alert.setAlert('success', 'Email Verified')
         return redirect(url_for(".homePage"))
     except SignatureExpired:
@@ -249,7 +249,7 @@ def articleCreation():
         else:
             filename = secure_filename(img_file.filename)
             img_set.save(img_file, name=f"{filename}")
-            with open(f'{PATH}\\static\\assets\\uploads\\images\\{filename}', 'rb', encoding="utf-8") as image:
+            with open(f'{current_app.static_folder}/assets/uploads/images/{filename}', 'rb') as image:
                 img = str(base64.b64encode(image.read()), 'utf-8')
         current_date = datetime.now()
         date_util = DateUtil(current_date)
@@ -258,7 +258,7 @@ def articleCreation():
         body = request.form["editordata"]         
         new_article = Article(
             title=form.title.data,
-            author=form.author.data,
+            author=form.author.data.capitalize(),
             create_date=creation_date,
             short_desc=form.short_desc.data,
             title_img=img,

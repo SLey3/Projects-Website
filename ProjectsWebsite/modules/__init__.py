@@ -6,6 +6,7 @@ from flask_assets import Environment, Bundle
 from flask_uploads import UploadSet, IMAGES
 from flask_mail import Mail
 from flask_praetorian import Praetorian
+from flask_msearch import Search
 
 # ------------------ module variables ------------------
 db = SQLAlchemy()
@@ -21,6 +22,8 @@ assets = Environment()
 security = Security()
 
 guard = Praetorian()
+
+search = Search()
 
 assets = Environment()
 

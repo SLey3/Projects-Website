@@ -103,14 +103,23 @@ class AccountManegementForms:
         """
         Creates Search Input
         """
-        command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
+        command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Title', 'autocomplete':'off'})
         
+        command_sbmt = ButtonField('<i class="fa fa-search" aria-hidden="true"></i>', id="article-srch-btn", render_kw={"class":"article-search-btn"})
+       
+    class ArticleDeleteForms(FlaskForm):
+        """
+        Submit fields for deleting article starting with the delete all field
+        """
+        delete_all = SubmitField(id="article-delete-all-sbmt", render_kw={"class":"article-dlt-a-sbmt"}) 
+        
+        delete_article = ButtonField("<i class='fa fa-trash-o' aria-hidden='true'></i>", render_kw={"class":"inner-article-delete-btn"})
         
     class roleForm(FlaskForm):
         """
         Submit Field that raises an alert before deleting all roles
         """
-        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', 'value':'delete all'}) 
+        delete_all = SubmitField(id="role-delete-all-sbmt", render_kw={'class':'role-delete-all-btn', 'value':'delete all'}) 
         
         add_role = StringField(id="add-role-input", validators=[DataRequired("Field cannot be empty"), ValidateRole()], render_kw={'class':'add-role-form-input', 'placeholder':'Enter Role', 'autocomplete':'off'})
         

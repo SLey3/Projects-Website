@@ -118,17 +118,18 @@ class unverfiedLogUtil:
     The encoding kwarg for `open()` has been provided by default for each function.
     """
     def __init__(self):
-        self.encoding = "utf-8"
+        self.openKwargs = {}
+        self.openKwargs["mode"] = "r+"
+        self.openKwargs["encoding"] = "utf-8"
     
-    def addContent(self, *line_content, **openKwargs):
+    def addContent(self, *line_content):
         """
         adds an unverfied member email and token in the unverfied log
         
         Format:
             (email) token
         """
-        openKwargs.setdefault("encoding", self.encoding)
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **self.openKwargs) as f:
             line = f"({line_content[0]}) {line_content[1]}"
             lines = f.readlines()
             if lines == []:
@@ -139,23 +140,28 @@ class unverfiedLogUtil:
                 f.writelines(lines)
                 f.close()
         
-    def removeContent(self, content_identifier: str, **openKwargs):
+    def removeContent(self, content_identifier: str):
         """
         removes line matching :param content_identifier: from the log
         
         :param content_identifier: : email string
         """
-        openKwargs.setdefault("encoding", self.encoding)
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **self.openKwargs) as f:
             lines = f.readlines()
             print(lines)
             for line in lines:
                 potential_email = line[line.find("(")+1:line.rfind(")")]
                 print(potential_email)
+                print(content_identifier)
                 if potential_email == content_identifier:
                     lines.remove(line)
-                    f.writelines(lines)
-                    f.close()
+                    print(lines)
+                    if lines == []:
+                        f.truncate(0)
+                        f.close()
+                    else:
+                        f.writelines(lines)
+                        f.close()
 
 class AlertUtil(object):
     """
@@ -408,14 +414,14 @@ def token_auth_required(f):
             token = b64decode(session["token"])
             token = str(token, encoding="utf-8")
             try:
-                data = guard.extract_jwt_token(token)
+                guard.extract_jwt_token(token)
             except:
                 return abort(401)
             return f(*args, **kwargs)
         elif "token" in request.args:
             token = request.args.get("token")
             try:
-                data = guard.extract_jwt_token(token)
+                guard.extract_jwt_token(token)
             except:
                 return abort(401)
             return f(*args, **kwargs)

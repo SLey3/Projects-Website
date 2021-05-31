@@ -7,7 +7,7 @@ from itertools import zip_longest
 
 __all__ = []
 
-for (func1, func2) in zip_longest(__mainmailall__, __filterall__, fillvalue=0"):
+for (func1, func2) in zip_longest(__mainmailall__, __filterall__, fillvalue=0):
     __all__.extend([func1, func2])
 
 del zip_longest

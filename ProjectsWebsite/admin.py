@@ -4,9 +4,13 @@ from flask import (
     redirect, request
 )
 from flask_login import confirm_login
+from sqlalchemy.orm.query import Query
 from ProjectsWebsite.database.models import User, Article, user_datastore
 from ProjectsWebsite.forms import AccountManegementForms
-from ProjectsWebsite.util import scrapeError as _scrapeError, token_auth_required, generate_err_request_url, logout_user, roles_required
+from ProjectsWebsite.util import (scrapeError as _scrapeError,
+                                  token_auth_required, generate_err_request_url,
+                                  logout_user, roles_required, unverfiedLogUtil
+                                  )
 from ProjectsWebsite.util.mail import defaultMail
 from ProjectsWebsite.modules import db, guard
 from functools import partial
@@ -60,19 +64,24 @@ def adminAccountsManegement(page):
             users = User.query.paginate(page, pages, error_out=False)
     return render_template("private/admin/accounts.html", accounts=users, tbl_search_form=search_form)
 
-@admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page':1})
+@admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
+@admin.route('management/accounts/edit_user/<string:user>/<action>/<item_id>/<int:page>', methods=['GET', 'POST'])
 @token_auth_required
-def adminAccountsUserManagement(user, page):
-    name_error = ""; email_error = ""; password_error = ""; active_error = ""; blacklist_error = ""; add_role_error = ""
+def adminAccountsUserManagement(user, page, action=None, item_id=None):
     page: int = page
     pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
     URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
     scrapeError = partial(_scrapeError, URL, 'p', auth=True)
-    info_forms, search_form, role_form, delete_role_forms = (AccountManegementForms.adminUserInfoForm(), AccountManegementForms.tableSearchForm(), AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms())
+    info_forms, search_form, role_form, delete_role_forms, delete_article_forms = (
+        AccountManegementForms.adminUserInfoForm(), AccountManegementForms.tableSearchForm(), 
+        AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
+        AccountManegementForms.ArticleDeleteForms()
+    )
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
+    action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
             user_info.name = info_forms.name.data
@@ -123,12 +132,28 @@ def adminAccountsUserManagement(user, page):
             user_datastore.remove_role_from_user(user_info, "verified")
             user_datastore.commit()
         elif delete_role_forms.unverified_field.data:
-            # TODO: make sure that the user is removed from the unverfied-logs.txt file
             user_datastore.remove_role_from_user(user_info, "unverified")
             user_datastore.commit()
+            log = unverfiedLogUtil()
+            log.removeContent(user_info.username)
         elif delete_role_forms.editor_field.data:
             user_datastore.remove_role_from_user(user_info, "editor")
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms, name_error=name_error, email_error=email_error, pwd_error=password_error, active_error=active_error, blacklist_error=blacklist_error, add_role_error=add_role_error)
+        elif search_form.command.data and search_form.command_sbmt.data:
+            search_query = search_form.command.data
+            article_info = Article.query.filter(Article.title.like(search_query)).paginate(per_page=pages, error_out=False)
+            for article in article_info.items:
+                if article.author != user_info.name:
+                    article_info.items.remove(article)
+        elif delete_article_forms.delete_article.data:
+            if action == "delete":
+                item_id = request.args.get("item_id")
+                Article.delete(item_id)
+                user_datastore.commit()
+        elif delete_article_forms.delete_all.data:
+            Article.delete_all(user_info.name)
+            user_datastore.commit()
+        return redirect(url_for(".adminAccountsUserManagement", user=user_info.name))
     else:
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, role_form=role_form, delete_role_forms=delete_role_forms)
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
+                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms)
         

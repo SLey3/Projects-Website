@@ -1,6 +1,6 @@
 # Imports
 from subprocess import PIPE, TimeoutExpired
-from re import sub
+import re
 import os 
 import subprocess
 import click
@@ -73,7 +73,7 @@ def un_install():
     with open('requirements.in', 'r', encoding='utf-8') as r:
         lines = r.readlines()
     for line in lines:
-        sub_line = sub(r"==[0-9.]+", '', line)
+        sub_line = re.sub(r"==[0-9.a-zA-Z]+", '', line)
         if sub_line == "click":
             continue
         else:
@@ -108,8 +108,15 @@ def uninstall(module):
         lines = r.readlines()
     with open('requirements.in', 'w', encoding="utf-8") as r:
         for line in lines:
-            if line.strip() not in module:
+            subbed_line = re.sub(r"==[0-9.a-zA-Z]+", '', line)
+            if subbed_line.strip() not in module:
                 r.write(line)
+    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding="utf-8")
+    try:
+        outs, errs = command.communicate(timeout=9)
+    except TimeoutExpired:
+        command.kill()
+        
     for m in module:
         click.secho(f"Uninstalling: {m}...", fg="red")
         command = subprocess.Popen(["pip", "uninstall", m, "-y"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
