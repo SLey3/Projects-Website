@@ -28,38 +28,39 @@ __all__ = [
     "ValidatePasswordStrength"
 ]
 
-def ValidatePhone(message: optional[str] = None):
+class ValidatePhone(object):
     """
     validates phone number
     """
-    if isinstance(message, type(None)):
-        message = "Invalid Phone Number"
-    else:
-        message = message
-    
-    def _validatephone(form, field):
-        if len(field.data) > 15:
-            raise ValidationError("Invalid Phone Number")
+    def __init__(self, message: optional[str] = None):
+        if isinstance(message, type(None)):
+            self.message = "Invalid Phone Number"
+        else:
+            self.message = message
         
+    def __call__(self, form, field):
+        if len(field.data) > 15:
+            raise ValidationError("Invalid Phone Number Length")
         try:
             mobile_number = phonenumbers.parse(field.data)
             if not (phonenumbers.is_valid_number(mobile_number)):
-                raise ValidationError(message)
+                raise ValidationError(self.message)
         except:
             mobile_number = phonenumbers.parse("+1"+field.data)
             if not (phonenumbers.is_valid_number(mobile_number)):
-                raise ValidationError(message)
-    return _validatephone
+                raise ValidationError(self.message)
 
-def ValidateBool(python_bool: bool = True):
+class ValidateBool(object):
     """
     validates bool format
     """
-    python_bool = python_bool
-    def _validatebool(form, field):
+    def __init__(self, python_bool: bool = True):
+        self.python_bool = python_bool
+    
+    def __call__(self, form, field):
         if len(field.data) < 4 and len(field.data) > 5:
             raise ValidationError("Field may not be less than 4 character and no more than 5 characters.")
-        if python_bool:
+        if self.python_bool:
             if not bool_re.match(field.data):
                 raise ValidationError("Input is not in Python bool format or is not a bool.")
         else:
@@ -67,14 +68,12 @@ def ValidateBool(python_bool: bool = True):
             other_bool_re = re.compile(r"True|False", re.I)
             if not other_bool_re.match(field.data):
                 raise ValidationError("Input is not a bool.")
-    return _validatebool
-
-
-def ValidateRole():
+            
+class ValidateRole(object):
     """
     validates role
     """
-    def _validaterole(form, field):
+    def __call__(self, form, field):
         if len(field.data) >= 11:
             raise ValidationError("Length of Role may not be 12+ characters long")
         from ProjectsWebsite.database.models import Role
@@ -82,35 +81,33 @@ def ValidateRole():
             pass
         else:
             raise ValidationError(f"{field.data} is not a valid role.")
-    return _validaterole       
-
-def ValidatePasswordStrength():
+        
+class ValidatePasswordStrength(object):
     """
     Checks Password Strength
-    """
+    """   
     failed_tests = []
-    def _validateStrength(form, field):
-        nonlocal failed_tests
+    
+    def __call__(self, form, field):
         policy = PasswordPolicy.from_names(
-            uppercase=3,
-            numbers=4,
-            special=2,
-            nonletters=2)
+        uppercase=3,
+        numbers=4,
+        special=2,
+        nonletters=2)
         result = policy.test(field.data)
         if result == []:
             return None
         for test in result:
             if isinstance(test, Uppercase):
-                failed_tests.append("uppercase letters")
+                self.failed_tests.append("uppercase letters")
             elif isinstance(test, Numbers):
-                failed_tests.append("numbers")
+                self.failed_tests.append("numbers")
             elif isinstance(test, Special):
-                failed_tests.append("special characters")
+                self.failed_tests.append("special characters")
             elif isinstance(test, NonLetters):
-                failed_tests.append("non-letter characters")
+                self.failed_tests.append("non-letter characters")
         err = "The Password has less than the required limit(s) of: "
-        for test in failed_tests:
+        for test in self.failed_tests:
             err +=  f'\n{test}'
         err += "."
         raise ValidationError(err)
-    return _validateStrength
