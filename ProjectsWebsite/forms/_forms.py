@@ -11,6 +11,16 @@ from ProjectsWebsite.forms.validators import *
 from ProjectsWebsite.forms.field import ButtonField
 
 # ------------------ Forms------------------
+__all__ = [
+    "loginForm",
+    "registerForm",
+    "articleForm",
+    "contactForm",
+    "forgotForm",
+    "forgotRequestForm",
+    "AccountManegementForms"
+]
+
 class loginForm(FlaskForm):
     """
     website login Form for loginpage.html
@@ -31,7 +41,7 @@ class registerForm(FlaskForm):
                                              Length(min=3, max=50, message="Email length must be at most 50 characters")], 
                                             render_kw={'placeholder':'Email'})
     password = PasswordField("password", id="password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
-                                                                                         message="length should be between 8-99 characters")],
+                                                                                         message="length should be between 8-99 characters"), ValidatePasswordStrength()],
                                                                                         render_kw={'placeholder':'Password'})
     confirm_pass = PasswordField("confirm_pass", id="confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
                                                                         "Confirmation password must equal to the created password")],
@@ -78,7 +88,7 @@ class forgotForm(FlaskForm):
     Password change form for forgot password
     """
     new_password = PasswordField("password", id="password", validators=[DataRequired("Password field Entry required."),  Length(min=8, max=99,
-                                message="length should be between 8-99 characters")], render_kw={'placeholder':'New Password'})
+                                message="length should be between 8-99 characters"), ValidatePasswordStrength()], render_kw={'placeholder':'New Password'})
     
     confirm_new_password = PasswordField("confirm_new_password", id="confirm_pass", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
                                          render_kw={'placeholder':'Confirm Password'})
@@ -133,7 +143,15 @@ class AccountManegementForms:
             unverified_field = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', id="unverified-data-role-type-container", render_kw={'class':'inner-delete-btn', "data-role-type":"unverified"})
             
             editor_field = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', id="editor-data-role-type-container", render_kw={'class':'inner-delete-btn', "data-role-type":"editor"})
-            
+    class extOptionForm(FlaskForm):
+        """
+        Includes: Blacklist and UnBlacklist Buttons
+        """
+        blacklist = SubmitField(id="blacklist-btn", render_kw={'class':'blacklist', 'value':'Blacklist'})
+        
+        unblacklist = SubmitField(id="unBlacklist-btn", render_kw={'class':'blacklist', 'value':'Remove Blacklist'})
+        
+        reason = StringField(id="reason-field", validators=[Length(min=0, max=100, message="Blacklist Reason may not be over 100 characters."), Optional()], render_kw={'class':'blacklist-reason', 'autocomplete':'off', 'placeholder':'Enter Reason...'})            
         
     class adminUserInfoForm(FlaskForm):
         """

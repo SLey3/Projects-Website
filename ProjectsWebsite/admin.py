@@ -4,15 +4,15 @@ from flask import (
     redirect, request
 )
 from flask_login import confirm_login
-from sqlalchemy.orm.query import Query
-from ProjectsWebsite.database.models import User, Article, user_datastore
+from flask_mail import Message
+from ProjectsWebsite.database.models import User, Article, Blacklist, user_datastore
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   token_auth_required, generate_err_request_url,
                                   logout_user, roles_required, unverfiedLogUtil
                                   )
-from ProjectsWebsite.util.mail import defaultMail
-from ProjectsWebsite.modules import db, guard
+from ProjectsWebsite.util.mail import defaultMail, blacklistMail
+from ProjectsWebsite.modules import db, guard, mail
 from functools import partial
 
 # ------------------ Blueprint Config ------------------
@@ -73,12 +73,16 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
     pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
+    if user_info.is_blacklisted:
+        blacklist_info = Blacklist.query.filter_by(blacklisted_person=user_info.name).first()
+    else:
+        blacklist_info = None
     URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
     scrapeError = partial(_scrapeError, URL, 'p', auth=True)
-    info_forms, search_form, role_form, delete_role_forms, delete_article_forms = (
+    info_forms, search_form, role_form, delete_role_forms, delete_article_forms, ext_options = (
         AccountManegementForms.adminUserInfoForm(), AccountManegementForms.tableSearchForm(), 
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
-        AccountManegementForms.ArticleDeleteForms()
+        AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
     article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
     action = request.args.get("action")
@@ -93,7 +97,7 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif not info_forms.email.validate(info_forms) and info_forms.email.data:
             email_error = scrapeError(('id', 'email-err-p'), info_forms.email.data)
         elif info_forms.password.data and info_forms.password.validate(info_forms):
-            user_info.password = guard.hash_password(info_forms.password.data)
+            user_info.hashed_password = guard.hash_password(info_forms.password.data)
         elif not info_forms.password.validate(info_forms) and info_forms.password.data:
             password_error = scrapeError(('id', 'pwd-err-p'), info_forms.password.errors)
         elif info_forms.active.data and info_forms.active.validate(info_forms):
@@ -106,15 +110,6 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             db.session.commit()
         elif not info_forms.active.validate(info_forms) and info_forms.active.data:
             active_error = scrapeError(('id', 'active-status-err-p'), info_forms.active.errors)
-        elif info_forms.blacklist.data and info_forms.blacklist.validate(info_forms):
-            if info_forms.blacklist.data == "False":
-                data = False
-            else:
-                data = True
-            user_info.blacklisted = data
-            db.session.commit()
-        elif not info_forms.blacklist.validate(info_forms) and info_forms.blacklist.data:
-            blacklist_error = scrapeError(('id', 'blacklist-status-err-p'), info_forms.blacklist.errors)
         elif role_form.delete_all.data:
             for role in user_info.roles:
                 if role not in ('admin', 'verified', 'unverified'):
@@ -152,8 +147,33 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif delete_article_forms.delete_all.data:
             Article.delete_all(user_info.name)
             user_datastore.commit()
+        elif ext_options.blacklist.data: 
+            reason = ext_options.reason.data
+            user_id = user_info.id
+            try:
+                reasons = list(reason.split("|"))
+            except Exception:
+                reasons = []
+            blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
+            blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
+            mail.send(blacklist_msg)
+            print("past mail section")
+            if reasons == []:
+                reason_list = "No Reasons"
+            else:
+                reason_list = ""
+                for reason in reasons:
+                    reason_list += f"- {reason}\n"
+            blacklist_query = Blacklist.add_blacklist(
+                blacklisted_person=user_info.name,
+                reason=reason_list
+            )
+            user_info.blacklisted = True
+            user_datastore.put(blacklist_query)
+            user_datastore.commit()
+        elif ext_options.unblacklist.data: ...
         return redirect(url_for(".adminAccountsUserManagement", user=user_info.name))
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
-                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms)
+                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options)
         

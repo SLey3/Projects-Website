@@ -10,11 +10,12 @@
     <meta name="publisher" content="Sergio Ley">
     <meta name="distribution" content="private">
     <title>{% block title %}{% endblock %}</title>
-    {% block css %}{% endblock %}
+    {% block css %}{% endblock %}{% assets "alert__css" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
 </head>
 
 <body>
-    {% block content %} {% endblock %} {% block js %}{% endblock %}
+    {% from "public/render/_render_alert.html" import render_alert %}{% block content %} {% endblock %} {% block js %}{% endblock %}
 </body>
 
 </html>

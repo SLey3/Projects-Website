@@ -2,6 +2,7 @@
 from wtforms.widgets import HTMLString, html_params
 
 # ------------------ Widget ------------------
+__all__ = ["ButtonWidget"]
 class ButtonWidget(object):
     """
     Widget for ButtonField.

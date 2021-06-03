@@ -70,15 +70,22 @@ def loginPage():
     alert_dict = alert.getAlert()
     
     if request.method == 'POST':
-        user = guard.authenticate(form.username.data, form.password.data)
+        user = User.lookup(form.username.data)
         if user:
-            token = guard.encode_jwt_token(user)
-            login_user(token, user)
-            return redirect(url_for(".homePage"))
-        error = "Invalid Email or Password"
-        return render_template("public/loginpage.html", form=form, error=error, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
+            if guard._verify_password(form.password.data, user.hashed_password):
+                if user.is_blacklisted:
+                    alert.setAlert('error', "This Account is Banned.")
+                    return redirect(url_for(".loginPage"))
+                token = guard.encode_jwt_token(user)
+                login_user(token, user)
+                return redirect(url_for(".homePage"))
+        alert.setAlert('error', "Invalid Email or Password")
+        return redirect(url_for(".loginPage"))
     else:
         if current_user.is_authenticated:
+            if current_user.is_blacklisted:
+                alert.setAlert('error', f"Your Account with the ID of {current_user.id} has been Banned. You should have received an e-mail from us regarding this")
+                logout_user()
             return redirect(url_for('.homePage'))
         return render_template("public/loginpage.html", form=form, alert_msg=alert_dict['Msg'], alert_type=alert_dict['Type'])
 
@@ -89,7 +96,7 @@ def registerPage():
     """
     global email
     form = registerForm()
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         with sql_sess.no_autoflush:
             user_datastore.find_or_create_role('admin')
             user_datastore.find_or_create_role('member')
@@ -103,7 +110,7 @@ def registerPage():
             hashed_password=guard.hash_password(form.password.data),
             created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
             blacklisted=False,
-            roles=['admin', 'member', 'unverified']
+            roles=['member', 'unverified']
         )
         user_datastore.commit()
         def yield_email(email):
@@ -161,15 +168,15 @@ def initialForgotPage():
         recipient_email = form.email.data
         user = User.lookup(form.email.data)
         if isinstance(user, type(None)):
+            alert.setAlert('warning', f"No Account found under {recipient_email}.")
             if recipient_email != '' and form.submit.data == True:
-                alert.setAlert('warning', f"No Account found under {recipient_email}.")
                 return redirect(url_for(".loginPage"))
             elif recipient_email == '' and form.back_button.data:
                 return redirect(url_for('.loginPage'))
         if not form.submit.data and form.back_button.data:
-            return redirect(url_for('loginPage')) 
+            return redirect(url_for('.loginPage')) 
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
-        reset_url = 'http://127.0.0.1:5000' + url_for("resetRequestRecieved", token=reset_token, email=recipient_email)
+        reset_url = 'http://127.0.0.1:5000' + url_for(".resetRequestRecieved", token=reset_token, email=recipient_email)
         reset_msg = Message('Reset Password', recipients=[recipient_email])
         reset_msg.html = automatedMail(user.name, 
                                 f'''You have requested to reset your password. Follow the link below to reset your password.
@@ -193,13 +200,13 @@ def resetRequestRecieved(token, email):
             email = str(email).replace("%40", '@')
             replacementPassword = guard.hash_password(form.confirm_new_password.data)
             user = User.lookup(email)
-            if not guard.authenticate(user, form.confirm_new_password.data):
-                user.password = replacementPassword
+            if not user.verify_password(replacementPassword):
+                user.hashed_password = replacementPassword
                 db.session.commit()
                 alert.setAlert('success', 'Password has been Successfully reset.')
             else:
                 alert.setAlert('warning', 'The Requested Password matches your current password.')
-            return redirect(url_for('loginPage'))
+            return redirect(url_for('.loginPage'))
         else:
             return render_template("public/forgotrecieved.html", form=form, token=token, email=email)
     

@@ -9,7 +9,7 @@ from ProjectsWebsite.util.mail import automatedMail
 from typing import (
     Dict, List, Tuple, Optional
 )
-from ProjectsWebsite.modules import guard, login_manager, db, mail
+from ProjectsWebsite.modules import guard, login_manager, mail
 try:
     from werkzeug import LocalProxy
 except ImportError:

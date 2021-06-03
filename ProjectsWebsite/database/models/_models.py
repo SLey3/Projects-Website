@@ -1,11 +1,10 @@
 # ------------------ Imports ------------------
 from flask import jsonify
 from flask_security import SQLAlchemyUserDatastore
-from wtforms import Form
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin
-from ProjectsWebsite.forms.field import ButtonField
+from datetime import datetime
 # from ProjectsWebsite.modules import search
 
 # ------------------ SQL classes  ------------------
@@ -82,10 +81,11 @@ class User(db.Model, SQLAlchemyUserMixin):
         """
         return self.identity
     
-    def to_json(self):
-        return jsonify(
-                       email=self.username,
-                       password=self.hashed_password)
+    def verify_password(self, hashed_pwd):
+        """
+        Returns True if hashed_pwd equals the users password
+        """
+        return hashed_pwd == self.hashed_password
         
     @property
     def is_authenticated(self):
@@ -93,6 +93,14 @@ class User(db.Model, SQLAlchemyUserMixin):
         returns if user is authenticated
         """
         return True
+    @property
+    def is_blacklisted(self):
+        """
+        returns if user is blacklisted
+        """
+        if self.blacklisted:
+            return True
+        return False
 
     def __repr__(self):
         return self.name
@@ -142,7 +150,22 @@ class Blacklist(db.Model):
     
     id = db.Column("id", db.Integer(), primary_key=True)
     blacklisted_person = db.Column("person", db.String(100), unique=True, nullable=False)
+    reason = db.Column("reason", db.String(255))
     date_blacklisted = db.Column("date", db.String(30))
+    
+    @classmethod
+    def add_blacklist(cls, **kwargs):
+        """
+        adds a person to the Blacklist database
+        """
+        kwargs.setdefault("date_blacklisted", datetime.now().strftime("%m/%d/%y %H:%M:%S"))
+        return cls(**kwargs)
+    @classmethod
+    def remove_blacklist(cls, name):
+        """
+        removes a person from the Blacklist database
+        """
+        return cls.query.filter(cls.blacklisted_person == name).delete()
     
 
 # ------------------ user_datastore  ------------------
