@@ -17,7 +17,7 @@ from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.database.models import User, user_datastore
 from ProjectsWebsite.modules import (
     assets, db, guard, login_manager,
-    mail, security, img_set, #search
+    mail, security, img_set, search
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, runSchedulerInspect, checkExpireRegistrationCodes
@@ -55,9 +55,7 @@ app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
 app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
 app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
-app.config["MSEARCH_PRIMARY_KEY"] = "id"
 app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
-app.config["MSEARCH_BACKEND"] = 'whoosh'
 app.config["MSEARCH_LOGGER"] = logging.DEBUG
 app.config.from_pyfile("../.env")
 import ProjectsWebsite.views as views
@@ -79,7 +77,7 @@ login_manager.init_app(app)
 
 mail.init_app(app)
 
-# search.init_app(app)
+search.init_app(app)
 
 configure_uploads(app, img_set)
 
@@ -103,9 +101,7 @@ def create_app(env_dir=None):
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
     app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
     app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
-    app.config["MSEARCH_PRIMARY_KEY"] = "id"
     app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
-    app.config["MSEARCH_BACKEND"] = 'whoosh'
     app.config["MSEARCH_LOGGER"] = logging.DEBUG
     app.config.from_pyfile(env_dir)
     import ProjectsWebsite.views as views
@@ -127,7 +123,7 @@ def create_app(env_dir=None):
 
     mail.init_app(app)
         
-    # search.init_app(app)
+    search.init_app(app)
 
     configure_uploads(app, img_set)
 

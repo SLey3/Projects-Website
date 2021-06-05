@@ -1,11 +1,10 @@
 # ------------------ Imports ------------------
-from flask import jsonify
 from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin
 from datetime import datetime
-# from ProjectsWebsite.modules import search
+from ProjectsWebsite.modules import search
 
 # ------------------ SQL classes  ------------------
 class Role(db.Model, RoleMixin):
@@ -172,5 +171,5 @@ class Blacklist(db.Model):
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
 # ------------------ search database class setup  ------------------
-# search.create_index(Article)
-# search.create_index(Blacklist)
+search.create_index(Article)
+search.create_index(Blacklist)
