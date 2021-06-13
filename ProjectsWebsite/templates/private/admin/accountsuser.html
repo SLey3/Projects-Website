@@ -26,9 +26,17 @@
                     <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
                     <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
                     <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
-                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span>
-                    <div id="edit-blacklist-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if blacklist_error %} {{ blacklist_error | safe }} {% else %}
-                    <p id="blacklist-status-err-p" class="blacklist-status-err err-txt"></p> {% endif %} <br>
+                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span> {% if user.is_blacklisted %}
+                    <br>
+                    <hr>
+                    <span id="blacklist-order-1" class="blacklist-reason">
+                        Reason: {{ blacklist_info.reason }}
+                    </span>
+                    <br>
+                    <span id="blacklist-order-2" class="blacklist-date">
+                        Date Blacklisted: {{ blacklist_info.date_blacklisted }}
+                    </span> {% endif %}
+                    <br>
                 </information>
             </div>
         </div>
@@ -105,7 +113,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for article in article_info.items %}
+                        {% for article in article_info %}
                         <tr>
                             <td>{{ article.id }}</td>
                             <td> {{ article.title }}</td>

@@ -90,7 +90,7 @@ class ValidatePasswordStrength(object):
     
     def __call__(self, form, field):
         policy = PasswordPolicy.from_names(
-        uppercase=3,
+        uppercase=2,
         numbers=4,
         special=2,
         nonletters=2)

@@ -45,7 +45,7 @@ markupsafe==1.1.1         # via jinja2, wtforms
 mccabe==0.6.1             # via pylint
 passlib==1.7.4            # via -r requirements.in, flask-praetorian, flask-security
 password-strength==0.0.3.post2  # via -r requirements.in
-pendulum==2.1.2           # via flask-praetorian
+pendulum==2.1.2           # via -r requirements.in, flask-praetorian
 phonenumbers==8.12.13     # via -r requirements.in
 py-buzz==1.0.3            # via flask-buzz
 pygments==2.7.4           # via rich

@@ -23,6 +23,12 @@ Telephone Number: <i>
 </pre>
 </i>
 <br>
+Date of Contact: <i>
+<pre>
+ {date}
+</pre>
+</i>
+<br>
 <hr>
 <br>
 <u><b>Message:</b></u>

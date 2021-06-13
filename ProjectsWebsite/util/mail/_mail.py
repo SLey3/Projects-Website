@@ -26,7 +26,7 @@ def _insert_content(letter: List[str], recipient: str, content: str, sender: Opt
     return letter
 
 
-def _format_contact(letter: List[str], name: str, inquiry_selection: str, email: str, tel: str, msg: str) -> List[str]:
+def _format_contact(letter: List[str], name: str, inquiry_selection: str, email: str, tel: str, msg: str, date: str) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
         if char == "{name}":
@@ -37,6 +37,8 @@ def _format_contact(letter: List[str], name: str, inquiry_selection: str, email:
             letter[i] = char.replace("{email}", email)
         elif char == "{tel}":
             letter[i] = char.replace("{tel}", tel)
+        elif char == "{date}":
+            letter[i] = char.replace("{date}", date)
         else:
             letter[i] = char.replace("{msg}", msg)
     return letter
@@ -99,5 +101,5 @@ def blacklistMail(name: str, id: str, reasons: List[str]):
         letter = b.readlines()
     filtered_letter = letterFilter(letter)
     new_letter = _format_blacklist(filtered_letter, name, id, reasons)
-    mail = "".join(char for char in filtered_letter)
+    mail = "".join(char for char in new_letter)
     return mail

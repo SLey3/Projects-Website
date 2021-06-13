@@ -9,7 +9,8 @@ from ProjectsWebsite.database.models import User, Article, Blacklist, user_datas
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   token_auth_required, generate_err_request_url,
-                                  logout_user, roles_required, unverfiedLogUtil
+                                  logout_user, roles_required, unverfiedLogUtil,
+                                  ArticleQueryLikeSearch, makeResultsObject, countSQLItems
                                   )
 from ProjectsWebsite.util.mail import defaultMail, blacklistMail
 from ProjectsWebsite.modules import db, guard, mail
@@ -69,7 +70,6 @@ def adminAccountsManegement(page):
 @admin.route('management/accounts/edit_user/<string:user>/<action>/<item_id>/<int:page>', methods=['GET', 'POST'])
 @token_auth_required
 def adminAccountsUserManagement(user, page, action=None, item_id=None):
-    page: int = page
     pages = 3
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
@@ -84,7 +84,8 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    article_info = Article.query.filter(Article.author.like(user)).paginate(page, pages, error_out=False)
+    article_info = Article.query.msearch(user_info.name).paginate(page, pages, error_out=False)
+    article_info = makeResultsObject(article_info)
     action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
@@ -134,11 +135,7 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif delete_role_forms.editor_field.data:
             user_datastore.remove_role_from_user(user_info, "editor")
         elif search_form.command.data and search_form.command_sbmt.data:
-            search_query = search_form.command.data
-            article_info = Article.query.filter(Article.title.like(search_query)).paginate(per_page=pages, error_out=False)
-            for article in article_info.items:
-                if article.author != user_info.name:
-                    article_info.items.remove(article)
+            article_info = ArticleQueryLikeSearch(search_form.command.data, page, pages, user_info.name)
         elif delete_article_forms.delete_article.data:
             if action == "delete":
                 item_id = request.args.get("item_id")
@@ -157,7 +154,6 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
             blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
             mail.send(blacklist_msg)
-            print("past mail section")
             if reasons == []:
                 reason_list = "No Reasons"
             else:
@@ -171,9 +167,36 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             user_info.blacklisted = True
             user_datastore.put(blacklist_query)
             user_datastore.commit()
-        elif ext_options.unblacklist.data: ...
-        return redirect(url_for(".adminAccountsUserManagement", user=user_info.name))
+        elif ext_options.unblacklist.data: 
+            # Have not set up util.mail.unBlacklistMail yet
+            #
+            # reason = ext_options.reason.data
+            #
+            # try:
+            #     reasons = list(reason.split("|"))
+            # except Exception:
+            #     reasons = []
+            blacklist_remove_query = Blacklist.remove_blacklist(user_info.name)
+            user_info.blacklisted = False
+            user_datastore.put(blacklist_remove_query)
+            user_datastore.commit()
+        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
+                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options,
+                                blacklist_info=blacklist_info)
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
-                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options)
+                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options,
+                                blacklist_info= blacklist_info)
         
+@admin.route('manegement/articles', methods=['GET', 'POST'], defaults={'page': 1})
+@admin.route('manegement/articles/<int:page>', methods=['GET', 'POST'])
+def adminArticleManegement(page, action=None,  item_id=None):
+    """
+    Article Manegement page
+    """
+    pages = page + countSQLItems(Article)
+    _articles = Article.query.paginate(page, pages, error_out=False)
+    articles = makeResultsObject(_articles)
+    if request.method == 'POST':...
+    else:
+        return render_template("private/admin/articles.html")

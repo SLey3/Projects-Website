@@ -11,20 +11,16 @@ from flask_session import Session
 from flask_uploads import configure_uploads
 from flask_debugtoolbar import DebugToolbarExtension
 from datetime import timedelta
-from ProjectsWebsite.admin import admin
-from ProjectsWebsite.dashboard import dash
 from ProjectsWebsite.forms import loginForm
-from ProjectsWebsite.database.models import User, user_datastore
 from ProjectsWebsite.modules import (
     assets, db, guard, login_manager,
-    mail, security, img_set, #search
+    mail, security, img_set, search
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, runSchedulerInspect, checkExpireRegistrationCodes
 from http.client import HTTPConnection as reqlogConnection
 from json import load
 from rich import print as rprint
-from tempfile import mkdtemp
 import ssl
 import logging
 import schedule
@@ -56,14 +52,10 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
 app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
 app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
 app.config["MSEARCH_PRIMARY_KEY"] = "id"
-app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
+app.config["MSEARCH_INDEX_NAME"] = 'whoosh_index'
 app.config["MSEARCH_BACKEND"] = 'whoosh'
 app.config["MSEARCH_LOGGER"] = logging.DEBUG
 app.config.from_pyfile("../.env")
-import ProjectsWebsite.views as views
-app.register_blueprint(dash)
-app.register_blueprint(admin)
-app.register_blueprint(views.main_app)
 app.add_template_global(current_user, 'current_user')
 app.add_template_global(request, 'request')
 app.add_template_global(redirect, 'redirect')
@@ -79,13 +71,15 @@ login_manager.init_app(app)
 
 mail.init_app(app)
 
-# search.init_app(app)
+search.init_app(app)
 
 configure_uploads(app, img_set)
 
 assets.init_app(app)
 
 alert.init_app(app)
+
+from ProjectsWebsite.database.models import User, user_datastore
 
 security.init_app(app, user_datastore, login_form=loginForm)
 
@@ -95,61 +89,14 @@ Session(app)
 
 if not PRODUCTION:
     toolbar = DebugToolbarExtension(app)
-    
-def create_app(env_dir=None):
-    app = Flask(__name__, template_folder="templates", static_folder='static')
-    app.config["FLASK_SKIP_DOTENV"] = 1
-    app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
-    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
-    app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
-    app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
-    app.config["MSEARCH_PRIMARY_KEY"] = "id"
-    app.config["MSEARCH_INDEX_NAME"] = mkdtemp()
-    app.config["MSEARCH_BACKEND"] = 'whoosh'
-    app.config["MSEARCH_LOGGER"] = logging.DEBUG
-    app.config.from_pyfile(env_dir)
-    import ProjectsWebsite.views as views
-    app.register_blueprint(dash)
-    app.register_blueprint(admin)
-    app.register_blueprint(views.main_app)
-    app.add_template_global(current_user, 'current_user')
-    app.add_template_global(request, 'request')
-    app.add_template_global(redirect, 'redirect')
-    app.register_error_handler(PraetorianError, 
-                            PraetorianError.build_error_handler(lambda e: logger.error(e.message)))
-    app.debug = True
-    
-    app.env = "development"
 
-    db.init_app(app)
-
-    login_manager.init_app(app)
-
-    mail.init_app(app)
-        
-    # search.init_app(app)
-
-    configure_uploads(app, img_set)
-
-    assets.init_app(app)
-
-    alert.init_app(app)
-
-    security.init_app(app, user_datastore, login_form=loginForm)
-
-    guard.init_app(app, User)
-
-    Session(app)
-
-    if not PRODUCTION:
-        toolbar = DebugToolbarExtension(app)
-    requests_logger = logging.getLogger("urllib3")
-    requests_logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    requests_logger.addHandler(ch)
-    reqlogConnection.debuglevel = 1
-    return app
+# ------------------ Blueprint registration ------------------
+from ProjectsWebsite.views import main_app
+from ProjectsWebsite.admin import admin
+from ProjectsWebsite.dashboard import dash
+app.register_blueprint(dash)
+app.register_blueprint(admin)
+app.register_blueprint(main_app)
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)

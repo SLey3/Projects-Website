@@ -1,14 +1,18 @@
 # ------------------ Imports ------------------
 from flask import abort, g, session, current_app, request, url_for
+from flask_sqlalchemy import Pagination
 from flask_security import RoleMixin as _role_mixin
 from flask_principal import Permission, RoleNeed
 from flask_mail import Message
 from functools import wraps, partialmethod, partial
 from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
 from ProjectsWebsite.util.mail import automatedMail
+from pendulum.datetime import DateTime
 from typing import (
-    Dict, List, Tuple, Optional
+    Dict, List, Tuple, Any, Optional, Callable, Type
 )
+from collections.abc import Iterator, Iterable
+from collections import namedtuple
 from ProjectsWebsite.modules import guard, login_manager, mail
 try:
     from werkzeug import LocalProxy
@@ -34,6 +38,9 @@ __all__ = [
     "is_valid_article_page",
     "formatPhoneNumber",
     "DateUtil",
+    "makeResultsObject",
+    "ArticleQueryLikeSearch",
+    "countSQLItems",
     "scrapeError",
     "current_user",
     "roles_required",
@@ -50,6 +57,8 @@ __all__ = [
 BeautifulSoup = partial(_beautifulsoup, features='html5lib')
 del _beautifulsoup
 del partial
+
+_pagination_args = namedtuple("_pagination_args", "page total_pages error_out")
 
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
@@ -68,14 +77,16 @@ def checkExpireRegistrationCodes():
             urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
         except SignatureExpired:
             lines.remove(line)
-            expired_user = User.lookup(user)
+            with current_app.app_context():
+                expired_user = User.lookup(user)
             expired_msg = Message("Account Deleted", recipients=[user])
             expired_msg.html = automatedMail(expired_user.name, f'''
                                              Your current account in MyProjects has not been verified and your verification link has expired. 
                                             You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.''')
             mail.send(expired_msg)
-            user_datastore.delete_user(user)
-            user_datastore.commit()
+            with current_app.app_context():
+                user_datastore.delete_user(user)
+                user_datastore.commit()
             f.writelines(lines)
             f.close()
         except Exception as e:
@@ -291,19 +302,19 @@ class DateUtil:
     """
     DateUtil for Correcting and Validating Date
     """
-    def __init__(self, date):
+    def __init__(self, date: Type[DateTime]):
         self.date = date
     
-    def _subDate(self, re_sub_pattern: Pattern, reversed_sub: bool, datetime_date: bool):
+    def _subDate(self, re_sub_pattern: Pattern, reversed_sub: bool, pendulum_date: bool):
         """
         Corrects Date to correct format
         """
-        if datetime_date:
+        if pendulum_date:
             if reversed_sub:
-                new_day = "{year}-{month}-{day}".format(year=self.date.year, month=self.date.month, day=self.date.day)
+                new_day = self.date.format('MM-DD-Y')
                 self.date = new_day
                 return new_day
-            new_day = "{month}/{day}/{year}".format(month=self.date.month, day=self.date.day, year=self.date.year)
+            new_day = self.date.format('L LTS')
             self.date = new_day
             return new_day
         else:
@@ -318,13 +329,13 @@ class DateUtil:
                 self.date = new_date
                 return new_date 
             
-    subDate = partialmethod(_subDate, reversed_sub=False, datetime_date=False) 
+    subDate = partialmethod(_subDate, reversed_sub=False, pendulum_date=False) 
     
-    reversedSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=False)
+    reversedSubDate = partialmethod(_subDate, reversed_sub=True, pendulum_date=False)
     
-    datetimeSubDate = partialmethod(_subDate, reversed_sub=False, datetime_date=True)
+    pendulumSubDate = partialmethod(_subDate, reversed_sub=False, pendulum_date=True)
     
-    reversedDatetimeSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=True)
+    reversedPendulumSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=True)
         
     def validateDate(self, re_pattern: Pattern):
         """
@@ -336,7 +347,47 @@ class DateUtil:
             return False
         else:
             return True
-                              
+    
+class Results(Pagination):
+    """
+    allows Pagination object to be iterable
+    """
+    def __init__(self, results: Pagination):
+        self.per_page = results.per_page
+        self.total = results.total
+        self.items = results.items
+    def __iter__(self) -> Iterator[Any]:
+        if isinstance(self.items, Iterable):
+            yield from self.items
+        else:
+            raise TypeError(f"Object {type(self.results)} is not iterable") 
+
+def makeResultsObject(object: Callable[[Pagination], Results]) -> Type[Results]:
+    """
+    makes a results object from the provided object
+    """
+    results_object = Results(object)
+    return results_object
+        
+def ArticleQueryLikeSearch(kw, page, total_pages, author: str = "") -> Results:
+    """
+    finds a result from the keword provided that may be in an articles title and returns a Results object
+    """
+    from ProjectsWebsite.database.models import Article
+    args = _pagination_args(page, total_pages, False)
+    if author:
+        results = Article.query.filter(Article.title.like(f"%{kw}%")).filter_by(author=author).paginate(*args)
+        results = makeResultsObject(results)
+        return results
+    results = Article.query.filter(Article.title.like(f"%{kw}%")).paginate(*args)
+    results = makeResultsObject(results)
+    return results
+
+def countSQLItems(model) -> int:
+    items = model.query.all()
+    item_count = len(items)
+    return item_count
+                        
 def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: bool = False) -> str:
     """
     Scrapes input error from argument: url

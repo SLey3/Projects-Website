@@ -31,9 +31,9 @@ from ProjectsWebsite.database.models import (
 )
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from datetime import datetime
 from traceback import format_exc
 import base64
+import pendulum
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
@@ -50,6 +50,9 @@ urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ unverLog init ------------------
 unverlog = unverfiedLogUtil()
+
+# ------------------ unverLog init ------------------
+dt = pendulum.now()
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -102,13 +105,12 @@ def registerPage():
             user_datastore.find_or_create_role('member')
             user_datastore.find_or_create_role('unverified')
             user_datastore.find_or_create_role('verified')
-        current_date = datetime.now()
         new_user = user_datastore.create_user(
             name=form.name.data.capitalize(),
             username=form.email.data.lower(),
             email=form.email.data.lower(),
             hashed_password=guard.hash_password(form.password.data),
-            created_at=f'{current_date.month}/{current_date.day}/{current_date.year}',
+            created_at=dt.format('L'),
             blacklisted=False,
             roles=['member', 'unverified']
         )
@@ -258,10 +260,8 @@ def articleCreation():
             img_set.save(img_file, name=f"{filename}")
             with open(f'{current_app.static_folder}/assets/uploads/images/{filename}', 'rb') as image:
                 img = str(base64.b64encode(image.read()), 'utf-8')
-        current_date = datetime.now()
-        date_util = DateUtil(current_date)
-        creation_date = date_util.datetimeSubDate(date_re)
-        del current_date
+        date_util = DateUtil(dt)
+        creation_date = date_util.pendulumSubDate(date_re)
         body = request.form["editordata"]         
         new_article = Article(
             title=form.title.data,
@@ -307,7 +307,7 @@ def contact_us():
         tel = formatPhoneNumber(form.mobile.data)
         msg = form.message.data
         mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
-        mail_msg.html = formatContact(name=name, inquiry_selection=inquiry_selection, email=email, tel=tel, msg=msg)
+        mail_msg.html = formatContact(name=name, inquiry_selection=inquiry_selection, email=email, tel=tel, msg=msg, date=dt.format('L LTS zzZ z'))
         mail.send(mail_msg)
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('.homePage'))
