@@ -5,41 +5,49 @@ from flask_security import RoleMixin as _role_mixin
 from flask_principal import Permission, RoleNeed
 from flask_mail import Message
 from functools import wraps, partialmethod, partial
-from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
+from ProjectsWebsite.util.helpers import (alertMessageType, InvalidType, 
+                                          OperationError, date_re, 
+                                          reversed_date_re)
 from ProjectsWebsite.util.mail import automatedMail
-from pendulum.datetime import DateTime
 from typing import (
-    Dict, List, Tuple, Any, Optional, Callable, Type
+    Dict, List, Tuple, Any, Optional, Callable, Type, Union
 )
-from collections.abc import Iterator, Iterable
 from collections import namedtuple
+from collections.abc import Iterator, Iterable
 from ProjectsWebsite.modules import guard, login_manager, mail
 try:
     from werkzeug import LocalProxy
 except ImportError:
     from werkzeug.local import LocalProxy
+from werkzeug.utils import import_string
 from bs4 import BeautifulSoup as _beautifulsoup, NavigableString
 from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
 from rich import print as rprint
 from time import sleep
-from re import Pattern
+from contextlib import contextmanager
+from sys import exit
+from pendulum.datetime import DateTime
+import pendulum
 import re
 import requests
 import schedule
 import threading
+import signal
 
 # ------------------ Utils ------------------
 __all__ = [
+    "appExitHandler",
     "checkExpireRegistrationCodes", 
     "runSchedulerInspect", 
+    'temp_save',
     "unverfiedLogUtil", 
     "AlertUtil",
     "is_valid_article_page",
     "formatPhoneNumber",
     "DateUtil",
     "makeResultsObject",
-    "ArticleQueryLikeSearch",
+    "QueryLikeSearch",
     "countSQLItems",
     "scrapeError",
     "current_user",
@@ -122,6 +130,29 @@ def runSchedulerInspect():
     thread.start()
     return cease_operation
 
+def _signal_handler(signal, frame):
+    thread_event = runSchedulerInspect()
+    thread_event.set()
+    return exit(0)
+
+@contextmanager
+def appExitHandler():
+    try:
+        yield
+    finally:
+        schedule.every(30).minutes.do(checkExpireRegistrationCodes)
+        rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
+        signal.signal(signal.SIGINT, _signal_handler)
+        rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
+
+class temp_save(dict):
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            return False
+    def __setitem__(self, k, v) -> None:
+        return super().__setitem__(k, v)
 class unverfiedLogUtil:
     """
     Utilities for managing the unverified token log file.
@@ -133,7 +164,7 @@ class unverfiedLogUtil:
         self.openKwargs["mode"] = "r+"
         self.openKwargs["encoding"] = "utf-8"
     
-    def addContent(self, *line_content):
+    def addContent(self, line_content: Tuple[str, str]):
         """
         adds an unverfied member email and token in the unverfied log
         
@@ -249,7 +280,7 @@ class AlertUtil(object):
         self.alert_dict.update(type='', message='')
         if alertType == 'error':
             if isinstance(alertMsg, int):
-                raise ValueError("Type: int is not allowed")
+                raise TypeError("type int is not allowed")
             for code in alert_codes_list:
                 if code != alertMsg:
                     continue
@@ -274,7 +305,7 @@ def is_valid_article_page(func):
     Returns:
         404 http code
     """
-    from ProjectsWebsite.database.models import Article
+    Article = import_string("ProjectsWebsite.database.models:Article")
     @wraps(func)
     def validator(id):
         articles = Article.query.all()
@@ -302,51 +333,70 @@ class DateUtil:
     """
     DateUtil for Correcting and Validating Date
     """
-    def __init__(self, date: Type[DateTime]):
+    def __init__(self, date: Optional[Union[Type[DateTime], str]] = None, format_token: str = ""):
+        if not date:
+            date = pendulum.now()
         self.date = date
+        if isinstance(self.date, DateTime):
+            if not format_token:
+                raise ValueError("format_token cannot be blank when date is the instance of pendulum DateTime")
+            self.token = format_token
+        else:
+            self.token = None
     
-    def _subDate(self, re_sub_pattern: Pattern, reversed_sub: bool, pendulum_date: bool):
+    def _subDate(self, reversed_sub: bool):
         """
         Corrects Date to correct format
         """
-        if pendulum_date:
-            if reversed_sub:
-                new_day = self.date.format('MM-DD-Y')
-                self.date = new_day
-                return new_day
-            new_day = self.date.format('L LTS')
+        if isinstance(self.date, DateTime):
+            if self.validateDate():
+                return self.date
+            new_day = self.date.format(self.token)
             self.date = new_day
             return new_day
         else:
-            if self.validateDate(re_sub_pattern):
-                return self.date
-            else:
-                if reversed_sub:
-                    new_date = re.sub(r"(\d{1,2})/(\d{1,2}/(\d{2,4})", r"\3-\1-\2", self.date)
-                    self.date = new_date
-                    return new_date
-                new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+            if reversed_sub:
+                if self.validateDate(True):
+                    return self.date
+                new_date = re.sub(r"(\d{1,2})/(\d{1,2}/(\d{2,4})", r"\3-\1-\2", self.date)
                 self.date = new_date
-                return new_date 
+                return new_date
+            if self.validateDate():
+                return self.date
+            new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+            self.date = new_date
+            return new_date 
             
-    subDate = partialmethod(_subDate, reversed_sub=False, pendulum_date=False) 
+    subDate = partialmethod(_subDate, reversed_sub=False) 
     
-    reversedSubDate = partialmethod(_subDate, reversed_sub=True, pendulum_date=False)
-    
-    pendulumSubDate = partialmethod(_subDate, reversed_sub=False, pendulum_date=True)
-    
-    reversedPendulumSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=True)
+    reversedSubDate = partialmethod(_subDate, reversed_sub=True)
+
         
-    def validateDate(self, re_pattern: Pattern):
+    def validateDate(self, reversed: bool = False):
         """
         returns True if date is valid. Returns false if not
         """
+        if isinstance(self.date, DateTime):
+            try:
+                pendulum.from_format(self.date, self.token)
+            except:
+                return False
+            else:
+                return True
         if len(self.date) == (7, 8, 9):
             return False
-        elif not re_pattern.match(self.date):
-            return False
-        else:
+        if reversed:
+            if not reversed_date_re.match(self.date):
+                return False
             return True
+        if not date_re.match(self.date):
+            return False
+        return True
+    
+    def __eq__(self, other):
+        return self.date == other.date
+    def __ne__(self, other):
+        return not self.__eq__(other)
     
 class Results(Pagination):
     """
@@ -356,35 +406,50 @@ class Results(Pagination):
         self.per_page = results.per_page
         self.total = results.total
         self.items = results.items
+        self.page = results.page
     def __iter__(self) -> Iterator[Any]:
         if isinstance(self.items, Iterable):
             yield from self.items
         else:
             raise TypeError(f"Object {type(self.results)} is not iterable") 
 
-def makeResultsObject(object: Callable[[Pagination], Results]) -> Type[Results]:
+def makeResultsObject(object: Callable[[Pagination], Results]) -> Results:
     """
     makes a results object from the provided object
     """
     results_object = Results(object)
     return results_object
         
-def ArticleQueryLikeSearch(kw, page, total_pages, author: str = "") -> Results:
+def QueryLikeSearch(model_name: str, kw: str,  page: int, total_pages: int, name: str = "", attr_name: str = "name") -> Results:
     """
-    finds a result from the keword provided that may be in an articles title and returns a Results object
+    finds a result from the keyword provided in the Model imported by :param: model_name that may be in the name of a user
+    
+    Returns:
+        Type[Results]
     """
-    from ProjectsWebsite.database.models import Article
+    model_name = model_name.capitalize()
+    Model = import_string( f"ProjectsWebsite.database.models:{model_name}")
     args = _pagination_args(page, total_pages, False)
-    if author:
-        results = Article.query.filter(Article.title.like(f"%{kw}%")).filter_by(author=author).paginate(*args)
+    name_attr = getattr(Model, attr_name)
+    if name_attr:
+        if name:
+            try:
+                results = Model.query.filter(name_attr.like(f"%{kw}%")).filter_by(name=name).paginate(*args)
+            except:
+                results = Model.query.filter(name_attr.like(f"%{kw}%")).filter_by(author=name).paginate(*args)
+            finally:
+                results = makeResultsObject(results)
+            return results
+        results = Model.query.filter(name_attr.like(f"%{kw}%")).paginate(*args)
         results = makeResultsObject(results)
-        return results
-    results = Article.query.filter(Article.title.like(f"%{kw}%")).paginate(*args)
-    results = makeResultsObject(results)
-    return results
+        return results      
 
-def countSQLItems(model) -> int:
-    items = model.query.all()
+def countSQLItems(model_name) -> int:
+    """
+    count the number of items in an SQL Database
+    """
+    Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    items = Model.query.all()
     item_count = len(items)
     return item_count
                         
@@ -409,7 +474,8 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
 current_user = LocalProxy(lambda: _get_user())
 
 def _get_user():
-    from ProjectsWebsite.database.models import User, AnonymousUser
+    User = import_string("ProjectsWebsite.database.models:User")
+    AnonymousUser = import_string("ProjectsWebsite.database.models:AnonymousUser")
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del(g._cached_user)
@@ -457,7 +523,7 @@ def roles_accepted(*roles):
 
 def token_auth_required(f):
     """
-    checks if token is in the session
+    checks if token is in the session and is valid
     """
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -476,15 +542,14 @@ def token_auth_required(f):
             except:
                 return abort(401)
             return f(*args, **kwargs)
-        else:
-            return abort(403)
+        return abort(403)
     return decorated
 
 def login_user(token, user):
     """
     Logs in user
     """
-    from ProjectsWebsite.database.models import User
+    User = import_string("ProjectsWebsite.database.models:User") 
     session["_id"] = login_manager._session_identifier_generator()
     session["_user_id"] = user.identity
     session["_e-recipient"] = b64encode(bytes(user.username, encoding="utf-8"))
@@ -497,7 +562,7 @@ def logout_user():
     """
     Logs out user if user is logged in
     """
-    from ProjectsWebsite.database.models import User
+    User = import_string("ProjectsWebsite.database.models:User")
     if "_user_id" in session:
         if "_e-recipient" in session:
             user_email = b64decode(session["_e-recipient"])

@@ -10,7 +10,8 @@ from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   token_auth_required, generate_err_request_url,
                                   logout_user, roles_required, unverfiedLogUtil,
-                                  ArticleQueryLikeSearch, makeResultsObject, countSQLItems
+                                  QueryLikeSearch, makeResultsObject, countSQLItems,
+                                  temp_save
                                   )
 from ProjectsWebsite.util.mail import defaultMail, blacklistMail
 from ProjectsWebsite.modules import db, guard, mail
@@ -53,16 +54,10 @@ def adminAccountsManegement(page):
     page = page
     pages = 3
     users = User.query.paginate(page, pages, error_out=False)
+    users = makeResultsObject(users)
     if request.method == 'POST':
-        form_found = False
-        while not form_found:
-            if not isinstance(search_form.command.data, type(None)) or search_form.command.data != "":
-                search_query = search_form.command.data
-                form_found = True
-        if search_query:
-            users = User.query.filter(User.name.like(search_query)).paginate(per_page=pages, error_out=False)
-        else:
-            users = User.query.paginate(page, pages, error_out=False)
+        if search_form.command.data:
+            users = QueryLikeSearch("User", search_form.command.data, page, pages)
     return render_template("private/admin/accounts.html", accounts=users, tbl_search_form=search_form)
 
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
@@ -70,11 +65,11 @@ def adminAccountsManegement(page):
 @admin.route('management/accounts/edit_user/<string:user>/<action>/<item_id>/<int:page>', methods=['GET', 'POST'])
 @token_auth_required
 def adminAccountsUserManagement(user, page, action=None, item_id=None):
-    pages = 3
+    article_pages = page + countSQLItems("Article")
     user = str(user).replace('%20', ' ')
     user_info = User.lookup_by_name(user)
     if user_info.is_blacklisted:
-        blacklist_info = Blacklist.query.filter_by(blacklisted_person=user_info.name).first()
+        blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()
     else:
         blacklist_info = None
     URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
@@ -84,8 +79,11 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    article_info = Article.query.msearch(user_info.name).paginate(page, pages, error_out=False)
-    article_info = makeResultsObject(article_info)
+    if temp_save["article_info"]:
+        article_info = temp_save.pop('article_info')
+    else:
+        article_info = Article.query.msearch(user_info.name).paginate(page, article_pages, error_out=False)
+        article_info = makeResultsObject(article_info)
     action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
@@ -134,8 +132,10 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             log.removeContent(user_info.username)
         elif delete_role_forms.editor_field.data:
             user_datastore.remove_role_from_user(user_info, "editor")
+            user_datastore.commit()
         elif search_form.command.data and search_form.command_sbmt.data:
-            article_info = ArticleQueryLikeSearch(search_form.command.data, page, pages, user_info.name)
+            article_info = QueryLikeSearch("Article", search_form.command.data, page, article_pages, user_info.name, "title")
+            temp_save['article_info'] = article_info
         elif delete_article_forms.delete_article.data:
             if action == "delete":
                 item_id = request.args.get("item_id")
@@ -147,21 +147,21 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif ext_options.blacklist.data: 
             reason = ext_options.reason.data
             user_id = user_info.id
-            try:
+            if reason:
                 reasons = list(reason.split("|"))
-            except Exception:
-                reasons = []
+            else:
+                reasons = "No Reasons"
             blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
             blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
             mail.send(blacklist_msg)
-            if reasons == []:
+            reason_list = ""
+            if reasons == "No Reasons":
                 reason_list = "No Reasons"
             else:
-                reason_list = ""
                 for reason in reasons:
                     reason_list += f"- {reason}\n"
             blacklist_query = Blacklist.add_blacklist(
-                blacklisted_person=user_info.name,
+                name=user_info.name,
                 reason=reason_list
             )
             user_info.blacklisted = True
@@ -176,13 +176,11 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             #     reasons = list(reason.split("|"))
             # except Exception:
             #     reasons = []
-            blacklist_remove_query = Blacklist.remove_blacklist(user_info.name)
+            Blacklist.remove_blacklist(user_info.name)
             user_info.blacklisted = False
-            user_datastore.put(blacklist_remove_query)
             user_datastore.commit()
-        return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
-                               role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options,
-                                blacklist_info=blacklist_info)
+            Blacklist.query.filter_by(name=user_info.name).first()
+        return redirect(url_for('.adminAccountsUserManagement', user=user_info.name))
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 
                                role_form=role_form, delete_role_forms=delete_role_forms, delete_article_forms=delete_article_forms, ext_options=ext_options,
@@ -194,7 +192,7 @@ def adminArticleManegement(page, action=None,  item_id=None):
     """
     Article Manegement page
     """
-    pages = page + countSQLItems(Article)
+    pages = page + countSQLItems("Article")
     _articles = Article.query.paginate(page, pages, error_out=False)
     articles = makeResultsObject(_articles)
     if request.method == 'POST':...

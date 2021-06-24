@@ -6,7 +6,9 @@ Dear
 
 <br>
 
-Your account with the ID of {id} has been banned for the following reason(s):
+Your account with the ID of 
+{id} 
+has been banned for the following reason(s):
 <br>
 {reasons}
 

@@ -1,199 +1,207 @@
- {% extends "private/base.html" %} {% from "private/admin/render/_render_form.html" import render_field %} {% block title %} MyProjects | {{ user.name }} Profile {% endblock %} {% block css %} {% assets "admin_edit_accounts_css" %}
+ {% extends "private/base.html" %} {% block title %} MyProjects | {{ user.name }} Profile {% endblock %} {% block css %} {% assets "admin_edit_accounts_css" %}
 <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous"> {% endblock %} {% block content %} {% include "private/admin/navbar/navbar.html" %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+<style>
+    .body-grid {
+        display: inline-flexbox;
+        grid-template-rows: 5.25rem;
+        justify-items: stretch;
+        justify-content: space-evenly;
+        transition: margin-left 0.5s ease-out;
+    }
+</style>
+{% endblock %} {% block content %}
 <div id="cntnr" class="body-grid">
     <div id="profile-title">
         <h1 id="acc-profile-title" class="page-title">Edit {{ user.name }} Account Profile</h1>
         <span name="sep" class="management-header-sep title-header-sep-align"></span>
     </div>
-    <div id="body-content">
-        <div id="info-cntnr" class="acc-info-cntnr">
-            <div name="sub-title" class="acc-info-title">
-                <h2 id="inf-title">Account Info</h2>
-                <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
-            </div>
-            <div class="text-body">
-                <information id="prof-info" class="text-wrap">
-                    <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
-                    <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
-                    <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
-                    <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
-                    <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
-                    <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
-                    <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
-                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
-                    <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
-                    <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
-                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
-                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span> {% if user.is_blacklisted %}
-                    <br>
-                    <hr>
-                    <span id="blacklist-order-1" class="blacklist-reason">
+    <div id="info-cntnr" class="acc-info-cntnr">
+        <div name="sub-title" class="acc-info-title">
+            <h2 id="inf-title">Account Info</h2>
+            <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
+        </div>
+        <div class="text-body">
+            <information id="prof-info" class="text-wrap">
+                <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
+                <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
+                <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
+                <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
+                <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
+                <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
+                <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
+                <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
+                <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
+                <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
+                <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
+                <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span> {% if user.is_blacklisted %}
+                <br>
+                <hr>
+                <span id="blacklist-order-1" class="blacklist-reason">
                         Reason: {{ blacklist_info.reason }}
                     </span>
-                    <br>
-                    <span id="blacklist-order-2" class="blacklist-date">
+                <br>
+                <span id="blacklist-order-2" class="blacklist-date">
                         Date Blacklisted: {{ blacklist_info.date_blacklisted }}
                     </span> {% endif %}
-                    <br>
-                </information>
-            </div>
+                <br>
+            </information>
         </div>
-        <div class="role-table">
-            <div id="role-tbl-title" class="role-ttle-cntnr">
-                <h4 class="role-tbl-title">Account Roles</h4>
-                <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
-            </div>
-            <div class="table-cntnr">
-                <table id="roles-table" class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Role ID</th>
-                            <th>Role Name</th>
-                            <th>
-                                <p id="role-select-all-txt" class="table-txt">Select</p> <input id="role-head-selectAll" type="checkbox" class="select-check" />
-                                <div id="delete-all-btn-container"></div>
-                                <div id="add-role-btn-container">
-                                    <div id="role-add-btn" onclick="addRoleExpand()"><i id="role-add-btn-icn" class="fa fa-plus-square-o" aria-hidden="true" aria-label="add-Role" title="add-Role"></i></div>{% if add_role_error %} {{ add_role_error | safe }} {% else %}
-                                    <p id="add-role-err-p" class="add-role-err err-txt"></p> {% endif %}</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for role in user.roles %}
-                        <tr>
-                            <td>{{ role.id }}</td>
-                            <td>{{ role.name }}</td>
-                            <td>
-                                <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
-                                    {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
-                                    {{ delete_role_forms.editor_field }} {% endif %}
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Role ID</th>
-                            <th>Role Name</th>
-                            <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" />
-                            </th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+    </div>
+    <div class="role-table">
+        <div id="role-tbl-title" class="role-ttle-cntnr">
+            <h4 class="role-tbl-title">Account Roles</h4>
+            <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
         </div>
-        <div class="article-table">
-            <div id="article-tbl=title" class="article-tbl-ttle-cntnr">
-                <h4 class="article-tbl-title">Articles Made by: {{ user.name }}</h4>
-                <span name="sep" class="management-header-sep article-title-sep-align"></span>
-            </div>
-            <div class="table-cntnr">
-                <table id="article-table" class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Article ID</th>
-                            <th>Article Name</th>
-                            <th>Article Desc</th>
-                            <th>Created In:</th>
-                            <th>Article Link </th>
-                            <th id="srch-upper-cell">
-                                <form id="article-srch-form" method="POST">
-                                    <p>
-                                        Search:
-                                    </p>
-                                    {{ search_form.command }} {{ search_form.command_sbmt }}
-                                </form>
-                            </th>
-                            <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" />
-                                <div id="article-delete-all-container"></div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for article in article_info %}
-                        <tr>
-                            <td>{{ article.id }}</td>
-                            <td> {{ article.title }}</td>
-                            <td>{{ article.short_desc }}</td>
-                            <td>{{ article.create_date }}</td>
-                            <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
-                            <td></td>
-                            <td>
-                                <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
-                                    {{ delete_article_forms.delete_article }}
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Article ID</th>
-                            <th>Article Name</th>
-                            <th>Article Desc</th>
-                            <th>Created In</th>
-                            <th>Article Link</th>
-                            <th></th>
-                            <th>Select <input id="article-foot-selectAll" type="checkbox" class="select-check" /></th>
-                        </tr>
-                    </tfoot>
-                </table>
-                <div id="article-tbl-pagination">
-                    <nav aria-label="Article-Table-Pagination">
-                        <ul class="pagination">
-                            {% if article_info.has_prev %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link btn disabled" href="#">Previous</a>
-                            </li>
-                            {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
-                            <li class="page-item active">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+        <div class="table-cntnr">
+            <table id="roles-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Role ID</th>
+                        <th>Role Name</th>
+                        <th>
+                            <p id="role-select-all-txt" class="table-txt">Select</p> <input id="role-head-selectAll" type="checkbox" class="select-check" />
+                            <div id="delete-all-btn-container"></div>
+                            <div id="add-role-btn-container">
+                                <div id="role-add-btn" onclick="addRoleExpand()"><i id="role-add-btn-icn" class="fa fa-plus-square-o" aria-hidden="true" aria-label="add-Role" title="add-Role"></i></div>{% if add_role_error %} {{ add_role_error | safe }} {% else %}
+                                <p id="add-role-err-p" class="add-role-err err-txt"></p> {% endif %}</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in user.roles %}
+                    <tr>
+                        <td>{{ role.id }}</td>
+                        <td>{{ role.name }}</td>
+                        <td>
+                            <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
+                                {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
+                                {{ delete_role_forms.editor_field }} {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Role ID</th>
+                        <th>Role Name</th>
+                        <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" />
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="article-table">
+        <div id="article-tbl=title" class="article-tbl-ttle-cntnr">
+            <h4 class="article-tbl-title">Articles Made by: {{ user.name }}</h4>
+            <span name="sep" class="management-header-sep article-title-sep-align"></span>
+        </div>
+        <div class="table-cntnr">
+            <table id="article-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Article ID</th>
+                        <th>Article Name</th>
+                        <th>Article Desc</th>
+                        <th>Created In:</th>
+                        <th>Article Link </th>
+                        <th id="srch-upper-cell">
+                            <form id="article-srch-form" method="POST">
+                                <p>
+                                    Search:
+                                </p>
+                                {{ search_form.command }} {{ search_form.command_sbmt }}
+                            </form>
+                        </th>
+                        <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" />
+                            <div id="article-delete-all-container"></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in article_info %}
+                    <tr>
+                        <td>{{ article.id }}</td>
+                        <td> {{ article.title }}</td>
+                        <td>{{ article.short_desc }}</td>
+                        <td>{{ article.create_date }}</td>
+                        <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
+                        <td></td>
+                        <td>
+                            <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
+                                {{ delete_article_forms.delete_article }}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Article ID</th>
+                        <th>Article Name</th>
+                        <th>Article Desc</th>
+                        <th>Created In</th>
+                        <th>Article Link</th>
+                        <th></th>
+                        <th>Select <input id="article-foot-selectAll" type="checkbox" class="select-check" /></th>
+                    </tr>
+                </tfoot>
+            </table>
+            <div id="article-tbl-pagination">
+                <nav aria-label="Article-Table-Pagination">
+                    <ul class="pagination">
+                        {% if article_info.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link btn disabled" href="#">Previous</a>
+                        </li>
+                        {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
+                        <li class="page-item active">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
                                         {{ page }}
                                 </a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
                                         {{ page }}
                                 </a>
-                            </li>
-                            {% endif %} {% else %}
-                            <li id="ellipsis" class="page-item disabled">
-                                <a class="page-link" href="#">...</a>
-                            </li>
-                            {% endif %} {% endfor %} {% if article_info.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link btn disabled" href="#">Next</a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
+                        </li>
+                        {% endif %} {% else %}
+                        <li id="ellipsis" class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                        {% endif %} {% endfor %} {% if article_info.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link btn disabled" href="#">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
             </div>
         </div>
-        <hr>
-        <div id="ext-option-menu" class="ext-opt-align">
-            {% if user.blacklisted %}
-            <form id="ext-option-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
-                {{ ext_options.reason }} {{ ext_options.unblacklist }}
-            </form>
-            {% else %}
-            <form id="ext-option-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
-                {{ ext_options.reason }} {{ ext_options.blacklist }}
-            </form>
-            {% endif %}
-        </div>
+    </div>
+    <hr>
+    <div id="ext-option-menu" class="ext-opt-align">
+        {% if user.blacklisted %}
+        <form id="unBlacklist-form" method="POST" onsubmit="return confirm_unBlacklist()" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
+            {{ ext_options.reason }} {{ ext_options.unblacklist }}
+        </form>
+        {% else %}
+        <form id="blacklist-form" method="POST" onsubmit="return confirm_blacklist()" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
+            {{ ext_options.reason }} {{ ext_options.blacklist }}
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %} {% block js %}
@@ -730,13 +738,6 @@
     }
 </script>
 <script type="text/javascript">
-    function confirm_deletion() {
-        if (confirm("Are you sure you want to delete ALL articles from {{ user.name }}?")) {
-            $("#delete-all-article-form").submit();
-        } else {
-            return false;
-        }
-    }
     (function() {
         $(document).ready(function() {
             $("#article-head-selectAll").click(function() {
@@ -755,6 +756,31 @@
             });
         });
     })();
+</script>
+<script type="text/javascript">
+    function confirm_deletion() {
+        if (confirm("Are you sure you want to delete ALL articles from {{ user.name }}?")) {
+            $("#delete-all-article-form").submit();
+        } else {
+            return false;
+        }
+    }
+
+    function confirm_blacklist() {
+        if (confirm("Are you sure you want to blacklist {{ user.name }}?")) {
+            $("#blacklist-form").submit();
+        } else {
+            return false;
+        }
+    }
+
+    function confirm_unBlacklist() {
+        if (confirm("Are you sure you want to unBlacklist from {{ user.name }}?")) {
+            $("#unBlacklist-form").submit();
+        } else {
+            return false;
+        }
+    }
 </script>
 {% assets "edit_prof_main_js" %}
 <script src="{{ ASSET_URL }}"></script>

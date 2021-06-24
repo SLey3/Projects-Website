@@ -48,10 +48,10 @@ def _format_blacklist(letter: List[str], name: str, id: str, reasons: List[str])
         i = letter.index(char)
         if char == "{name}":
             letter[i] = char.replace("{name}", name)
-        elif char == id:
+        elif char == "{id}":
             letter[i] = char.replace("{id}", id)
         elif char == "{reasons}":
-            if reasons == []:
+            if reasons == "No Reasons":
                 letter[i] = "No Reasons"
             else:
                 new_char = ""

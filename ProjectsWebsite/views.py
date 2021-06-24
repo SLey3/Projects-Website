@@ -29,11 +29,10 @@ from ProjectsWebsite.forms import (
 from ProjectsWebsite.database.models import (
     Article, User, user_datastore
 )
+from contextlib import suppress
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from traceback import format_exc
 import base64
-import pendulum
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
@@ -50,9 +49,6 @@ urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ unverLog init ------------------
 unverlog = unverfiedLogUtil()
-
-# ------------------ unverLog init ------------------
-dt = pendulum.now()
 
 # ------------------ LoginManaer: User Resource ------------------
 @login_manager.user_loader
@@ -260,8 +256,8 @@ def articleCreation():
             img_set.save(img_file, name=f"{filename}")
             with open(f'{current_app.static_folder}/assets/uploads/images/{filename}', 'rb') as image:
                 img = str(base64.b64encode(image.read()), 'utf-8')
-        date_util = DateUtil(dt)
-        creation_date = date_util.pendulumSubDate(date_re)
+        date_util = DateUtil(format_token='L')
+        creation_date = date_util.subDate()
         body = request.form["editordata"]         
         new_article = Article(
             title=form.title.data,
@@ -280,21 +276,15 @@ def articleCreation():
     
 @main_app.route('/articles/', methods=['GET', 'POST'])
 def article_home():
-    try:
+    with suppress(Exception):
         articles = Article.query.all()
-    except Exception:
-        exc = format_exc()
-        print(exc)
     return render_template("public/articles/articlepage.html", articles=articles)
 
 @main_app.route('/articles/<string:id>/')
 @is_valid_article_page
 def articlePage(id):
-    try:
+    with suppress(Exception):
         article = Article.query.filter_by(id=id).first()
-    except Exception:
-        exc = format_exc()
-        print(exc)
     return render_template('articles/articleviewpage.html', article=article)
 
 @main_app.route('/contact/', methods=['GET', 'POST'])

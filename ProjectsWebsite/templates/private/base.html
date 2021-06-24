@@ -13,9 +13,13 @@
     {% block css %}{% endblock %}{% assets "alert__css" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
 </head>
+<style>
+
+</style>
 
 <body>
-    {% from "public/render/_render_alert.html" import render_alert %}{% block content %} {% endblock %} {% block js %}{% endblock %}
+    {% from "public/render/_render_alert.html" import render_alert %} {% from "private/admin/render/_render_form.html" import render_field %} {% include "private/admin/navbar/navbar.html" %}
+    <main>{% block content %}{% endblock %}</main> {% block js %}{% endblock %}
 </body>
 
 </html>

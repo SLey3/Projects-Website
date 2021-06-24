@@ -42,3 +42,6 @@ cert/
 
 # unverified log dir
 unverified/
+
+# whoosh index folder
+whoosh_index

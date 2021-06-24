@@ -2,11 +2,12 @@
 from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
-from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin
+from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin, DateUtil
 from ProjectsWebsite.modules import search
-import pendulum
 
 # ------------------ SQL classes  ------------------
+dt = DateUtil(format_token="L LTS zzZ z")
+
 class Role(db.Model, RoleMixin):
     __tablename__ = 'roles'
     id = db.Column(db.Integer(), primary_key=True)
@@ -145,10 +146,10 @@ class Blacklist(db.Model):
     
     __bind_key__ = 'blacklist'
     
-    __searchable__ = ["blacklisted_person", "date_blacklisted"]
+    __searchable__ = ["name", "date_blacklisted"]
     
     id = db.Column("id", db.Integer(), primary_key=True)
-    blacklisted_person = db.Column("person", db.String(100), unique=True, nullable=False)
+    name = db.Column("person", db.String(100), unique=True, nullable=False)
     reason = db.Column("reason", db.String(255))
     date_blacklisted = db.Column("date", db.String(30))
     
@@ -157,15 +158,15 @@ class Blacklist(db.Model):
         """
         adds a person to the Blacklist database
         """
-        dt = pendulum.now()
-        kwargs.setdefault("date_blacklisted", dt.format('L LTS zzZ z'))
+        date = dt.subDate()
+        kwargs.setdefault("date_blacklisted", date)
         return cls(**kwargs)
     @classmethod
     def remove_blacklist(cls, name):
         """
         removes a person from the Blacklist database
         """
-        return cls.query.filter(cls.blacklisted_person == name).delete()
+        return cls.query.filter(cls.name == name).delete()
     
 
 # ------------------ user_datastore  ------------------

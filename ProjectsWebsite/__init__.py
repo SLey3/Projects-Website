@@ -17,14 +17,12 @@ from ProjectsWebsite.modules import (
     mail, security, img_set, search
 )
 from ProjectsWebsite.util.utilmodule import alert
-from ProjectsWebsite.util import current_user, runSchedulerInspect, checkExpireRegistrationCodes
+from ProjectsWebsite.util import current_user, appExitHandler
 from http.client import HTTPConnection as reqlogConnection
 from json import load
 from rich import print as rprint
 import ssl
 import logging
-import schedule
-import signal
 import os
 
 # ------------------ Production Status ------------------
@@ -138,26 +136,8 @@ def favicon():
     """
     return send_from_directory(os.path.join(app.root_path, 'static', 'assets', 'favicon'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     
-# ------------------ Exit handler ------------------
-class appExitHandler(object):
-    def __enter__(self):
-        schedule.every(1).hour.do(checkExpireRegistrationCodes)
-        self.thread_event = runSchedulerInspect()
-        def _signal_handler(signal, frame):
-            from sys import exit
-            rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
-            self.thread_event.set()
-            rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
-            return exit(0)
-        signal.signal(signal.SIGINT, _signal_handler)
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        return exc_type is None
-    
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':
-    schedule.every(1).hour.do(checkExpireRegistrationCodes)
     rprint("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]") 
     db.create_all(app=app)
     rprint("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
