@@ -213,7 +213,6 @@ def resetRequestRecieved(token, email):
         return redirect(url_for(".loginPage"))
 
 @main_app.route('/signout/')
-@token_auth_required
 def signOut():
     """
     Signs out of the site

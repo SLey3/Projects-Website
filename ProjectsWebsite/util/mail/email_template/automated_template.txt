@@ -1,7 +1,5 @@
-Dear 
-<pre> 
-    {name}
-</pre>
+Dear&nbsp; 
+{name}
 , 
 <br>
 

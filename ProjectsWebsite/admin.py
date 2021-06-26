@@ -13,12 +13,14 @@ from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   QueryLikeSearch, makeResultsObject, countSQLItems,
                                   temp_save
                                   )
-from ProjectsWebsite.util.mail import defaultMail, blacklistMail
+from ProjectsWebsite.util.mail import defaultMail, blacklistMail, unBlacklistMail
 from ProjectsWebsite.modules import db, guard, mail
 from functools import partial
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
+
+_temp_save = temp_save()
 
 # ------------------ Blueprint Routes ------------------
 @admin.route('/')
@@ -79,8 +81,8 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    if temp_save["article_info"]:
-        article_info = temp_save.pop('article_info')
+    if _temp_save["article_info"]:
+        article_info = _temp_save.pop("article_info")
     else:
         article_info = Article.query.msearch(user_info.name).paginate(page, article_pages, error_out=False)
         article_info = makeResultsObject(article_info)
@@ -135,7 +137,7 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
             user_datastore.commit()
         elif search_form.command.data and search_form.command_sbmt.data:
             article_info = QueryLikeSearch("Article", search_form.command.data, page, article_pages, user_info.name, "title")
-            temp_save['article_info'] = article_info
+            _temp_save["article_info"] = article_info
         elif delete_article_forms.delete_article.data:
             if action == "delete":
                 item_id = request.args.get("item_id")
@@ -144,38 +146,38 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif delete_article_forms.delete_all.data:
             Article.delete_all(user_info.name)
             user_datastore.commit()
-        elif ext_options.blacklist.data: 
+        elif ext_options.blacklist.data:...
+            # reason = ext_options.reason.data
+            # user_id = str(user_info.id)
+            # if reason:
+            #     reasons = list(reason.split("|"))
+            # else:
+            #     reasons = "No Reasons"
+            # blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
+            # blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
+            # mail.send(blacklist_msg)
+            # if reasons == "No Reasons":
+            #     reason_list = "No Reasons"
+            # else:
+            #     reason_list = "<br>"
+            #     for reason in reasons:
+            #         reason_list += f"- {reason} <br>"
+            # blacklist_query = Blacklist.add_blacklist(
+            #     name=user_info.name,
+            #     reason=reason_list
+            # )
+            # user_info.blacklisted = True
+            # user_datastore.put(blacklist_query)
+            # user_datastore.commit()
+        elif ext_options.unblacklist.data: 
             reason = ext_options.reason.data
-            user_id = user_info.id
             if reason:
                 reasons = list(reason.split("|"))
             else:
                 reasons = "No Reasons"
-            blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
-            blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
-            mail.send(blacklist_msg)
-            reason_list = ""
-            if reasons == "No Reasons":
-                reason_list = "No Reasons"
-            else:
-                for reason in reasons:
-                    reason_list += f"- {reason}\n"
-            blacklist_query = Blacklist.add_blacklist(
-                name=user_info.name,
-                reason=reason_list
-            )
-            user_info.blacklisted = True
-            user_datastore.put(blacklist_query)
-            user_datastore.commit()
-        elif ext_options.unblacklist.data: 
-            # Have not set up util.mail.unBlacklistMail yet
-            #
-            # reason = ext_options.reason.data
-            #
-            # try:
-            #     reasons = list(reason.split("|"))
-            # except Exception:
-            #     reasons = []
+            unblacklist_msg = Message('Unban Notice', recipients=[user_info.username])
+            unblacklist_msg.html = unBlacklistMail(user_info.name, reasons)
+            mail.send(unblacklist_msg)
             Blacklist.remove_blacklist(user_info.name)
             user_info.blacklisted = False
             user_datastore.commit()

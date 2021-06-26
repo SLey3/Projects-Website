@@ -27,6 +27,7 @@ from rich import print as rprint
 from time import sleep
 from contextlib import contextmanager
 from sys import exit
+from sqlalchemy.exc import InvalidRequestError
 from pendulum.datetime import DateTime
 import pendulum
 import re
@@ -137,22 +138,31 @@ def _signal_handler(signal, frame):
 
 @contextmanager
 def appExitHandler():
+    schedule.every(30).minutes.do(checkExpireRegistrationCodes)
     try:
         yield
     finally:
-        schedule.every(30).minutes.do(checkExpireRegistrationCodes)
         rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
         signal.signal(signal.SIGINT, _signal_handler)
         rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
 
 class temp_save(dict):
-    def __getitem__(self, key):
+    """
+    temporary data save dictionary that allows returning false 
+    if KeyError is raised when __getitem__ can't get an item due to the item being mistyped or not existing
+    """
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    def __getitem__(self, key) -> Union[bool, None]:
         try:
             return super().__getitem__(key)
         except KeyError:
             return False
-    def __setitem__(self, k, v) -> None:
-        return super().__setitem__(k, v)
+    def __setitem__(self, key, value) -> None:
+        return super().__setitem__(key, value)
+    
 class unverfiedLogUtil:
     """
     Utilities for managing the unverified token log file.
@@ -329,6 +339,7 @@ def formatPhoneNumber(phone_number: str) -> str:
     clean_phone_number = re.sub('[^0-9]+', '', phone_number)
     formatted_phone_number = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", f"{int(clean_phone_number[:-1])}") + clean_phone_number[-1]
     return formatted_phone_number
+
 class DateUtil:
     """
     DateUtil for Correcting and Validating Date
@@ -425,22 +436,22 @@ def QueryLikeSearch(model_name: str, kw: str,  page: int, total_pages: int, name
     finds a result from the keyword provided in the Model imported by :param: model_name that may be in the name of a user
     
     Returns:
-        Type[Results]
+        Results
     """
     model_name = model_name.capitalize()
     Model = import_string( f"ProjectsWebsite.database.models:{model_name}")
     args = _pagination_args(page, total_pages, False)
-    name_attr = getattr(Model, attr_name)
-    if name_attr:
+    row_attr = getattr(Model, attr_name)
+    if row_attr:
         if name:
             try:
-                results = Model.query.filter(name_attr.like(f"%{kw}%")).filter_by(name=name).paginate(*args)
-            except:
-                results = Model.query.filter(name_attr.like(f"%{kw}%")).filter_by(author=name).paginate(*args)
+                results = Model.query.filter(row_attr.like(f"%{kw}%")).filter_by(name=name).paginate(*args)
+            except InvalidRequestError:
+                results = Model.query.filter(row_attr.like(f"%{kw}%")).filter_by(author=name).paginate(*args)
             finally:
                 results = makeResultsObject(results)
             return results
-        results = Model.query.filter(name_attr.like(f"%{kw}%")).paginate(*args)
+        results = Model.query.filter(row_attr.like(f"%{kw}%")).paginate(*args)
         results = makeResultsObject(results)
         return results      
 

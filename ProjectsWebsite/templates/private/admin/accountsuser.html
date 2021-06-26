@@ -39,7 +39,7 @@
                 <br>
                 <hr>
                 <span id="blacklist-order-1" class="blacklist-reason">
-                        Reason: {{ blacklist_info.reason }}
+                        Reason: {{ blacklist_info.reason | safe }}
                     </span>
                 <br>
                 <span id="blacklist-order-2" class="blacklist-date">
@@ -760,7 +760,9 @@
 <script type="text/javascript">
     function confirm_deletion() {
         if (confirm("Are you sure you want to delete ALL articles from {{ user.name }}?")) {
+            console.log("submitting");
             $("#delete-all-article-form").submit();
+            console.log("submitted");
         } else {
             return false;
         }
@@ -768,7 +770,9 @@
 
     function confirm_blacklist() {
         if (confirm("Are you sure you want to blacklist {{ user.name }}?")) {
+            console.log("submitting");
             $("#blacklist-form").submit();
+            console.log("submitted");
         } else {
             return false;
         }

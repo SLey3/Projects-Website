@@ -1,17 +1,15 @@
-Dear 
-<pre> 
-    {name}
-</pre>
+Dear&nbsp;
+{name}
 , 
-
+<br>
+Your account with the ID of&nbsp;<b>
+{id}
+</b>&nbsp;has been banned for the following reason(s):
 <br>
 
-Your account with the ID of 
-{id} 
-has been banned for the following reason(s):
-<br>
 {reasons}
 
+<br>
 <br>
 From,
 <br>

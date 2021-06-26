@@ -1,0 +1,19 @@
+Dear&nbsp;
+{name}
+,
+<br>
+Your account with MyProjects has been unbanned for the following reason(s):
+<br>
+
+{reasons}
+
+<br>
+<br>
+From,
+<br>
+MyProjects Support Automated Service
+
+<hr>
+<i>If you have any questions, go to: <a href="
+{contacturl}
+">Contact Us</a>
