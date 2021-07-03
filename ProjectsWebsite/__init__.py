@@ -10,7 +10,6 @@ from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
 from flask_debugtoolbar import DebugToolbarExtension
-from datetime import timedelta
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.modules import (
     assets, db, guard, login_manager,
@@ -21,9 +20,15 @@ from ProjectsWebsite.util import current_user, appExitHandler
 from http.client import HTTPConnection as reqlogConnection
 from json import load
 from rich import print as rprint
+from pathlib import Path
+import flask_monitoringdashboard as MonitorDashboard
+import pendulum
 import ssl
 import logging
 import os
+
+
+path = Path(os.path.dirname(os.path.abspath(__name__)))
 
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
@@ -46,12 +51,9 @@ context.load_cert_chain('cert/server.cert', 'cert/server.key')
 app = Flask(__name__, template_folder="templates", static_folder='static')
 app.config["FLASK_SKIP_DOTENV"] = 1
 app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=5)
+app.config["PERMANENT_SESSION_LIFETIME"] = pendulum.duration(5, 59, 1, 100, 59, 15)
 app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
 app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
-app.config["MSEARCH_PRIMARY_KEY"] = "id"
-app.config["MSEARCH_INDEX_NAME"] = 'whoosh_index'
-app.config["MSEARCH_BACKEND"] = 'whoosh'
 app.config["MSEARCH_LOGGER"] = logging.DEBUG
 app.config.from_pyfile("../.env")
 app.add_template_global(current_user, 'current_user')
@@ -62,6 +64,10 @@ app.register_error_handler(PraetorianError,
 app.debug = True
 
 app.env = "development"
+
+print(path/"monitor_config.cfg")
+MonitorDashboard.config.init_from(file=path/"monitor_config.cfg", log_verbose=True)
+MonitorDashboard.bind(app)
 
 db.init_app(app)
 
@@ -138,9 +144,7 @@ def favicon():
     
 # ------------------ Webstarter ------------------
 if __name__ == '__main__':
-    rprint("[black][PRE-CONNECTING][/black] [bold green]Creating all SQL databases if not exists....[/bold green]") 
     db.create_all(app=app)
-    rprint("[bold green] All SQL databases has been created if they haven't been created. [/bold green]")
     rprint("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
     with appExitHandler():
         app.run()

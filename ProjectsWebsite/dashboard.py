@@ -8,7 +8,7 @@ from flask import (
 from ProjectsWebsite.util import (roles_accepted, roles_required, token_auth_required)
 
 # ------------------ Blueprint Config ------------------
-dash = Blueprint('dashboard', __name__, static_folder='static', template_folder="templates/private", url_prefix='/dashboard')
+dash = Blueprint('dboard', __name__, static_folder='static', template_folder="templates/private", url_prefix='/dashboard')
 
 # ------------------ Dashboard urls ------------------
 

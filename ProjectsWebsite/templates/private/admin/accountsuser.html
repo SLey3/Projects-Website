@@ -780,7 +780,9 @@
 
     function confirm_unBlacklist() {
         if (confirm("Are you sure you want to unBlacklist from {{ user.name }}?")) {
+            console.log("submitting");
             $("#unBlacklist-form").submit();
+            console.log("submitted");
         } else {
             return false;
         }

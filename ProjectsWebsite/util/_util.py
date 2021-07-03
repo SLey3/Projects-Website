@@ -71,8 +71,9 @@ _pagination_args = namedtuple("_pagination_args", "page total_pages error_out")
 
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
-    from ProjectsWebsite.views import urlSerializer
-    from ProjectsWebsite.database.models import user_datastore, User
+    urlSerializer, user_datastore, User = (import_string("ProjectsWebsite.views:urlSerializer"),
+                                           import_string("ProjectsWebsite.database.models:user_datastore"),
+                                           import_string("ProjectsWebsite.database.models:User"))
     with open(f"{current_app.static_folder}\\unverified\\unverified-log.txt", 'r+', encoding="utf-8") as f:
         lines = f.readlines()
         f.close()
@@ -485,8 +486,8 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
 current_user = LocalProxy(lambda: _get_user())
 
 def _get_user():
-    User = import_string("ProjectsWebsite.database.models:User")
-    AnonymousUser = import_string("ProjectsWebsite.database.models:AnonymousUser")
+    User, AnonymousUser = (import_string("ProjectsWebsite.database.models:User"),
+                          import_string("ProjectsWebsite.database.models:AnonymousUser"))
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del(g._cached_user)
