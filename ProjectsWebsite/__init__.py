@@ -27,8 +27,7 @@ import ssl
 import logging
 import os
 
-
-path = Path(os.path.dirname(os.path.abspath(__name__)))
+path = Path(os.path.dirname(os.path.abspath(__file__)))
 
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
@@ -65,8 +64,7 @@ app.debug = True
 
 app.env = "development"
 
-print(path/"monitor_config.cfg")
-MonitorDashboard.config.init_from(file=path/"monitor_config.cfg", log_verbose=True)
+MonitorDashboard.config.init_from(file=path.parent/"monitor_config.cfg", log_verbose=True)
 MonitorDashboard.bind(app)
 
 db.init_app(app)

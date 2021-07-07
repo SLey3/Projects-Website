@@ -1,5 +1,7 @@
 # vscode folder
 .vscode/
+# node modules
+node_modules/
 # python related files/folders
 __pycache__/
 *.py[cod]
