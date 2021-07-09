@@ -62,6 +62,51 @@ def adminAccountsManegement(page):
             users = QueryLikeSearch("User", search_form.command.data, page, pages)
     return render_template("private/admin/accounts.html", accounts=users, tbl_search_form=search_form)
 
+
+@admin.route('management/accounts/edit_user/<string:user>/process_blacklist/', methods=['POST'])
+def adminAccountsUserManagementProcessBlacklist(user):
+    user_name = request.form["user"] or None
+    if user_name:
+        user_info = User.lookup_by_name(user_name)
+        if request.form["type"] == "blacklist":
+            reason = request.form["reasons"] or None
+            user_id = str(user_info.id)
+            if reason:
+                reasons = list(reason.split("|"))
+            else:
+                reasons = "No Reasons"
+            blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
+            blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
+            mail.send(blacklist_msg)
+            if reasons == "No Reasons":
+                reason_list = "No Reasons"
+            else:
+                reason_list = "<br>"
+                for reason in reasons:
+                    reason_list += f"- {reason} <br>"
+            blacklist_query = Blacklist.add_blacklist(
+                name=user_info.name,
+                reason=reason_list
+            )
+            user_info.blacklisted = True
+            user_datastore.put(blacklist_query)
+            user_datastore.commit()
+        elif request.form["type"] == "unBlacklist":
+            reason = request.form["reasons"] or None
+            if reason:
+                reasons = list(reason.split("|"))
+            else:
+                reasons = "No Reasons"
+            unblacklist_msg = Message('Unban Notice', recipients=[user_info.username])
+            unblacklist_msg.html = unBlacklistMail(user_info.name, reasons)
+            mail.send(unblacklist_msg)
+            Blacklist.remove_blacklist(user_info.name)
+            user_info.blacklisted = False
+            user_datastore.commit()
+            Blacklist.query.filter_by(name=user_info.name).first()
+    return True
+
+
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
 @admin.route('management/accounts/edit_user/<string:user>/<action>/<item_id>/<int:page>', methods=['GET', 'POST'])
@@ -146,42 +191,6 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif delete_article_forms.delete_all.data:
             Article.delete_all(user_info.name)
             user_datastore.commit()
-        elif ext_options.blacklist.data:
-            reason = ext_options.reason.data
-            user_id = str(user_info.id)
-            if reason:
-                reasons = list(reason.split("|"))
-            else:
-                reasons = "No Reasons"
-            blacklist_msg = Message('Ban Notice', recipients=[user_info.username])
-            blacklist_msg.html = blacklistMail(user_info.name, user_id, reasons)
-            mail.send(blacklist_msg)
-            if reasons == "No Reasons":
-                reason_list = "No Reasons"
-            else:
-                reason_list = "<br>"
-                for reason in reasons:
-                    reason_list += f"- {reason} <br>"
-            blacklist_query = Blacklist.add_blacklist(
-                name=user_info.name,
-                reason=reason_list
-            )
-            user_info.blacklisted = True
-            user_datastore.put(blacklist_query)
-            user_datastore.commit()
-        elif ext_options.unblacklist.data: 
-            reason = ext_options.reason.data
-            if reason:
-                reasons = list(reason.split("|"))
-            else:
-                reasons = "No Reasons"
-            unblacklist_msg = Message('Unban Notice', recipients=[user_info.username])
-            unblacklist_msg.html = unBlacklistMail(user_info.name, reasons)
-            mail.send(unblacklist_msg)
-            Blacklist.remove_blacklist(user_info.name)
-            user_info.blacklisted = False
-            user_datastore.commit()
-            Blacklist.query.filter_by(name=user_info.name).first()
         return redirect(url_for('.adminAccountsUserManagement', user=user_info.name))
     else:
         return render_template("private/admin/accountsuser.html", user=user_info, article_info=article_info, search_form=search_form, info_forms=info_forms, 

@@ -196,11 +196,7 @@
     </div>
     <hr>
     <div id="ext-option-menu" class="ext-opt-align">
-        {% if user.blacklisted %}
-        <form id="unBlacklist-form" method="POST" onsubmit="return confirm_unBlacklist()" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
-            {{ ext_options.reason }} {{ ext_options.unblacklist }}
-        </form>
-        {% else %} {{ ext_options.blacklist }}
+        {% if user.blacklisted %} {{ ext_options.unblacklist }} {% else %} {{ ext_options.blacklist }}
         </form>
         {% endif %}
     </div>
@@ -770,15 +766,7 @@
         }
     }
 
-    function confirm_blacklist() {
-        if (confirm("Are you sure you want to blacklist {{ user.name }}?")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    $(".blacklist").on('click', function() {
+    $("#blacklist-btn").click(function() {
         $.confirm({
             title: 'Confirm Blacklist',
             draggable: false,
@@ -800,11 +788,20 @@
                     keys: ['enter'],
                     action: function() {
                         $.alert("Blacklist confirmed");
-                        return true;
+                        $.ajax({
+                            method: 'POST',
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            data: {
+                                'type': 'blacklist',
+                                'user': "{{ user.name }}",
+                                'reasons': $("#reason-field").val()
+                            }
+                        }).done(setTimeout(function() {
+                            location.reload(true);
+                        }, 1500));
                     }
                 },
                 cancel: function() {},
-
             },
             onContentReady: function() {
                 let jc = this;
@@ -816,13 +813,52 @@
         });
     });
 
-    function confirm_unBlacklist() {
-        if (confirm("Are you sure you want to unBlacklist from {{ user.name }}?")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    $("#unBlacklist-btn").click(function() {
+        $.confirm({
+            title: 'Confirm unBlacklist',
+            draggable: false,
+            columnClass: 'small',
+            animation: 'rotateYR',
+            closeAnimation: 'rotateXR',
+            animationSpeed: 1500,
+            content: '' +
+                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement", user=user.name) }}">' +
+                '<div class="form-group">' +
+                '<label> Reason for unBlacklist:</label>' +
+                '{{ ext_options.reason }}' +
+                '</div>' +
+                '</form>',
+            buttons: {
+                formSubmit: {
+                    text: 'Submit',
+                    btnClass: 'btn-danger',
+                    keys: ['enter'],
+                    action: function() {
+                        $.alert("unBlacklist confirmed");
+                        $.ajax({
+                            method: 'POST',
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            data: {
+                                'type': 'unBlacklist',
+                                'user': "{{ user.name }}",
+                                'reasons': $("#reason-field").val()
+                            }
+                        }).done(setTimeout(function() {
+                            location.reload(true);
+                        }, 1500));
+                    }
+                },
+                cancel: function() {},
+            },
+            onContentReady: function() {
+                let jc = this;
+                this.$content.find('form').on('submit', function(e) {
+                    e.preventDefault();
+                    jc.$$formSubmit.trigger('click');
+                });
+            }
+        });
+    });
 </script>
 {% assets "edit_prof_main_js" %}
 <script src="{{ ASSET_URL }}"></script>
