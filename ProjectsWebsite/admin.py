@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 from flask import (
     Blueprint, render_template, url_for,
-    redirect, request
+    redirect, request, jsonify
 )
 from flask_login import confirm_login
 from flask_mail import Message
@@ -81,6 +81,7 @@ def adminAccountsUserManagementProcessBlacklist(user):
             if reasons == "No Reasons":
                 reason_list = "No Reasons"
             else:
+       
                 reason_list = "<br>"
                 for reason in reasons:
                     reason_list += f"- {reason} <br>"
@@ -104,8 +105,22 @@ def adminAccountsUserManagementProcessBlacklist(user):
             user_info.blacklisted = False
             user_datastore.commit()
             Blacklist.query.filter_by(name=user_info.name).first()
-    return True
+        return jsonify({'reasons': reason})
 
+@admin.route('management/accounts/edit_user/<string:user>/process_search/', methods=['POST'])
+def adminAccountsUserManagementProcessSearch(user):
+    ajax_data = request.form["search_data"] or None
+    user_name = request.form["name"]
+    user = User.lookup_by_name(user_name)
+    page = int(request.form["page"])
+    pages = int(request.form["pages"])
+    if pages == 1:
+        pages = pages + page
+    if ajax_data:
+        article_info = QueryLikeSearch("Article", ajax_data, page, pages, user_name, "title")
+    else:
+        article_info = QueryLikeSearch("Article", None, page, pages, user_name)
+    return render_template("private/admin/render/_search_ajax.html", article_info=article_info, user=user, delete_article_forms=AccountManegementForms.ArticleDeleteForms())
 
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
 @admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
@@ -126,11 +141,8 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    if _temp_save["article_info"]:
-        article_info = _temp_save.pop("article_info")
-    else:
-        article_info = Article.query.msearch(user_info.name).paginate(page, article_pages, error_out=False)
-        article_info = makeResultsObject(article_info)
+    article_info = Article.query.msearch(user_info.name).paginate(page, article_pages, error_out=False)
+    article_info = makeResultsObject(article_info)
     action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
@@ -180,9 +192,6 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif delete_role_forms.editor_field.data:
             user_datastore.remove_role_from_user(user_info, "editor")
             user_datastore.commit()
-        elif search_form.command.data and search_form.command_sbmt.data:
-            article_info = QueryLikeSearch("Article", search_form.command.data, page, article_pages, user_info.name, "title")
-            _temp_save["article_info"] = article_info
         elif delete_article_forms.delete_article.data:
             if action == "delete":
                 item_id = request.args.get("item_id")

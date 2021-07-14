@@ -67,7 +67,7 @@ BeautifulSoup = partial(_beautifulsoup, features='html5lib')
 del _beautifulsoup
 del partial
 
-_pagination_args = namedtuple("_pagination_args", "page total_pages error_out")
+_pagination_args = namedtuple("_pagination_args", "page total_pages error_out max_per_page")
 
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
@@ -439,8 +439,20 @@ def QueryLikeSearch(model_name: str, kw: str,  page: int, total_pages: int, name
     """
     model_name = model_name.capitalize()
     Model = import_string( f"ProjectsWebsite.database.models:{model_name}")
-    args = _pagination_args(page, total_pages, False)
-    row_attr = getattr(Model, attr_name)
+    args = _pagination_args(page, total_pages, False, 3)
+    if not kw:
+        if name:
+            try:
+                results = Model.query.filter_by(name=name).paginate(*args)
+            except InvalidRequestError:
+                results = Model.query.filter_by(author=name).paginate(*args)
+            finally:
+                results = makeResultsObject(results)
+                return results
+        results = Model.query.all().paginate(*args)
+        results = makeResultsObject(results)
+        return results
+    row_attr = getattr(Model, attr_name, None)
     if row_attr:
         if name:
             try:
@@ -449,7 +461,7 @@ def QueryLikeSearch(model_name: str, kw: str,  page: int, total_pages: int, name
                 results = Model.query.filter(row_attr.like(f"%{kw}%")).filter_by(author=name).paginate(*args)
             finally:
                 results = makeResultsObject(results)
-            return results
+                return results
         results = Model.query.filter(row_attr.like(f"%{kw}%")).paginate(*args)
         results = makeResultsObject(results)
         return results      

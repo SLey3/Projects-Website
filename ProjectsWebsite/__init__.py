@@ -13,7 +13,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.modules import (
     assets, db, guard, login_manager,
-    mail, security, img_set, search
+    mail, security, img_set, migrate
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, appExitHandler
@@ -73,7 +73,7 @@ login_manager.init_app(app)
 
 mail.init_app(app)
 
-search.init_app(app)
+migrate.init_app(app, db, "ProjectsWebsite/migrations")
 
 configure_uploads(app, img_set)
 

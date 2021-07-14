@@ -124,7 +124,7 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="article-tbody">
                     {% for article in article_info %}
                     <tr>
                         <td>{{ article.id }}</td>
@@ -857,6 +857,24 @@
                     jc.$$formSubmit.trigger('click');
                 });
             }
+        });
+    });
+</script>
+<script type="text/javascript">
+    $(document).on('submit', '#article-srch-form', function(e) {
+        e.preventDefault();
+        $.ajax({
+            method: 'POST',
+            url: '{{ url_for("admin.adminAccountsUserManagementProcessSearch", user=user.name) }}',
+            data: {
+                'search_data': $("#table-search").val(),
+                'name': '{{ user.name }}',
+                'page': '{{ article_info.page }}',
+                'pages': '{{ article_info.pages }}'
+            }
+        }).done(function(data) {
+            $("#article-tbody").fadeOut(5).fadeIn(1000);
+            $("#article-tbody").html(data);
         });
     });
 </script>

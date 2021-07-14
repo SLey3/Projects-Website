@@ -3,7 +3,6 @@ from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin, DateUtil
-from ProjectsWebsite.modules import search
 
 # ------------------ SQL classes  ------------------
 dt = DateUtil(format_token="L LTS zzZ z")
@@ -120,8 +119,6 @@ class Article(db.Model):
     
     __bind_key__ = 'articles'
     
-    __searchable__ = ["title", "author"]
-    
     id = db.Column("id", db.Integer, primary_key=True)
     title = db.Column("title", db.String(100))
     author = db.Column("author", db.String(100))
@@ -146,8 +143,6 @@ class Blacklist(db.Model):
     
     __bind_key__ = 'blacklist'
     
-    __searchable__ = ["name", "date_blacklisted"]
-    
     id = db.Column("id", db.Integer(), primary_key=True)
     name = db.Column("person", db.String(100), unique=True, nullable=False)
     reason = db.Column("reason", db.String(255))
@@ -171,7 +166,3 @@ class Blacklist(db.Model):
 
 # ------------------ user_datastore  ------------------
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-
-# ------------------ search database class setup  ------------------
-search.create_index(Article)
-search.create_index(Blacklist)

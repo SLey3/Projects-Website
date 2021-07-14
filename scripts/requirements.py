@@ -4,6 +4,7 @@ import re
 import os 
 import subprocess
 import click
+import sys
 
 # Command Utils
 @click.group()
@@ -14,7 +15,7 @@ def moduleInstall():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')   
     click.secho("Installing modules...", fg="yellow")
-    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=PIPE, stdout=PIPE, stderr=PIPE)   
+    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)   
     click.secho("Successfully installed modules", fg="green", underline=True)
     
 def install_lighthouse():
@@ -38,10 +39,19 @@ def lighthouseInstallCallback(ctx, param, value):
 @click.command(help="Updates Requirements file")
 @click.option("--install", expose_value=False, is_flag=True, callback=installCallback, help="install all modules")
 @click.option("--install-lighthouse", expose_value=False, is_flag=True, callback=lighthouseInstallCallback, help="install lighthouse from npm")
-def update():
+@click.option("-u", nargs=1, default=None, help="upgrades module")
+def update(u):
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')
-    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding="utf-8")
+    if u:
+        command = subprocess.Popen(["pip", "install", "-U", f"{u}"], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)
+        try:
+            outs, errs = command.communicate(timeout=9)
+        except TimeoutExpired:
+            command.kill()
+        click.secho(f"{u} updated succesfully", fg="green")
+        return
+    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=sys.stdout, stderr=PIPE, encoding="utf-8")
     try:
         outs, errs = command.communicate(timeout=9)
     except TimeoutExpired:
@@ -51,14 +61,18 @@ def update():
     
 @click.command(help="Adds specified module to in file")
 @click.argument("module", nargs=1, type=str, required=True)
-@click.option("--version", nargs=1, default=None)
-def add_to_in_file(module, version):
+@click.option("--version", nargs=1, default=None, help="version of module")
+@click.option("--greaterthan", is_flag=True, help=">= in requirements file")
+def add_to_in_file(module, version, greaterthan):
     click.secho(f"Adding {module} to requirements.in...", fg="yellow")
     if version:
         if os.path.basename(os.getcwd()) == 'script':
             os.chdir('..')
         with open('requirements.in', 'a', encoding='utf-8') as r:
-            r.write(f"\n{module}=={version}")
+            if greaterthan:
+                r.write(f"\n{module}>={version}")
+            else:
+                r.write(f"\n{module}=={version}")
     else:
         if os.path.basename(os.getcwd()) == 'script':
             os.chdir('..')
@@ -78,7 +92,7 @@ def un_install():
             continue
         else:
             click.secho(f"Uninstalling: {sub_line}...", fg="yellow")
-            subprocess.run(['pip', 'uninstall', sub_line, '-y'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            subprocess.run(['pip', 'uninstall', sub_line, '-y'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)
             click.secho(f"Successfully uninstalled: {sub_line}", fg="green")
     
 def uninstallCallback(ctx, param, value):
@@ -111,7 +125,7 @@ def uninstall(module):
             subbed_line = re.sub(r"==[0-9.a-zA-Z]+", '', line)
             if subbed_line.strip() not in module:
                 r.write(line)
-    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding="utf-8")
+    command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)
     try:
         outs, errs = command.communicate(timeout=9)
     except TimeoutExpired:

@@ -6,7 +6,7 @@ from flask_assets import Environment, Bundle
 from flask_uploads import UploadSet, IMAGES
 from flask_mail import Mail
 from flask_praetorian import Praetorian
-from flask_msearch import Search
+from flask_migrate import Migrate
 
 # ------------------ module variables ------------------
 db = SQLAlchemy()
@@ -23,9 +23,9 @@ security = Security()
 
 guard = Praetorian()
 
-search = Search()
-
 assets = Environment()
+
+migrate = Migrate()
 
 js_main_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
                    filters='jsmin', output="js/main/dist/main.min.js") 
