@@ -56,8 +56,9 @@ def update(u):
         outs, errs = command.communicate(timeout=9)
     except TimeoutExpired:
         command.kill()
-        
-    click.secho("requirements file updated", fg="green")
+    else: 
+        click.echo(errs)
+        click.secho("requirements file updated", fg="green")
     
 @click.command(help="Adds specified module to in file")
 @click.argument("module", nargs=1, type=str, required=True)
@@ -106,9 +107,9 @@ def uninstallCallback(ctx, param, value):
 def uninstallLighthouseCallback(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    click.secho("Uninstalling lighthouse...")
+    click.secho("Uninstalling lighthouse...", fg="red")
     os.system("npm uninstall -g lighthouse")
-    click.secho("Successfully uninstalled lighthouse")
+    click.secho("Successfully uninstalled lighthouse", fg="green")
     ctx.exit()
     
 @click.command(help="uninstalls specified module")

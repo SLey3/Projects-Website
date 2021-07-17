@@ -8,6 +8,9 @@ from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin, DateUtil
 dt = DateUtil(format_token="L LTS zzZ z")
 
 class Role(db.Model, RoleMixin):
+    """
+    Role model for all roles in this website
+    """
     __tablename__ = 'roles'
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column(db.ForeignKey("user.id"))
@@ -18,7 +21,7 @@ class Role(db.Model, RoleMixin):
   
 class User(db.Model, SQLAlchemyUserMixin):
     """
-    User Model
+    User Model for all users with accounts
     """
     __tablename__ = 'user'
     
@@ -31,8 +34,7 @@ class User(db.Model, SQLAlchemyUserMixin):
     confirmed_at = db.Column(db.DateTime())
     created_at = db.Column("date", db.String(30))
     blacklisted = db.Column(db.Boolean())
-    roles = db.relationship('Role', primaryjoin="and_(User.id==Role.user_id)",
-                            backref=db.backref('users'))
+    roles = db.relationship('Role', backref=db.backref("users"), lazy='subquery')
     
     def has_role(self, role):
         """
@@ -107,13 +109,13 @@ class User(db.Model, SQLAlchemyUserMixin):
 
 class AnonymousUser(AnonymousUserMixin):
     """
-    AnonymousUser class
+    AnonymousUser class for not logged in users
     """
     pass
 
 class Article(db.Model):
     """
-    Article Model
+    Article Model for all articles
     """
     __tablename__ = 'article'
     
@@ -126,13 +128,20 @@ class Article(db.Model):
     short_desc = db.Column("short_description", db.String(150))
     title_img = db.Column(db.String(500))
     body = db.Column("body", db.String(900))
+    download_pdf = db.Column(db.LargeBinary)
     
     @classmethod
     def delete(cls, id):
+        """
+        delete an article by id
+        """
         return cls.query.filter(cls.id == id).delete()
     
     @classmethod
     def delete_all(cls, author):
+        """
+        Delete all of a specific authors article
+        """
         return cls.query.filter(cls.author == author).delete()
         
 class Blacklist(db.Model):
@@ -151,15 +160,16 @@ class Blacklist(db.Model):
     @classmethod
     def add_blacklist(cls, **kwargs):
         """
-        adds a person to the Blacklist database
+        adds a person to the Blacklist database (e.g. Ban)
         """
         date = dt.subDate()
         kwargs.setdefault("date_blacklisted", date)
         return cls(**kwargs)
+    
     @classmethod
     def remove_blacklist(cls, name):
         """
-        removes a person from the Blacklist database
+        removes a person from the Blacklist database (e.g. UnBan)
         """
         return cls.query.filter(cls.name == name).delete()
     

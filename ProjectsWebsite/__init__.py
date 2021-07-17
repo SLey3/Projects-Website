@@ -73,7 +73,7 @@ login_manager.init_app(app)
 
 mail.init_app(app)
 
-migrate.init_app(app, db, "ProjectsWebsite/migrations")
+migrate.init_app(app, db, f"{path}/migrations")
 
 configure_uploads(app, img_set)
 

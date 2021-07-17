@@ -141,8 +141,7 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    article_info = Article.query.msearch(user_info.name).paginate(page, article_pages, error_out=False)
-    article_info = makeResultsObject(article_info)
+    article_info = QueryLikeSearch("Article", None, page, article_pages, user_info.name)
     action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):

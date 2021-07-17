@@ -1,2 +1,0 @@
-1) Start Work on Article Manegement Page
-2) continue working on other admin management pages (e.g. github page, and Web Settings, and possibly a mail section)

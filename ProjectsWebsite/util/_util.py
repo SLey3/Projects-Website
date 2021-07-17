@@ -28,6 +28,8 @@ from time import sleep
 from contextlib import contextmanager
 from sys import exit
 from sqlalchemy.exc import InvalidRequestError
+from googletrans import Translator
+from polib import pofile, detect_encoding
 from pendulum.datetime import DateTime
 import pendulum
 import re
@@ -163,6 +165,39 @@ class temp_save(dict):
             return False
     def __setitem__(self, key, value) -> None:
         return super().__setitem__(key, value)
+    
+    
+class PofileAutoTranslator:
+    """
+    Object to auto translate a Pofiles msgtxt to the locale set by Babel
+    NOTE: Babel has not been set up right now. 
+    Do not use this class and finish setting up self.locale when Babel is present
+    """
+    def __init__(self, file: str):
+        encoding = detect_encoding(file)
+        self.pfile = pofile(file, encoding=encoding, check_for_duplicates=True)
+        self.locale = ... ###TODO: set Babel local getter here
+        self.translator = Translator()
+        
+    def _save(self):
+        """
+        saves the po file
+        """
+        self.pfile.save()
+            
+    def translate(self):
+        """
+        Translates all msgtxt in the pofile
+        """
+        percent_translated = self.pfile.percent_translated()
+        if percent_translated == 100:
+            return
+        for entry in self.pfile:
+            translated = self.translator.translate(entry.msgid, dest=self.locale)
+            entry.msgtxt = translated.text
+        self._save()
+                
+            
     
 class unverfiedLogUtil:
     """
