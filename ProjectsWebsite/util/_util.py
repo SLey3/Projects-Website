@@ -167,7 +167,7 @@ class temp_save(dict):
         return super().__setitem__(key, value)
     
     
-class PofileAutoTranslator:
+class PoFileAutoTranslator:
     """
     Object to auto translate a Pofiles msgtxt to the locale set by Babel
     NOTE: Babel has not been set up right now. 
@@ -176,15 +176,9 @@ class PofileAutoTranslator:
     def __init__(self, file: str):
         encoding = detect_encoding(file)
         self.pfile = pofile(file, encoding=encoding, check_for_duplicates=True)
-        self.locale = ... ###TODO: set Babel local getter here
+        self.locale = self.pfile.metadata["Language"]
         self.translator = Translator()
-        
-    def _save(self):
-        """
-        saves the po file
-        """
-        self.pfile.save()
-            
+    
     def translate(self):
         """
         Translates all msgtxt in the pofile
@@ -194,8 +188,8 @@ class PofileAutoTranslator:
             return
         for entry in self.pfile:
             translated = self.translator.translate(entry.msgid, dest=self.locale)
-            entry.msgtxt = translated.text
-        self._save()
+            entry.msgstr = translated.text
+        self.pfile.save()
                 
             
     

@@ -15,7 +15,8 @@ def moduleInstall():
     if os.path.basename(os.getcwd()) == 'script':
         os.chdir('..')   
     click.secho("Installing modules...", fg="yellow")
-    subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)   
+    process = subprocess.run(['pip', 'install', '-r', 'requirements.txt', '--no-warn-script-location'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)   
+    click.echo(process.stdout)
     click.secho("Successfully installed modules", fg="green", underline=True)
     
 def install_lighthouse():
@@ -49,6 +50,8 @@ def update(u):
             outs, errs = command.communicate(timeout=9)
         except TimeoutExpired:
             command.kill()
+        else:
+            click.echo(errs)
         click.secho(f"{u} updated succesfully", fg="green")
         return
     command = subprocess.Popen(["pip-compile", "requirements.in"], stdin=PIPE, stdout=sys.stdout, stderr=PIPE, encoding="utf-8")
@@ -93,7 +96,8 @@ def un_install():
             continue
         else:
             click.secho(f"Uninstalling: {sub_line}...", fg="yellow")
-            subprocess.run(['pip', 'uninstall', sub_line, '-y'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)
+            process = subprocess.run(['pip', 'uninstall', sub_line, '-y'], stdin=PIPE, stdout=sys.stdout, stderr=PIPE)
+            click.echo(process.stdout)
             click.secho(f"Successfully uninstalled: {sub_line}", fg="green")
     
 def uninstallCallback(ctx, param, value):
@@ -131,6 +135,8 @@ def uninstall(module):
         outs, errs = command.communicate(timeout=9)
     except TimeoutExpired:
         command.kill()
+    else:
+        click.echo(errs)
         
     for m in module:
         click.secho(f"Uninstalling: {m}...", fg="red")
@@ -139,6 +145,8 @@ def uninstall(module):
             outs, errs = command.communicate(timeout=7)
         except TimeoutExpired:
             command.kill()
+        else:
+            click.echo(errs)
         click.secho(f"Successfully uninstalled: {m}", fg="green")
 
 

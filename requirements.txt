@@ -30,16 +30,15 @@ flask-login==0.5.0        # via -r requirements.in, flask-security
 flask-mail==0.9.1         # via -r requirements.in, flask-praetorian, flask-security
 flask-migrate==3.0.1      # via -r requirements.in
 flask-monitoringdashboard==3.1.0  # via -r requirements.in
-flask-msearch==0.2.9.2    # via -r requirements.in
 flask-praetorian==1.2.0   # via -r requirements.in
 flask-principal==0.4.0    # via -r requirements.in, flask-security
 flask-reuploaded==0.3.2   # via -r requirements.in
 flask-security==3.0.0     # via -r requirements.in
 flask-session==0.4.0      # via -r requirements.in
-flask-sqlalchemy==2.5.1   # via -r requirements.in, flask-migrate, flask-msearch
+flask-sqlalchemy==2.5.1   # via -r requirements.in, flask-migrate
 flask-wtf==0.14.3         # via -r requirements.in, flask-security
-flask==1.1.2              # via -r requirements.in, flask-assets, flask-babelex, flask-buzz, flask-debugtoolbar, flask-login, flask-mail, flask-migrate, flask-monitoringdashboard, flask-msearch, flask-praetorian, flask-principal, flask-reuploaded, flask-security, flask-session, flask-sqlalchemy, flask-wtf
-googletrans==3.0.0        # via -r requirements.in
+flask==1.1.2              # via -r requirements.in, flask-assets, flask-babelex, flask-buzz, flask-debugtoolbar, flask-login, flask-mail, flask-migrate, flask-monitoringdashboard, flask-praetorian, flask-principal, flask-reuploaded, flask-security, flask-session, flask-sqlalchemy, flask-wtf
+googletrans==4.0.0-rc1    # via -r requirements.in
 greenlet==1.1.0           # via sqlalchemy
 h11==0.9.0                # via httpcore
 h2==3.2.0                 # via httpcore

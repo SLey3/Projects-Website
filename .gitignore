@@ -45,8 +45,5 @@ cert/
 # unverified log dir
 unverified/
 
-# whoosh index folder
-whoosh_index
-
 # Flask-monitoringdashboard config
 monitor_config.cfg
