@@ -1,0 +1,15 @@
+{% for article in article_info %}
+<tr>
+    <td>{{ article.id }}</td>
+    <td> {{ article.title }}</td>
+    <td>{{ article.short_desc }}</td>
+    <td>{{ article.create_date }}</td>
+    <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
+    <td></td>
+    <td>
+        <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
+            {{ delete_article_forms.delete_article }}
+        </form>
+    </td>
+</tr>
+{% endfor %}

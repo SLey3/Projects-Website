@@ -6,6 +6,7 @@ from flask_assets import Environment, Bundle
 from flask_uploads import UploadSet, IMAGES
 from flask_mail import Mail
 from flask_praetorian import Praetorian
+from flask_migrate import Migrate
 
 # ------------------ module variables ------------------
 db = SQLAlchemy()
@@ -24,10 +25,12 @@ guard = Praetorian()
 
 assets = Environment()
 
+migrate = Migrate()
+
 js_main_bundle = Bundle('js/main/src/confirm.js', 'js/main/src/pass.js', 'js/main/src/novalidate.js',
                    filters='jsmin', output="js/main/dist/main.min.js") 
 
-edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/accounts/edit_profile/src/navalign.js',
+edit_profile_js_bundle = Bundle('js/ext/admin/accounts/edit_profile/src/element.js', 'js/ext/admin/main/navalign.js', 
                                 filters='jsmin', output='js/ext/admin/accounts/edit_profile/dist/index.min.js')
 
 alert_css_bundle = Bundle('styles/alert_css/src/box.css', 'styles/alert_css/src/error.css', 

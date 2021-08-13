@@ -11,6 +11,16 @@ from ProjectsWebsite.forms.validators import *
 from ProjectsWebsite.forms.field import ButtonField
 
 # ------------------ Forms------------------
+__all__ = [
+    "loginForm",
+    "registerForm",
+    "articleForm",
+    "contactForm",
+    "forgotForm",
+    "forgotRequestForm",
+    "AccountManegementForms"
+]
+
 class loginForm(FlaskForm):
     """
     website login Form for loginpage.html
@@ -31,7 +41,7 @@ class registerForm(FlaskForm):
                                              Length(min=3, max=50, message="Email length must be at most 50 characters")], 
                                             render_kw={'placeholder':'Email'})
     password = PasswordField("password", id="password", validators=[DataRequired("Password field must not be blank"), Length(min=8, max=99,
-                                                                                         message="length should be between 8-99 characters")],
+                                                                                         message="length should be between 8-99 characters"), ValidatePasswordStrength()],
                                                                                         render_kw={'placeholder':'Password'})
     confirm_pass = PasswordField("confirm_pass", id="confirm_pass", validators=[DataRequired("You must confirm the password."), EqualTo("password", 
                                                                         "Confirmation password must equal to the created password")],
@@ -78,7 +88,7 @@ class forgotForm(FlaskForm):
     Password change form for forgot password
     """
     new_password = PasswordField("password", id="password", validators=[DataRequired("Password field Entry required."),  Length(min=8, max=99,
-                                message="length should be between 8-99 characters")], render_kw={'placeholder':'New Password'})
+                                message="length should be between 8-99 characters"), ValidatePasswordStrength()], render_kw={'placeholder':'New Password'})
     
     confirm_new_password = PasswordField("confirm_new_password", id="confirm_pass", validators=[DataRequired("Password Confirmation Required"), EqualTo("new_password", "Passwords do not match.")],
                                          render_kw={'placeholder':'Confirm Password'})
@@ -103,14 +113,23 @@ class AccountManegementForms:
         """
         Creates Search Input
         """
-        command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search By Name', 'autocomplete':'off'})
+        command = SearchField(id="table-search", render_kw={'class':'tbl-srch', 'placeholder':'Search', 'autocomplete':'off'})
         
+        command_sbmt = ButtonField('<i class="fa fa-search" aria-hidden="true"></i>', id="article-srch-btn", render_kw={"class":"article-search-btn"})
+       
+    class ArticleDeleteForms(FlaskForm):
+        """
+        Submit fields for deleting article starting with the delete all field
+        """
+        delete_all = SubmitField(id="article-delete-all-sbmt", render_kw={"class":"article-dlt-a-sbmt"}) 
+        
+        delete_article = ButtonField("<i class='fa fa-trash-o' aria-hidden='true'></i>", render_kw={"class":"inner-article-delete-btn"})
         
     class roleForm(FlaskForm):
         """
         Submit Field that raises an alert before deleting all roles
         """
-        delete_all = SubmitField(id="delete-all-sbmt", render_kw={'class':'delete-all-btn', 'value':'delete all'}) 
+        delete_all = SubmitField(id="role-delete-all-sbmt", render_kw={'class':'role-delete-all-btn', 'value':'delete all'}) 
         
         add_role = StringField(id="add-role-input", validators=[DataRequired("Field cannot be empty"), ValidateRole()], render_kw={'class':'add-role-form-input', 'placeholder':'Enter Role', 'autocomplete':'off'})
         
@@ -124,7 +143,15 @@ class AccountManegementForms:
             unverified_field = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', id="unverified-data-role-type-container", render_kw={'class':'inner-delete-btn', "data-role-type":"unverified"})
             
             editor_field = ButtonField('<i class="fa fa-trash-o" aria-hidden="true"></i>', id="editor-data-role-type-container", render_kw={'class':'inner-delete-btn', "data-role-type":"editor"})
-            
+    class extOptionForm(FlaskForm):
+        """
+        Includes: Blacklist and UnBlacklist Buttons
+        """
+        blacklist = SubmitField(id="blacklist-btn", render_kw={'class':'blacklist', 'value':'Blacklist'})
+        
+        unblacklist = SubmitField(id="unBlacklist-btn", render_kw={'class':'blacklist', 'value':'Remove Blacklist'})
+        
+        reason = StringField(id="reason-field", validators=[Length(min=0, max=100, message="Blacklist Reason may not be over 100 characters."), Optional()], render_kw={'class':'blacklist-reason', 'autocomplete':'off', 'placeholder':'Enter Reason...'})            
         
     class adminUserInfoForm(FlaskForm):
         """
@@ -150,8 +177,3 @@ class AccountManegementForms:
                              render_kw={'placeholder':'Edit active status...', 'class':'active-status-input', 'autocomplete':'off'})
         
         active_sbmt = SubmitField(id='active-status-sbmt-btn', render_kw={'value':'Submit', 'class':'active-status-sbmt-btn'})
-        
-        blacklist = StringField('Blacklist Status: ', id='edit-blacklist-input', validators=[DataRequired("Field may not be empty"), ValidateBool()],
-                                render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input', 'autocomplete':'off'})
-        
-        blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status-sbmt-btn'})

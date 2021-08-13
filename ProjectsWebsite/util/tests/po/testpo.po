@@ -1,0 +1,17 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: ghub4127@gmail.com\n"
+"PO-Revision-Date: 2021-08-06 16:40:28\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+
+#: fixtures.py:22
+msgid "This is a test PO File."
+msgstr "Este es un archivo PO de prueba."
+
+#: fixtures.py:27
+msgid "TERMS AND CONDITIONS: 1) No Plagerizing in ANY way!"
+msgstr "Términos y condiciones: 1) ¡No hay plagiar de ninguna manera!"

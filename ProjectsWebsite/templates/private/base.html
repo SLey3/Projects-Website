@@ -9,12 +9,18 @@
     <meta name="designer" content="Sergio Ley">
     <meta name="publisher" content="Sergio Ley">
     <meta name="distribution" content="private">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %}{% endblock %}</title>
-    {% block css %}{% endblock %}
+    {% block css %}{% endblock %}{% assets "alert__css" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
 </head>
+<style>
+
+</style>
 
 <body>
-    {% block content %} {% endblock %} {% block js %}{% endblock %}
+    {% from "public/render/_render_alert.html" import render_alert %} {% from "private/admin/render/_render_form.html" import render_field %} {% include "private/admin/navbar/navbar.html" %}
+    <main>{% block content %}{% endblock %}</main> {% block js %}{% endblock %}
 </body>
 
 </html>

@@ -1,0 +1,2 @@
+START_VAR_BLOCK = "{{"
+END_VAR_BLOCK = "}}"

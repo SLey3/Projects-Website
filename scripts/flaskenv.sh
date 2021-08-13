@@ -1,5 +1,5 @@
 echo "commencing process..."
-export FLASK_APP="wsgi.py"
+export FLASK_APP="ProjectsWebsite/__init__.py"
 export FLASK_DEBUG=1
 export FLASK_ENV="development"
 export FLASK_SKIP_DOTENV=1

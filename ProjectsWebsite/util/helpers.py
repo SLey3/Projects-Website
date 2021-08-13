@@ -23,7 +23,14 @@ email_re = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 date_re = re.compile(r'''[^a-zA-Z] # No word characters allowed
                          \d{1,2}/ # Month
                          \d{1,2}/ # Day
-                         \d{2,4}  # Year''', re.X)
+                         \d{2,4}  # Year
+                         ''', re.X)
+
+reversed_date_re = re.compile(r'''[^a-zA-z] # No word characters allowed
+                                  \d{2,4}- # Year
+                                  \d{1,2}- # Month
+                                  \d{1,2} # year
+                                  ''', re.X)
 
 bool_re = re.compile(r'True|False')
 

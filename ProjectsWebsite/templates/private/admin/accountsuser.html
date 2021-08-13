@@ -1,657 +1,264 @@
- {% extends "private/base.html" %} {% from "private/admin/render/_render_form.html" import render_field %} {% block title %} MyProjects | {{ user.name }} Profile {% endblock %} {% block css %} {% assets "admin_edit_accounts_css" %}
+ {% extends "private/base.html" %} {% block title %} MyProjects | {{ user.name }} Profile {% endblock %} {% block css %} {% assets "admin_edit_accounts_css" %}
 <link rel="stylesheet" href="{{ ASSET_URL }}"> {% endassets %}
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous"> {% endblock %} {% block content %} {% include "private/admin/navbar/navbar.html" %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.2/css/bootstrap-grid.min.css" integrity="sha512-LLxZHu50SXdFJdAzHmDJAoLaozhTB4BYZPoN+xdTRjiPmPhI+1mEJXdoHHiDWmd/jj/9x10pkd8mYGG9sqfPPA==" crossorigin="anonymous"
+    referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css" />
+<style>
+    .body-grid {
+        display: inline-flexbox;
+        grid-template-rows: 5.25rem;
+        justify-items: stretch;
+        justify-content: space-evenly;
+        transition: margin-left 0.5s ease-out;
+    }
+</style>
+{% endblock %} {% block content %}
 <div id="cntnr" class="body-grid">
     <div id="profile-title">
         <h1 id="acc-profile-title" class="page-title">Edit {{ user.name }} Account Profile</h1>
         <span name="sep" class="management-header-sep title-header-sep-align"></span>
     </div>
-    <div id="body-content">
-        <div id="info-cntnr" class="acc-info-cntnr">
-            <div name="sub-title" class="acc-info-title">
-                <h2 id="inf-title">Account Info</h2>
-                <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
-            </div>
-            <div class="text-body">
-                <information id="prof-info" class="text-wrap">
-                    <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
-                    <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
-                    <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
-                    <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
-                    <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
-                    <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
-                    <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
-                    <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
-                    <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
-                    <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
-                    <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
-                    <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span>
-                    <div id="edit-blacklist-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if blacklist_error %} {{ blacklist_error | safe }} {% else %}
-                    <p id="blacklist-status-err-p" class="blacklist-status-err err-txt"></p> {% endif %} <br>
-                </information>
-            </div>
+    <div id="info-cntnr" class="acc-info-cntnr">
+        <div name="sub-title" class="acc-info-title">
+            <h2 id="inf-title">Account Info</h2>
+            <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
         </div>
-        <div class="role-table">
-            <div id="role-tbl-title" class="role-ttle-cntnr">
-                <h4 class="role-tbl-title">Account Roles</h4>
-                <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
-            </div>
-            <div class="table-cntnr">
-                <table id="roles-table" class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Role ID</th>
-                            <th>Role Name</th>
-                            <th>
-                                <p id="role-select-all-txt" class="table-txt">Select</p> <input id="role-head-selectAll" type="checkbox" class="select-check" />
-                                <div id="delete-all-btn-container"></div>
-                                <div id="add-role-btn-container">
-                                    <div id="role-add-btn" onclick="addRoleExpand()"><i id="role-add-btn-icn" class="fa fa-plus-square-o" aria-hidden="true" aria-label="add-Role" title="add-Role"></i></div>{% if add_role_error %} {{ add_role_error | safe }} {% else %}
-                                    <p id="add-role-err-p" class="add-role-err err-txt"></p> {% endif %}</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for role in user.roles %}
-                        <tr>
-                            <td>{{ role.id }}</td>
-                            <td>{{ role.name }}</td>
-                            <td>
-                                <form id="inner-delete-role-form" method="POST">
-                                    {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
-                                    {{ delete_role_forms.editor_field }} {% endif %}
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Role ID</th>
-                            <th>Role Name</th>
-                            <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" />
-                            </th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+        <div class="text-body">
+            <information id="prof-info" class="text-wrap">
+                <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
+                <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
+                <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
+                <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
+                <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
+                <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
+                <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
+                <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
+                <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
+                <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
+                <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
+                <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span> {% if user.is_blacklisted %}
+                <br>
+                <hr>
+                <span id="blacklist-order-1" class="blacklist-reason">
+                        Reason: {{ blacklist_info.reason | safe }}
+                    </span>
+                <br>
+                <span id="blacklist-order-2" class="blacklist-date">
+                        Date Blacklisted: {{ blacklist_info.date_blacklisted }}
+                    </span> {% endif %}
+                <br>
+            </information>
         </div>
-        <div class="article-table">
-            <div id="article-tbl=title" class="article-tbl-ttle-cntnr">
-                <h4 class="article-tbl-title">Articles Made by: {{ user.name }}</h4>
-                <span name="sep" class="management-header-sep article-title-sep-align"></span>
-            </div>
-            <div class="table-cntnr">
-                <table id="article-table" class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Article ID</th>
-                            <th>Article Name</th>
-                            <th>Article Desc</th>
-                            <th>Created In:</th>
-                            <th>Article Link </th>
-                            <th id="srch-upper-cell">Search: {{ search_form.command }} <button id="article-srch-btn" class="article-search-btn"><i class="fa fa-search" aria-hidden="true"></i></button></th>
-                            <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" /></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for article in article_info.items %}
-                        <tr>
-                            <td>{{ article.id }}</td>
-                            <td> {{ article.title }}</td>
-                            <td>{{ article.short_desc }}</td>
-                            <td>{{ article.create_date }}</td>
-                            <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
-                            <td></td>
-                            <td><input name="article-check-inner" type="checkbox" class="select-check inner-check" /></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Article ID</th>
-                            <th>Article Name</th>
-                            <th>Article Desc</th>
-                            <th>Created In</th>
-                            <th>Article Link</th>
-                            <th></th>
-                            <th>Select <input id="article-foot-selectAll" type="checkbox" class="select-check" /></th>
-                        </tr>
-                    </tfoot>
-                </table>
-                <div id="article-tbl-pagination">
-                    <nav aria-label="Article-Table-Pagination">
-                        <ul class="pagination">
-                            {% if article_info.has_prev %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link btn disabled" href="#">Previous</a>
-                            </li>
-                            {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
-                            <li class="page-item active">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+    </div>
+    <div class="role-table">
+        <div id="role-tbl-title" class="role-ttle-cntnr">
+            <h4 class="role-tbl-title">Account Roles</h4>
+            <span name="sep" class="management-header-sep acc-roles-title-sep-align"></span>
+        </div>
+        <div class="table-cntnr">
+            <table id="roles-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Role ID</th>
+                        <th>Role Name</th>
+                        <th>
+                            <p id="role-select-all-txt" class="table-txt">Select</p> <input id="role-head-selectAll" type="checkbox" class="select-check" />
+                            <div id="delete-all-btn-container"></div>
+                            <div id="add-role-btn-container">
+                                <div id="role-add-btn" onclick="addRoleExpand()"><i id="role-add-btn-icn" class="fa fa-plus-square-o" aria-hidden="true" aria-label="add-Role" title="add-Role"></i></div>{% if add_role_error %} {{ add_role_error | safe }} {% else %}
+                                <p id="add-role-err-p" class="add-role-err err-txt"></p> {% endif %}</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in user.iter_roles() %}
+                    <tr>
+                        <td>{{ role.id }}</td>
+                        <td>{{ role.name }}</td>
+                        <td>
+                            <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
+                                {% if role.name == 'Member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'Verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'Unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'Editor' %}
+                                {{ delete_role_forms.editor_field }} {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Role ID</th>
+                        <th>Role Name</th>
+                        <th>Select <input id="role-foot-selectAll" type="checkbox" class="select-check" />
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="article-table">
+        <div id="article-tbl=title" class="article-tbl-ttle-cntnr">
+            <h4 class="article-tbl-title">Articles Made by: {{ user.name }}</h4>
+            <span name="sep" class="management-header-sep article-title-sep-align"></span>
+        </div>
+        <div class="table-cntnr">
+            <table id="article-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Article ID</th>
+                        <th>Article Name</th>
+                        <th>Article Desc</th>
+                        <th>Created In:</th>
+                        <th>Article Link </th>
+                        <th id="srch-upper-cell">
+                            <form id="article-srch-form" method="POST">
+                                <p>
+                                    Search:
+                                </p>
+                                {{ search_form.command }} {{ search_form.command_sbmt }}
+                            </form>
+                        </th>
+                        <th>Select <input id="article-head-selectAll" type="checkbox" class="select-check" />
+                            <div id="article-delete-all-container"></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="article-tbody">
+                    {% for article in article_info %}
+                    <tr>
+                        <td>{{ article.id }}</td>
+                        <td> {{ article.title }}</td>
+                        <td>{{ article.short_desc }}</td>
+                        <td>{{ article.create_date }}</td>
+                        <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
+                        <td></td>
+                        <td>
+                            <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
+                                {{ delete_article_forms.delete_article }}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Article ID</th>
+                        <th>Article Name</th>
+                        <th>Article Desc</th>
+                        <th>Created In</th>
+                        <th>Article Link</th>
+                        <th></th>
+                        <th>Select <input id="article-foot-selectAll" type="checkbox" class="select-check" /></th>
+                    </tr>
+                </tfoot>
+            </table>
+            <div id="article-tbl-pagination">
+                <nav aria-label="Article-Table-Pagination">
+                    <ul class="pagination">
+                        {% if article_info.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link btn disabled" href="#">Previous</a>
+                        </li>
+                        {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
+                        <li class="page-item active">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
                                         {{ page }}
                                 </a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
                                         {{ page }}
                                 </a>
-                            </li>
-                            {% endif %} {% else %}
-                            <li id="ellipsis" class="page-item disabled">
-                                <a class="page-link" href="#">...</a>
-                            </li>
-                            {% endif %} {% endfor %} {% if article_info.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link btn disabled" href="#">Next</a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
+                        </li>
+                        {% endif %} {% else %}
+                        <li id="ellipsis" class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                        {% endif %} {% endfor %} {% if article_info.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link btn disabled" href="#">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
             </div>
         </div>
+    </div>
+    <hr>
+    <div id="ext-option-menu" class="ext-opt-align">
+        {% if user.blacklisted %} {{ ext_options.unblacklist }} {% else %} {{ ext_options.blacklist }}
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %} {% block js %}
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
 <script type="text/javascript">
     (function() {
         $('input[type=checkbox]#article-head-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#article-foot-selectAll").prop('checked', $(this).prop('checked'));
         });
         $('input[type=checkbox]#article-foot-selectAll').click(function() {
-            $("input[name=article-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#article-head-selectAll").prop('checked', $(this).prop('checked'));
         });
     })();
 
     (function() {
         $('input[type=checkbox]#role-head-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#role-foot-selectAll").prop('checked', $(this).prop('checked'));
         });
         $('input[type=checkbox]#role-foot-selectAll').click(function() {
-            $("input[name=role-check-inner]").prop('checked', $(this).prop('checked'));
             $("input[type=checkbox]#role-head-selectAll").prop('checked', $(this).prop('checked'));
         });
     })();
 </script>
 <script type="text/javascript">
-    function addHoverElement() {
-        document.getElementsByName("info-txt-span").forEach(item => {
-            if (item.id == "order-1") {
-                const spanOrderList = [
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-1").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-2') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-2").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-3') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-4",
-                    "span#order-5",
-                    "span#order-6"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-3").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-4') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-5",
-                    "span#order-6"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-4").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-5') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-6"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-5").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            } else if (item.id == 'order-6') {
-                const spanOrderList = [
-                    "span#order-1",
-                    "span#order-2",
-                    "span#order-3",
-                    "span#order-4",
-                    "span#order-5"
-                ];
-
-                $(item.nodeName.toLowerCase() + "#order-6").hover(function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 0);
-                    });
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).addClass("lower-span-txt");
-                    }
-                }, function() {
-                    $(".edit-icon").each(function() {
-                        $(this).css("opacity", 1);
-                    })
-                    for (var o = 0; o < spanOrderList.length; o++) {
-                        let order = spanOrderList[o];
-                        $(order).removeClass("lower-span-txt");
-                    }
-                });
-            }
-        });
-    }
-    addHoverElement();
+    '{{ js_include("ext/admin/accounts/edit_profile/src/ts/dist/editprof.js") | safe }}'
 </script>
 <script type="text/javascript">
-    (function() {
-        const spanOrderList = [
-            ".info-name",
-            ".info-email",
-            ".info-password",
-            ".info-active-status",
-            ".info-acc-create",
-            ".info-blacklist-status"
-        ];
-
-        $("#edit-name-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-name").replaceWith($('<form id="edit-name-form" name="name-form" action="{{ request.url }}" method="POST">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.name.label }}' + '{{ info_forms.name }}' + '{{ info_forms.name_sbmt }}' + '<div id="minus-icn" class="close-edit-name-align close-edit-name-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>'));
-            $("#minus-icn").click(function() {
-                $("form#edit-name-form").replaceWith($('<span id="order-1" name="info-txt-span" class="info-name">' + 'Name: {{ user.name }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-email-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-email").replaceWith('<form id="edit-email-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.email.label }}' + '{{ info_forms.email }}' + '{{ info_forms.email_sbmt }}' + '<div id="minus-icn" class="close-edit-email-align close-edit-email-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-email-form").replaceWith($('<span id="order-2" name="info-txt-span" class="info-email">' + 'Email: {{ user.email }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-pwd-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-password").replaceWith('<form id="edit-pwd-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.password.label }}' + '{{ info_forms.password }}' + '{{ info_forms.password_sbmt }}' + '<div id="minus-icn" class="close-edit-pwd-align close-edit-pwd-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-pwd-form").replaceWith($('<span id="order-3" name="info-txt-span" class="info-password">' + 'Password: ****' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-active-status-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-active-status").replaceWith('<form id="edit-active-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.active.label }}' + '{{ info_forms.active }}' + '{{ info_forms.active_sbmt }}' + '<div id="minus-icn" class="close-edit-active-status-align close-edit-active-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-active-status-form").replaceWith($('<span id="order-4" name="info-txt-span" class="info-active-status">' + 'Active Status: {{ user.active }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-blacklist-status-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-blacklist-status").replaceWith('<form id="edit-blacklist-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.blacklist.label }}' + '{{ info_forms.blacklist }}' + '{{ info_forms.blacklist_sbmt }}' + '<div id="minus-icn" class="close-edit-blacklist-status-align close-edit-blacklist-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-blacklist-status-form").replaceWith($('<span id="order-6" name="info-txt-span" class="info-email">' + 'Blacklisted Status: {{ user.blacklisted }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-    })();
+    editProfInit("edit-name-icn", "info-name", "name", {
+        elements: ['<input autocomplete="off" class="name-input" id="edit-name-input" name="name" placeholder="Edit name..." required="" type="text" value="">', '<input class="name-sbmt-btn" id="name-sbmt-btn" name="name_sbmt" type="submit" value="Submit">'],
+        label: "Name: ",
+        section_item: "{{ user.name }}"
+    });
 </script>
 <script type="text/javascript">
-    function confirm_deletion() {
-        return confirm("Are you sure you want to delete ALL roles from {{ user.name }}?");
-    }
     (function() {
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form id='delete-all-form' method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all() }}' + "</form>");
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn-icn").css("cursor", "default");
+                    $("#role-add-btn").css("cursor", "default");
                 } else {
+                    $("#role-add-btn-icn").css("opacity", 1);
+                    $("#role-add-btn-icn").css("cursor", "pointer");
+                    $("#role-add-btn").css("cursor", "pointer");
                     $("#delete-all-btn-container").empty()
                 }
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form method='POST'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn").css("cursor", "default");
+                    $("#role-add-btn-icn").css("cursor", "default");
                 } else {
+                    $("#role-add-btn-icn").css("opacity", 0);
+                    $("#role-add-btn").css("cursor", "pointer");
+                    $("#role-add-btn-icn").css("cursor", "pointer");
                     $("#delete-all-btn-container").empty();
                 }
             })
@@ -662,7 +269,6 @@
     function addRoleCollapse() {
         $(document).ready(function() {
             $("#add-back-btn").click(function() {
-                console.log("I'm clicked!");
                 $("#role-head-selectAll").attr('type', 'checkbox');
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Select");
@@ -679,10 +285,150 @@
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Add Role");
                 $("#add-role-btn-container").empty();
-                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ request.url }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
+                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
             });
         });
     }
+</script>
+<script type="text/javascript">
+    (function() {
+        $(document).ready(function() {
+            $("#article-head-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                } else {
+                    $("#article-delete-all-container").empty();
+                }
+            });
+            $("#article-foot-selectAll").click(function() {
+                if ($(this).prop("checked")) {
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                } else {
+                    $("#article-delete-all-container").empty();
+                }
+            });
+        });
+    })();
+</script>
+<script type="text/javascript">
+    function confirm_deletion() {
+        if (confirm("Are you sure you want to delete ALL roles from {{ user.name }}?")) {
+            console.log("submitting");
+            $("#delete-all-article-form").submit();
+            console.log("submitted");
+        } else {
+            return false;
+        }
+    }
+
+    $("#blacklist-btn").click(function() {
+        $.confirm({
+            title: 'Confirm Blacklist',
+            draggable: false,
+            columnClass: 'small',
+            animation: 'rotateYR',
+            closeAnimation: 'rotateXR',
+            animationSpeed: 1500,
+            content: '' +
+                '<form id="blacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement", user=user.name) }}">' +
+                '<div class="form-group">' +
+                '<label> Reason for Blacklist:</label>' +
+                '{{ ext_options.reason }}' +
+                '</div>' +
+                '</form>',
+            buttons: {
+                formSubmit: {
+                    text: 'Submit',
+                    btnClass: 'btn-danger',
+                    keys: ['enter'],
+                    action: function() {
+                        $.alert("Blacklist confirmed");
+                        $.ajax({
+                            method: 'POST',
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            data: {
+                                'type': 'blacklist',
+                                'user': "{{ user.name }}",
+                                'reasons': $("#reason-field").val()
+                            }
+                        }).done(setTimeout(function() {
+                            location.reload(true);
+                        }, 1500));
+                    }
+                },
+                cancel: function() {},
+            },
+            onContentReady: function() {
+                let jc = this;
+                this.$content.find('form').on('submit', function(e) {
+                    e.preventDefault();
+                    jc.$$formSubmit.trigger('click');
+                });
+            }
+        });
+    });
+
+    $("#unBlacklist-btn").click(function() {
+        $.confirm({
+            title: 'Confirm unBlacklist',
+            draggable: false,
+            columnClass: 'small',
+            animation: 'rotateYR',
+            closeAnimation: 'rotateXR',
+            animationSpeed: 1500,
+            content: '' +
+                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement", user=user.name) }}">' +
+                '<div class="form-group">' +
+                '<label> Reason for unBlacklist:</label>' +
+                '{{ ext_options.reason }}' +
+                '</div>' +
+                '</form>',
+            buttons: {
+                formSubmit: {
+                    text: 'Submit',
+                    btnClass: 'btn-danger',
+                    keys: ['enter'],
+                    action: function() {
+                        $.alert("unBlacklist confirmed");
+                        $.ajax({
+                            method: 'POST',
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            data: {
+                                'type': 'unBlacklist',
+                                'user': "{{ user.name }}",
+                                'reasons': $("#reason-field").val()
+                            }
+                        }).done(setTimeout(function() {
+                            location.reload(true);
+                        }, 1500));
+                    }
+                },
+                cancel: function() {},
+            },
+            onContentReady: function() {
+                let jc = this;
+                this.$content.find('form').on('submit', function(e) {
+                    e.preventDefault();
+                    jc.$$formSubmit.trigger('click');
+                });
+            }
+        });
+    });
+</script>
+<script type="text/javascript">
+    $(document).on('submit', '#article-srch-form', function(e) {
+        e.preventDefault();
+        $.ajax({
+            method: 'POST',
+            url: '{{ url_for("admin.adminAccountsUserManagementProcessSearch", user=user.name) }}',
+            data: {
+                'search_data': $("#table-search").val()
+            }
+        }).done(function(data) {
+            $("#article-tbody").fadeOut(5).fadeIn(1000);
+            $("#article-tbody").html(data);
+        });
+    });
 </script>
 {% assets "edit_prof_main_js" %}
 <script src="{{ ASSET_URL }}"></script>

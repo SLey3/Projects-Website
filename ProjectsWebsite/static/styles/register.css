@@ -4,7 +4,6 @@ body {
     font-family: Baskerville, Baskerville Old Face, Hoefler Text, Garamond, Times New Roman, serif;
     background: linear-gradient(120deg, #5b5c85, #7cc29a);
     height: 100vh;
-    overflow: hidden;
 }
 
 .center {

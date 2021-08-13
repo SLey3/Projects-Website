@@ -3,5 +3,5 @@
     "1": "Reset Link Expired.",
     "2": "Internal Server error. If this happens again contact the administrator.",
     "3": "Invalid permission to access that webpage.",
-    "4": "Not logged in. Please log in to try again"
+    "4": "Your account is not logged in as your session may have expired. Please log in to try again"
 }

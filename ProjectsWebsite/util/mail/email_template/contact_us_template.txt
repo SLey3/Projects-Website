@@ -1,26 +1,22 @@
 <b>Contact</b>:
 <br>
-Name: 
-<pre> 
+Name:&nbsp;
 {name}
-</pre>
 <br>
-Inquiry Selection: <b>
-<pre> 
- {inquiry_selection}
-</pre>
+Inquiry Selection:&nbsp;<b> 
+{inquiry_selection}
 </b>
 <br>
-Email: <i>
-<pre>
- {email}
-</pre>
+Email:&nbsp;<i>
+{email}
 </i>
 <br>
-Telephone Number: <i>
-<pre>
- {tel}
-</pre>
+Telephone Number:&nbsp;<i>
+{tel}
+</i>
+<br>
+Date of Contact:&nbsp;<i>
+{date}
 </i>
 <br>
 <hr>

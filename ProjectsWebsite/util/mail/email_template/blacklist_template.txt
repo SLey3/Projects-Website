@@ -1,0 +1,28 @@
+Dear&nbsp;
+{name}
+, 
+<br>
+Your account with the ID of&nbsp;<b>
+{id}
+</b>&nbsp;has been banned for the following reason(s):
+<br>
+
+{reasons}
+
+<br>
+<br>
+From,
+<br>
+MyProjects Support Automated Service
+
+<hr>
+<i>If you want to appeal this ban, go to: <a href="
+{contacturl}
+">Contact Us</a> and choose the other inquiry where insert the following template on the message for you to edit: 
+<br>
+Name
+<br>
+Account ID provided in this email
+<br>
+Appeal 
+</i>

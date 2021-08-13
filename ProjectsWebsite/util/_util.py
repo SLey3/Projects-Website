@@ -1,41 +1,61 @@
 # ------------------ Imports ------------------
 from flask import abort, g, session, current_app, request, url_for
+from flask_sqlalchemy import Pagination
 from flask_security import RoleMixin as _role_mixin
 from flask_principal import Permission, RoleNeed
 from flask_mail import Message
 from functools import wraps, partialmethod, partial
-from ProjectsWebsite.util.helpers import alertMessageType, InvalidType, OperationError
+from ProjectsWebsite.util.helpers import (alertMessageType, InvalidType, 
+                                          OperationError, date_re, 
+                                          reversed_date_re)
 from ProjectsWebsite.util.mail import automatedMail
 from typing import (
-    Dict, List, Tuple, Any, Optional
+    Dict, List, Tuple, Any, Optional, Callable, Type, Union
 )
-from ProjectsWebsite.modules import guard, login_manager, db, mail
+from collections import namedtuple
+from collections.abc import Iterator, Iterable
+from ProjectsWebsite.modules import guard, login_manager, mail
 try:
     from werkzeug import LocalProxy
 except ImportError:
     from werkzeug.local import LocalProxy
+from werkzeug.utils import import_string
 from bs4 import BeautifulSoup as _beautifulsoup, NavigableString
 from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
 from rich import print as rprint
 from time import sleep
-from shlex import split, join
-from collections import namedtuple
-from re import Pattern
+from contextlib import contextmanager, AbstractContextManager
+from sys import exit
+from sqlalchemy.exc import InvalidRequestError
+from googletrans import Translator
+from polib import pofile, detect_encoding
+from pathlib import Path
+from pendulum.datetime import DateTime
+import pendulum
 import re
 import requests
 import schedule
 import threading
+import signal
+import os.path as _path
 
 # ------------------ Utils ------------------
 __all__ = [
+    "appExitHandler",
     "checkExpireRegistrationCodes", 
-    "runSchedulerInspect", 
+    "runSchedulerInspect",
+    "InternalError_or_success", 
+    "temp_save",
+    "PoFileAutoTranslator",
     "unverfiedLogUtil", 
     "AlertUtil",
     "is_valid_article_page",
     "formatPhoneNumber",
     "DateUtil",
+    "makeResultsObject",
+    "QueryLikeSearch",
+    "countSQLItems",
     "scrapeError",
     "current_user",
     "roles_required",
@@ -53,10 +73,13 @@ BeautifulSoup = partial(_beautifulsoup, features='html5lib')
 del _beautifulsoup
 del partial
 
+_pagination_args = namedtuple("_pagination_args", "page total_pages error_out max_per_page")
+
 def checkExpireRegistrationCodes(): 
     rprint("[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]")
-    from ProjectsWebsite.views import urlSerializer
-    from ProjectsWebsite.database.models import user_datastore, User
+    urlSerializer, user_datastore, User = (import_string("ProjectsWebsite.views:urlSerializer"),
+                                           import_string("ProjectsWebsite.database.models:user_datastore"),
+                                           import_string("ProjectsWebsite.database.models:User"))
     with open(f"{current_app.static_folder}\\unverified\\unverified-log.txt", 'r+', encoding="utf-8") as f:
         lines = f.readlines()
         f.close()
@@ -70,14 +93,16 @@ def checkExpireRegistrationCodes():
             urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
         except SignatureExpired:
             lines.remove(line)
-            expired_user = User.lookup(user)
+            with current_app.app_context():
+                expired_user = User.lookup(user)
             expired_msg = Message("Account Deleted", recipients=[user])
             expired_msg.html = automatedMail(expired_user.name, f'''
                                              Your current account in MyProjects has not been verified and your verification link has expired. 
                                             You must <a href="{url_for("main_app.registerPage")}">register</a> again if you want to have an account in MyProject.''')
             mail.send(expired_msg)
-            user_datastore.delete_user(user)
-            user_datastore.commit()
+            with current_app.app_context():
+                user_datastore.delete_user(user)
+                user_datastore.commit()
             f.writelines(lines)
             f.close()
         except Exception as e:
@@ -113,6 +138,81 @@ def runSchedulerInspect():
     thread.start()
     return cease_operation
 
+def _signal_handler(signal, frame):
+    thread_event = runSchedulerInspect()
+    thread_event.set()
+    return exit(0)
+
+@contextmanager
+def appExitHandler():
+    schedule.every(30).minutes.do(checkExpireRegistrationCodes)
+    try:
+        yield
+    finally:
+        rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
+        signal.signal(signal.SIGINT, _signal_handler)
+        rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
+        
+class InternalError_or_success(AbstractContextManager):
+    """
+    Object checks if an Exception occurred, if it did then a 500 Internal Server error would occur
+    """
+    def __init__(self, *exceptions):
+        self._exceptions = exceptions
+    def __enter__(self):...
+    def __exit__(self, exctype, excinst, exctb):
+        if exctype is not None:
+            if issubclass(exctype, self._exceptions):
+                return abort(500)
+        return 
+
+class temp_save(dict):
+    """
+    temporary data save dictionary that allows returning false 
+    if KeyError is raised when __getitem__ can't get an item due to the item being mistyped or not existing
+    """
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls, *args, **kwargs)
+        instance.__init__(*args, **kwargs)
+        return instance
+    def __getitem__(self, k) -> Union[bool, None]:
+        try:
+            return super().pop(k)
+        except KeyError:
+            return False
+    def __setitem__(self, k, v) -> None:
+        super().__setitem__(k, v)
+    def setMultipleValues(self, kwds, *values) -> None:
+        """
+        set's multiple items into the dictionary
+        """    
+        for kwd, val in zip(kwds, values):
+            self[kwd] = val
+    
+class PoFileAutoTranslator:
+    """
+    Object to auto translate a Pofiles msgtxt to the locale set by Babel
+    NOTE: Babel has not been set up right now. 
+    Do not use this class and finish setting up self.locale when Babel is present
+    """
+    def __init__(self, file: Union[str, Type[Path]]):
+        encoding = detect_encoding(file)
+        self.pfile = pofile(file, encoding=encoding, check_for_duplicates=True)
+        self.locale = self.pfile.metadata["Language"]
+        self.translator = Translator()
+    
+    def translate(self):
+        """
+        Translates all msgtxt in the pofile to the locale set by the self.locale attribute
+        """
+        percent_translated = self.pfile.percent_translated()
+        if percent_translated == 100:
+            return
+        for entry in self.pfile:
+            translated = self.translator.translate(entry.msgid, dest=self.locale)
+            entry.msgstr = translated.text
+        self.pfile.save()
+                
 class unverfiedLogUtil:
     """
     Utilities for managing the unverified token log file.
@@ -120,17 +220,21 @@ class unverfiedLogUtil:
     The encoding kwarg for `open()` has been provided by default for each function.
     """
     def __init__(self):
-        self.encoding = "utf-8"
+        dir = Path(_path.dirname(_path.abspath(__file__)))
+        self.openKwargs = {}
+        self.openKwargs["mode"] = "r+"
+        self.openKwargs["encoding"] = "utf-8"
+        # to make testing much easier as it would allow for the file path to be changed easily
+        self.filepath = dir/"unverified"/"unverfied-log.txt"
     
-    def addContent(self, *line_content, **openKwargs):
+    def addContent(self, line_content: Tuple[str, str]):
         """
         adds an unverfied member email and token in the unverfied log
         
         Format:
             (email) token
         """
-        openKwargs.setdefault("encoding", self.encoding)
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+        with open(self.filepath, **self.openKwargs) as f:
             line = f"({line_content[0]}) {line_content[1]}"
             lines = f.readlines()
             if lines == []:
@@ -141,32 +245,26 @@ class unverfiedLogUtil:
                 f.writelines(lines)
                 f.close()
         
-    def removeContent(self, content_identifier: str, **openKwargs):
+    def removeContent(self, content_identifier: str):
         """
         removes line matching :param content_identifier: from the log
         
         :param content_identifier: : email string
         """
-        openKwargs.setdefault("encoding", self.encoding)
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **openKwargs) as f:
+        with open(self.filepath, **self.openKwargs) as f:
             lines = f.readlines()
-            self.content = lines
+            print(lines)
             for line in lines:
                 potential_email = line[line.find("(")+1:line.rfind(")")]
                 if potential_email == content_identifier:
                     lines.remove(line)
-                    f.writelines(lines)
-                    f.close()
-       
-    def __eq__(self, other):
-        if hasattr(self, "content"):
-            if isinstance(self.content, list):
-                for c in self.content:
-                    if c == content:
-                        return True
-                return False
-            return False
-        raise NotImplementedError("__eq__ not implemented at the moment")
+                    print(lines)
+                    if lines == []:
+                        f.truncate(0)
+                        f.close()
+                    else:
+                        f.writelines(lines)
+                        f.close()
 
 class AlertUtil(object):
     """
@@ -243,7 +341,7 @@ class AlertUtil(object):
         self.alert_dict.update(type='', message='')
         if alertType == 'error':
             if isinstance(alertMsg, int):
-                raise ValueError("Type: int is not allowed")
+                raise TypeError("type int is not allowed")
             for code in alert_codes_list:
                 if code != alertMsg:
                     continue
@@ -268,13 +366,12 @@ def is_valid_article_page(func):
     Returns:
         404 http code
     """
-    from ProjectsWebsite.database.models import Article
+    Article = import_string("ProjectsWebsite.database.models:Article")
     @wraps(func)
     def validator(id):
         articles = Article.query.all()
         for article in articles:
-            article_id_number = str(article.id)
-            if id == article_id_number:
+            if id == str(article.id):
                 return func(id)
         return abort(404)
     return validator
@@ -297,52 +394,136 @@ class DateUtil:
     """
     DateUtil for Correcting and Validating Date
     """
-    def __init__(self, date):
+    def __init__(self, date: Optional[Union[Type[DateTime], str]] = None, format_token: str = ""):
+        if not date:
+            date = pendulum.now()
         self.date = date
+        if isinstance(self.date, DateTime):
+            if not format_token:
+                raise ValueError("format_token cannot be blank when date is the instance of pendulum DateTime")
+            self.token = format_token
+        else:
+            self.token = None
     
-    def _subDate(self, re_sub_pattern: Pattern, reversed_sub: bool, datetime_date: bool):
+    def _subDate(self, reversed_sub: bool):
         """
         Corrects Date to correct format
         """
-        if datetime_date:
-            if reversed_sub:
-                new_day = "{year}-{month}-{day}".format(year=self.date.year, month=self.date.month, day=self.date.day)
-                self.date = new_day
-                return new_day
-            new_day = "{month}/{day}/{year}".format(month=self.date.month, day=self.date.day, year=self.date.year)
+        if isinstance(self.date, DateTime):
+            if self.validateDate():
+                return self.date
+            new_day = self.date.format(self.token)
             self.date = new_day
             return new_day
         else:
-            if self.validateDate(re_sub_pattern):
-                return self.date
-            else:
-                if reversed_sub:
-                    new_date = re.sub(r"(\d{1,2})/(\d{1,2}/(\d{2,4})", r"\3-\1-\2", self.date)
-                    self.date = new_date
-                    return new_date
-                new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+            if reversed_sub:
+                if self.validateDate(True):
+                    return self.date
+                new_date = re.sub(r"(\d{1,2})/(\d{1,2}/(\d{2,4})", r"\3-\1-\2", self.date)
                 self.date = new_date
-                return new_date 
+                return new_date
+            if self.validateDate():
+                return self.date
+            new_date = re.sub(r"(\d{2,4})-(\d{1,2})-(\d{1,2})", r"\2/\3/\1", self.date)
+            self.date = new_date
+            return new_date 
             
-    subDate = partialmethod(_subDate, reversed_sub=False, datetime_date=False) 
+    subDate = partialmethod(_subDate, reversed_sub=False) 
     
-    reversedSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=False)
-    
-    datetimeSubDate = partialmethod(_subDate, reversed_sub=False, datetime_date=True)
-    
-    reversedDatetimeSubDate = partialmethod(_subDate, reversed_sub=True, datetime_date=True)
+    reversedSubDate = partialmethod(_subDate, reversed_sub=True)
+
         
-    def validateDate(self, re_pattern: Pattern):
+    def validateDate(self, reversed: bool = False):
         """
         returns True if date is valid. Returns false if not
         """
+        if isinstance(self.date, DateTime):
+            try:
+                pendulum.from_format(self.date, self.token)
+            except:
+                return False
+            else:
+                return True
         if len(self.date) == (7, 8, 9):
             return False
-        elif not re_pattern.match(self.date):
-            return False
-        else:
+        if reversed:
+            if not reversed_date_re.match(self.date):
+                return False
             return True
-                              
+        if not date_re.match(self.date):
+            return False
+        return True
+    
+    def __eq__(self, other):
+        return self.date == other.date
+    
+class Results(Pagination):
+    """
+    allows Pagination object to be iterable
+    """
+    def __init__(self, results: Pagination):
+        self.per_page = results.per_page
+        self.total = results.total
+        self.items = results.items
+        self.page = results.page
+    def __iter__(self) -> Iterator[Any]:
+        if isinstance(self.items, Iterable):
+            yield from self.items
+        else:
+            raise TypeError(f"Object {type(self.results)} is not iterable") 
+
+def makeResultsObject(object: Callable[[Pagination], Results]) -> Results:
+    """
+    makes a results object from the provided object
+    """
+    results_object = Results(object)
+    return results_object
+        
+def QueryLikeSearch(model_name: str, kw: str,  page: int, total_pages: int, name: str = "", attr_name: str = "name") -> Results:
+    """
+    finds a result from the keyword provided in the Model imported by :param: model_name that may be in the name of a user
+    
+    Returns:
+        Results
+    """
+    model_name = model_name.capitalize()
+    Model = import_string( f"ProjectsWebsite.database.models:{model_name}")
+    args = _pagination_args(page, total_pages, False, 3)
+    if not kw:
+        if name:
+            try:
+                results = Model.query.filter_by(name=name).paginate(*args)
+            except InvalidRequestError:
+                results = Model.query.filter_by(author=name).paginate(*args)
+            finally:
+                results = makeResultsObject(results)
+                return results
+        results = Model.query.all().paginate(*args)
+        results = makeResultsObject(results)
+        return results
+    row_attr = getattr(Model, attr_name, None)
+    if row_attr:
+        if name:
+            try:
+                results = Model.query.filter(row_attr.like(f"%{kw}%")).filter_by(name=name).paginate(*args)
+            except InvalidRequestError:
+                results = Model.query.filter(row_attr.like(f"%{kw}%")).filter_by(author=name).paginate(*args)
+            finally:
+                results = makeResultsObject(results)
+                return results
+        results = Model.query.filter(row_attr.like(f"%{kw}%")).paginate(*args)
+        results = makeResultsObject(results)
+        return results      
+
+def countSQLItems(model_name) -> int:
+    """
+    count the number of items in an SQL Database
+    """
+    Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    items = Model.query.all()
+    item_count = len(items)
+    return item_count
+                        
 def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: bool = False) -> str:
     """
     Scrapes input error from argument: url
@@ -364,14 +545,15 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
 current_user = LocalProxy(lambda: _get_user())
 
 def _get_user():
-    from ProjectsWebsite.database.models import User, AnonymousUser
+    from ProjectsWebsite.database.models import User
+    from ProjectsWebsite.database.models import AnonymousUser
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del(g._cached_user)
         return AnonymousUser
     if not hasattr(g, "_cached_user"):
         try:
-            setattr(g, "_cached_user", User.identify(session["_user_id"]))
+            g._cached_user = User.identify(session["_user_id"])
         except:
             session.clear()
             return AnonymousUser
@@ -412,7 +594,7 @@ def roles_accepted(*roles):
 
 def token_auth_required(f):
     """
-    checks if token is in the session
+    checks if token is in the session and is valid
     """
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -420,26 +602,25 @@ def token_auth_required(f):
             token = b64decode(session["token"])
             token = str(token, encoding="utf-8")
             try:
-                data = guard.extract_jwt_token(token)
+                guard.extract_jwt_token(token)
             except:
                 return abort(401)
             return f(*args, **kwargs)
         elif "token" in request.args:
             token = request.args.get("token")
             try:
-                data = guard.extract_jwt_token(token)
+                guard.extract_jwt_token(token)
             except:
                 return abort(401)
             return f(*args, **kwargs)
-        else:
-            return abort(403)
+        return abort(403)
     return decorated
 
 def login_user(token, user):
     """
     Logs in user
     """
-    from ProjectsWebsite.database.models import User
+    User = import_string("ProjectsWebsite.database.models:User") 
     session["_id"] = login_manager._session_identifier_generator()
     session["_user_id"] = user.identity
     session["_e-recipient"] = b64encode(bytes(user.username, encoding="utf-8"))
@@ -452,7 +633,9 @@ def logout_user():
     """
     Logs out user if user is logged in
     """
-    from ProjectsWebsite.database.models import User
+    User = import_string("ProjectsWebsite.database.models:User")
+    if current_user.is_anonymous:
+        return True
     if "_user_id" in session:
         if "_e-recipient" in session:
             user_email = b64decode(session["_e-recipient"])
@@ -465,30 +648,28 @@ def logout_user():
     if "_fresh" in session:
         session.pop("_fresh", None) 
     return True
-
-class staticproperty(property):
-    """
-    Makes Classmethod with property possible
-    """
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
     
-class AnonymousUserMixin(object):
+class AnonymousUserMixin:
     """
-    AnonymouseUserMixin
+    AnonymouseUserMixin functions
     """
-    @staticproperty
-    def is_authenticated(cls):
+    @property
+    def is_authenticated(self):
         return False
     
-    @staticproperty
-    def is_active(cls):
+    @property
+    def is_active(self):
         return False
 
-    @staticproperty
-    def is_anonymous(cls):
+    @property
+    def is_anonymous(self):
         return True
+    
+    @property
+    def is_blacklisted(self):
+        return False
 
+    @property
     def get_id(self):
         return
     

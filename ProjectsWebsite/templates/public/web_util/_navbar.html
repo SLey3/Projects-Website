@@ -20,7 +20,7 @@
             <li class="nav-item dropdown">
                 <a class="nav-link justify-content-end ml-auto dropdown-toggle" href="#" id="navDropDown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
                 <div class="dropdown-menu" aria-labelledby="navDropDown">
-                    <a class="dropdown-item" href="/dashboard">My Account</a> {% if current_user.has_role('admin') %}
+                    <a class="dropdown-item" href="/dashboard">My Account</a> {% if current_user.has_role(Roles.ADMIN) %}
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="/home/admin">Admin Dashboard</a> {% endif %}
                     <div class="dropdown-divider"></div>

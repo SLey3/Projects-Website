@@ -5,3 +5,7 @@
 [submodule "lighthouse"]
     path=ext/lighthouse
     url=https://github.com/GoogleChrome/lighthouse.git
+
+[submodule "wkhtmltopdf"]
+	path=ext/wkhtmltopdf
+	url=https://github.com/wkhtmltopdf/wkhtmltopdf.git
