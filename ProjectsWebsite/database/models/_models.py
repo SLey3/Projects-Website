@@ -3,7 +3,7 @@ from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin, DateUtil
-
+from ProjectsWebsite.database.models.roles import Roles
 # ------------------ SQL classes  ------------------
 dt = DateUtil(format_token="L LTS zzZ z")
 
@@ -12,9 +12,10 @@ class Role(db.Model, RoleMixin):
     Role model for all roles in this website
     """
     __tablename__ = 'roles'
-    id = db.Column(db.Integer(), primary_key=True)
-    user_id = db.Column(db.ForeignKey("user.id"))
-    name = db.Column(db.String(80), unique=True)
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.Enum(Roles), unique=True)
     
     def __repr__(self):
         return f"{self.name}"
@@ -30,11 +31,10 @@ class User(db.Model, SQLAlchemyUserMixin):
     email = db.Column("email", db.String(100))
     username = db.Column("username", db.String(100), unique=True)
     hashed_password = db.Column("hashed_password", db.String(255))
-    active = db.Column("active", db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
+    active = db.Column("active", db.Boolean)
     created_at = db.Column("date", db.String(30))
-    blacklisted = db.Column(db.Boolean())
-    roles = db.relationship('Role', backref=db.backref("users"), lazy='subquery')
+    blacklisted = db.Column(db.Boolean)
+    roles = db.relationship('Role', backref=db.backref("users", lazy='subquery'), primaryjoin="and_(User.id==Role.user_id)")
     
     def has_role(self, role):
         """
@@ -75,6 +75,10 @@ class User(db.Model, SQLAlchemyUserMixin):
             db.session.commit()
             return True
         return False
+    
+    @property
+    def is_anonymous(self):
+        return False
             
     def get_id(self):
         """
@@ -102,6 +106,12 @@ class User(db.Model, SQLAlchemyUserMixin):
         if self.blacklisted:
             return True
         return False
+    
+    def iter_roles(self):
+        for role in self.roles:
+            current_name = str(role.name.value).replace("<", "").replace(">", "")
+            role.name = current_name.capitalize()
+            yield role
 
     def __repr__(self):
         return self.name
@@ -125,9 +135,9 @@ class Article(db.Model):
     title = db.Column("title", db.String(100))
     author = db.Column("author", db.String(100))
     create_date = db.Column(db.String(100))
-    short_desc = db.Column("short_description", db.String(150))
-    title_img = db.Column(db.String(500))
-    body = db.Column("body", db.String(900))
+    short_desc = db.Column("short_description", db.String)
+    title_img = db.Column(db.String)
+    body = db.Column("body", db.String)
     download_pdf = db.Column(db.LargeBinary)
     
     @classmethod

@@ -1,7 +1,8 @@
 # vscode folder
 .vscode/
-# node modules
+# js/ts related folders
 node_modules/
+dist/
 # python related files/folders
 __pycache__/
 *.py[cod]
@@ -9,6 +10,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
+.pytest_cache/
 downloads/
 eggs/
 .eggs/
@@ -47,3 +49,6 @@ unverified/
 
 # Flask-monitoringdashboard config
 monitor_config.cfg
+
+# pytest log
+.pytest_log/*

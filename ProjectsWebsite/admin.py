@@ -6,25 +6,27 @@ from flask import (
 from flask_login import confirm_login
 from flask_mail import Message
 from ProjectsWebsite.database.models import User, Article, Blacklist, user_datastore
+from ProjectsWebsite.database.models.roles import Roles
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   token_auth_required, generate_err_request_url,
                                   logout_user, roles_required, unverfiedLogUtil,
                                   QueryLikeSearch, makeResultsObject, countSQLItems,
-                                  temp_save, logout_user
+                                  temp_save as _temp_save, logout_user, InternalError_or_success
                                   )
 from ProjectsWebsite.util.mail import defaultMail, blacklistMail, unBlacklistMail
 from ProjectsWebsite.modules import db, guard, mail
 from functools import partial
+from sqlalchemy.exc import OperationalError
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
 
-_temp_save = temp_save()
+temp_save = _temp_save()
 
 # ------------------ Blueprint Routes ------------------
 @admin.route('/')
-@roles_required('admin')
+@roles_required(Roles.ADMIN, Roles.VERIFIED)
 @token_auth_required
 def adminRedirectHomePage():
     """
@@ -35,7 +37,7 @@ def adminRedirectHomePage():
 
 @admin.route('/dashboard')
 @admin.route('/dashboard/')
-@roles_required('admin')
+@roles_required(Roles.ADMIN, Roles.VERIFIED)
 @token_auth_required
 def adminHomePage():
     """
@@ -46,7 +48,7 @@ def adminHomePage():
 
 @admin.route('/manegement/accounts/', methods=['GET', 'POST'], defaults={'page': 1})
 @admin.route('/manegement/accounts/<int:page>', methods=['GET', 'POST'])
-@roles_required('admin')
+@roles_required(Roles.ADMIN, Roles.VERIFIED)
 @token_auth_required
 def adminAccountsManegement(page):
     """
@@ -69,7 +71,7 @@ def adminAccountsUserManagementProcessBlacklist(user):
     if user_name:
         user_info = User.lookup_by_name(user_name)
         if request.form["type"] == "blacklist":
-            reason = request.form["reasons"] or None
+            reason = request.form.get("reasons", None)
             user_id = str(user_info.id)
             if reason:
                 reasons = list(reason.split("|"))
@@ -92,8 +94,9 @@ def adminAccountsUserManagementProcessBlacklist(user):
             user_info.blacklisted = True
             user_datastore.put(blacklist_query)
             user_datastore.commit()
+            logout_user()
         elif request.form["type"] == "unBlacklist":
-            reason = request.form["reasons"] or None
+            reason = request.form.get("reasons", None)
             if reason:
                 reasons = list(reason.split("|"))
             else:
@@ -110,16 +113,15 @@ def adminAccountsUserManagementProcessBlacklist(user):
 @admin.route('management/accounts/edit_user/<string:user>/process_search/', methods=['POST'])
 def adminAccountsUserManagementProcessSearch(user):
     ajax_data = request.form["search_data"] or None
-    user_name = request.form["name"]
-    user = User.lookup_by_name(user_name)
-    page = int(request.form["page"])
-    pages = int(request.form["pages"])
+    user = User.lookup_by_name(temp_save["user"])
+    page = temp_save["page"]
+    pages = temp_save["total_pages"]
     if pages == 1:
         pages = pages + page
     if ajax_data:
-        article_info = QueryLikeSearch("Article", ajax_data, page, pages, user_name, "title")
+        article_info = QueryLikeSearch("Article", ajax_data, page, pages, user.name, "title")
     else:
-        article_info = QueryLikeSearch("Article", None, page, pages, user_name)
+        article_info = QueryLikeSearch("Article", None, page, pages, user.name)
     return render_template("private/admin/render/_search_ajax.html", article_info=article_info, user=user, delete_article_forms=AccountManegementForms.ArticleDeleteForms())
 
 @admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
@@ -129,6 +131,7 @@ def adminAccountsUserManagementProcessSearch(user):
 def adminAccountsUserManagement(user, page, action=None, item_id=None):
     article_pages = page + countSQLItems("Article")
     user = str(user).replace('%20', ' ')
+    temp_save.setMultipleValues(["total_pages", "page", "user"], article_pages, page, user)
     user_info = User.lookup_by_name(user)
     if user_info.is_blacklisted:
         blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()
@@ -141,7 +144,8 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         AccountManegementForms.roleForm(), AccountManegementForms.roleForm.deleteRoleTableForms(),
         AccountManegementForms.ArticleDeleteForms(), AccountManegementForms.extOptionForm()
     )
-    article_info = QueryLikeSearch("Article", None, page, article_pages, user_info.name)
+    with InternalError_or_success(OperationalError):
+        article_info = QueryLikeSearch("Article", None, page, article_pages, user_info.name)
     action = request.args.get("action")
     if request.method == "POST":
         if info_forms.name.data and info_forms.name.validate(info_forms):
@@ -168,12 +172,13 @@ def adminAccountsUserManagement(user, page, action=None, item_id=None):
         elif not info_forms.active.validate(info_forms) and info_forms.active.data:
             active_error = scrapeError(('id', 'active-status-err-p'), info_forms.active.errors)
         elif role_form.delete_all.data:
-            for role in user_info.roles:
+            for role in user_info.iter_roles():
                 if role not in ('admin', 'verified', 'unverified'):
                     user_datastore.remove_role_from_user(user_info, role)
                     user_datastore.commit()
         elif role_form.add_role.data and role_form.add_role.validate(role_form):
-            user_datastore.add_role_to_user(user_info, role_form.add_role.data)
+            role = getattr(Roles, role_form.add_role.data.upper())
+            user_datastore.add_role_to_user(user_info, role)
             user_datastore.commit()
         elif not role_form.add_role.validate(role_form) and role_form.add_role.data:
             add_role_error = scrapeError(('id', 'add-role-err-p'), role_form.add_role.errors)

@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "module":"ES6",
+        "noImplicitAny": true,
+        "sourceMap":true,
+        "watch": true,
+        "outDir": "dist"
+    },
+    "include": ["src/*"],
+    "exclude": ["node_modules"]
+}

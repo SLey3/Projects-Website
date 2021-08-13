@@ -1,0 +1,13 @@
+{
+    "name": "projectswebsite_editprofbackendjs",
+    "author": "Sergio Ley Languren",
+    "license": "UNLICENSED",
+    "scripts": {
+        "build": "tsc src/editprof.ts && src/hoverinit.ts",
+        "watch": "tsc --watch"
+    },
+    "dependencies": {
+        "@types/jquery": "^3.5.6",
+        "jquery": "^3.6.0"
+    }
+}

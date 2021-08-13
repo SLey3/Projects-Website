@@ -177,8 +177,3 @@ class AccountManegementForms:
                              render_kw={'placeholder':'Edit active status...', 'class':'active-status-input', 'autocomplete':'off'})
         
         active_sbmt = SubmitField(id='active-status-sbmt-btn', render_kw={'value':'Submit', 'class':'active-status-sbmt-btn'})
-        
-        blacklist = StringField('Blacklist Status: ', id='edit-blacklist-input', validators=[DataRequired("Field may not be empty"), ValidateBool()],
-                                render_kw={'placeholder':'Edit blacklist status...', 'class':'blacklist-status-input', 'autocomplete':'off'})
-        
-        blacklist_sbmt = SubmitField(id='blacklist-status-sbmt-btn', render_kw={'value':'Submit', 'class':'blacklist-status-sbmt-btn'})

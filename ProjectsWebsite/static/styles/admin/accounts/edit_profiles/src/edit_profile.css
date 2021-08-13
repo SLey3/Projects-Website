@@ -182,8 +182,7 @@
 .close-edit-name-icon,
 .close-edit-email-icon,
 .close-edit-pwd-icon,
-.close-edit-active-status-icon,
-.close-edit-blacklist-status-icon {
+.close-edit-active-icon {
     position: relative;
     bottom: 2rem;
     color: rgb(128, 128, 128);
@@ -193,8 +192,7 @@
 .close-edit-name-icon:hover,
 .close-edit-email-icon:hover,
 .close-edit-pwd-icon:hover,
-.close-edit-active-status-icon:hover,
-.close-edit-blacklist-status-icon:hover {
+.close-edit-active-icon:hover {
     color: rgb(0, 255, 255);
     cursor: pointer;
 }
@@ -214,14 +212,9 @@
     left: 24rem;
 }
 
-.close-edit-active-status-align {
+.close-edit-active-align {
     position: relative;
     left: 26rem;
-}
-
-.close-edit-blacklist-status-align {
-    position: relative;
-    left: 28rem;
 }
 
 .role-delete-all-btn,

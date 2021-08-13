@@ -2,24 +2,21 @@
 from flask import (
     Blueprint, render_template,
     redirect, request,
-    url_for, current_app
+    url_for, current_app,
+    send_file
 )
-try:
-    from flask_sqlalchemy.orm.session import Session as SQLSession
-except ModuleNotFoundError:
-    from sqlalchemy.orm.session import Session as SQLSession
+from sqlalchemy.orm.session import Session as SQLSession
 from flask_mail import Message
 from ProjectsWebsite.util import (
-    is_valid_article_page, formatPhoneNumber, DateUtil,
+    InternalError_or_success, is_valid_article_page, formatPhoneNumber, DateUtil,
     current_user, login_user, logout_user, token_auth_required, 
-    roles_required, roles_accepted, unverfiedLogUtil
+    roles_required, roles_accepted, unverfiedLogUtil, temp_save as _temp_save
 )
 from ProjectsWebsite.util.mail import automatedMail, formatContact
 from ProjectsWebsite.util.helpers import date_re
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.modules import (
-    db, img_set, mail, login_manager,
-    guard
+    db, img_set, mail, guard
 )
 from ProjectsWebsite.forms import (
     loginForm, registerForm,
@@ -29,14 +26,18 @@ from ProjectsWebsite.forms import (
 from ProjectsWebsite.database.models import (
     Article, User, user_datastore
 )
-from contextlib import suppress
+from ProjectsWebsite.database.models.roles import Roles
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from tempfile import TemporaryFile
 import base64
+import pdfkit
+import os
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint('main_app', __name__, static_folder='static', template_folder='templates/public')
 
+temp_save = _temp_save()
 
 # ------------------  SQLAlchemy Session Config ------------------
 sql_sess = SQLSession(autoflush=False)
@@ -49,14 +50,6 @@ urlSerializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 # ------------------ unverLog init ------------------
 unverlog = unverfiedLogUtil()
-
-# ------------------ LoginManaer: User Resource ------------------
-@login_manager.user_loader
-def load_user(user_id):
-    """
-    Gets the User
-    """
-    return User.identify(int(user_id))
 
 # ------------------ web pages ------------------
 @main_app.route('/login/', methods=['GET', 'POST'])
@@ -81,7 +74,7 @@ def loginPage():
         alert.setAlert('error', "Invalid Email or Password")
         return redirect(url_for(".loginPage"))
     else:
-        if current_user.is_authenticated:
+        if current_user.is_authenticated and not current_user.is_anonymous:
             if current_user.is_blacklisted:
                 alert.setAlert('error', f"Your Account with the ID of {current_user.id} has been Banned. You should have received an e-mail from us regarding this")
                 logout_user()
@@ -93,29 +86,30 @@ def registerPage():
     """
     Registration Page
     """
-    global email
     form = registerForm()
+    dt = DateUtil(format_token='L')
     if request.method == 'POST' and form.validate_on_submit():
         with sql_sess.no_autoflush:
-            user_datastore.find_or_create_role('admin')
-            user_datastore.find_or_create_role('member')
-            user_datastore.find_or_create_role('unverified')
-            user_datastore.find_or_create_role('verified')
-        new_user = user_datastore.create_user(
+            user_datastore.find_or_create_role(Roles.ADMIN)
+            user_datastore.find_or_create_role(Roles.MEMBER)
+            user_datastore.find_or_create_role(Roles.UNVERIFIED)
+            user_datastore.find_or_create_role(Roles.VERIFIED)
+            user_datastore.find_or_create_role(Roles.EDITOR)
+        user_datastore.create_user(
             name=form.name.data.capitalize(),
             username=form.email.data.lower(),
             email=form.email.data.lower(),
             hashed_password=guard.hash_password(form.password.data),
-            created_at=dt.format('L'),
+            created_at=dt.subDate(),
             blacklisted=False,
-            roles=['member', 'unverified']
+            roles=[Roles.MEMBER, Roles.UNVERIFIED]
         )
         user_datastore.commit()
-        def yield_email(email):
-            yield email
-        email = yield_email(form.email.data.lower())
+
+        temp_save["registration_email"] = form.email.data.lower()
+        
         token = urlSerializer.dumps(form.email.data, salt='email-confirm')
-        verify_msg = Message('Confirm Account', recipients=[form.email.data])
+        verify_msg = Message('Confirm Account', recipients=[form.email.data.lower()])
         confirm_link = 'http://127.0.0.1:5000' + url_for(".confirmation_recieved", token=token, external=True)
         verify_msg.html = automatedMail(form.name.data, f'''
                                         Thank you for registering! In order to complete the registration you must click on the link below. <br>
@@ -134,12 +128,12 @@ def confirmation_recieved(token):
     Confirmation and account creation page
     :param token: Email token
     """
-    global email
-    email = "".join(email)
+    email = temp_save["registration_email"]
+
     try:
         urlSerializer.loads(token, salt="email-confirm", max_age=3600/2)
-        user_datastore.remove_role_from_user(User.lookup(email), 'unverified')
-        user_datastore.add_role_to_user(User.lookup(email), "verified")
+        user_datastore.remove_role_from_user(User.lookup(email), Roles.UNVERIFIED)
+        user_datastore.add_role_to_user(User.lookup(email), Roles.VERIFIED)
         user_datastore.commit()
         unverlog.removeContent(email)
         alert.setAlert('success', 'Email Verified')
@@ -241,7 +235,7 @@ def aboutPage():
     return render_template('public/aboutpage.html')
 
 @main_app.route('/articles/create_article/', methods=['GET', 'POST'])
-@roles_accepted("admin", "editor")
+@roles_accepted(Roles.ADMIN, Roles.EDITOR)
 @token_auth_required
 def articleCreation():
     form = articleForm()
@@ -257,15 +251,21 @@ def articleCreation():
                 img = str(base64.b64encode(image.read()), 'utf-8')
         date_util = DateUtil(format_token='L')
         creation_date = date_util.subDate()
-        body = request.form["editordata"]         
+        body = request.form["editordata"]
+        temp_file = TemporaryFile(delete=True)
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf=os.path.join(os.environ["ProgramFiles"], "wkhtmltopdf", "bin", "wkhtmltopdf.exe"))
+        pdf = pdfkit.from_string(body, False, css=f"{main_app.static_folder}/styles/articlepage.css", configuration=pdfkit_config)
+        temp_file.write(pdf)       
         new_article = Article(
             title=form.title.data,
             author=form.author.data.capitalize(),
             create_date=creation_date,
             short_desc=form.short_desc.data,
             title_img=img,
-            body=body
+            body=body,
+            download_pdf=temp_file.read()
         )
+        temp_file.close()
         db.session.add(new_article)
         db.session.commit()
         alert.setAlert('success', 'Article has been Created.')
@@ -275,20 +275,21 @@ def articleCreation():
     
 @main_app.route('/articles/', methods=['GET', 'POST'])
 def article_home():
-    with suppress(Exception):
+    with InternalError_or_success(Exception):
         articles = Article.query.all()
     return render_template("public/articles/articlepage.html", articles=articles)
 
 @main_app.route('/articles/<string:id>/')
 @is_valid_article_page
 def articlePage(id):
-    with suppress(Exception):
+    with InternalError_or_success(Exception):
         article = Article.query.filter_by(id=id).first()
     return render_template('articles/articleviewpage.html', article=article)
 
 @main_app.route('/contact/', methods=['GET', 'POST'])
 def contact_us():
     form = contactForm()
+    dt = DateUtil(format_token="L LTS zzZ z")
     if request.method == 'POST' and form.validate_on_submit():
         name = form.first_name.data + " " + form.last_name.data
         inquiry_selection = dict(form.inquiry_selection.choices).get(form.inquiry_selection.data)
@@ -296,7 +297,7 @@ def contact_us():
         tel = formatPhoneNumber(form.mobile.data)
         msg = form.message.data
         mail_msg = Message(f'Contact Message Recieved', recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"])
-        mail_msg.html = formatContact(name=name, inquiry_selection=inquiry_selection, email=email, tel=tel, msg=msg, date=dt.format('L LTS zzZ z'))
+        mail_msg.html = formatContact(name=name, inquiry_selection=inquiry_selection, email=email, tel=tel, msg=msg, date=dt.subDate())
         mail.send(mail_msg)
         alert.setAlert('info', 'Contact Message has been Sent. Please wait for a responce from support team.')
         return redirect(url_for('.homePage'))
@@ -304,7 +305,7 @@ def contact_us():
         return render_template('public/contactpage.html', form=form)
 
 @main_app.route('/home/admin/')   
-@roles_required('admin', 'verified')
+@roles_required(Roles.ADMIN, Roles.VERIFIED)
 def adminPage():
     """
     Administrator Page

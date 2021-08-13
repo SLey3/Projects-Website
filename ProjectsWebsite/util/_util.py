@@ -25,11 +25,12 @@ from base64 import b64encode, b64decode
 from itsdangerous import SignatureExpired
 from rich import print as rprint
 from time import sleep
-from contextlib import contextmanager
+from contextlib import contextmanager, AbstractContextManager
 from sys import exit
 from sqlalchemy.exc import InvalidRequestError
 from googletrans import Translator
 from polib import pofile, detect_encoding
+from pathlib import Path
 from pendulum.datetime import DateTime
 import pendulum
 import re
@@ -37,13 +38,16 @@ import requests
 import schedule
 import threading
 import signal
+import os.path as _path
 
 # ------------------ Utils ------------------
 __all__ = [
     "appExitHandler",
     "checkExpireRegistrationCodes", 
-    "runSchedulerInspect", 
-    'temp_save',
+    "runSchedulerInspect",
+    "InternalError_or_success", 
+    "temp_save",
+    "PoFileAutoTranslator",
     "unverfiedLogUtil", 
     "AlertUtil",
     "is_valid_article_page",
@@ -148,6 +152,19 @@ def appExitHandler():
         rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
         signal.signal(signal.SIGINT, _signal_handler)
         rprint("[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]")
+        
+class InternalError_or_success(AbstractContextManager):
+    """
+    Object checks if an Exception occurred, if it did then a 500 Internal Server error would occur
+    """
+    def __init__(self, *exceptions):
+        self._exceptions = exceptions
+    def __enter__(self):...
+    def __exit__(self, exctype, excinst, exctb):
+        if exctype is not None:
+            if issubclass(exctype, self._exceptions):
+                return abort(500)
+        return 
 
 class temp_save(dict):
     """
@@ -155,17 +172,22 @@ class temp_save(dict):
     if KeyError is raised when __getitem__ can't get an item due to the item being mistyped or not existing
     """
     def __new__(cls, *args, **kwargs):
-        return super().__new__(cls, *args, **kwargs)
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    def __getitem__(self, key) -> Union[bool, None]:
+        instance = super().__new__(cls, *args, **kwargs)
+        instance.__init__(*args, **kwargs)
+        return instance
+    def __getitem__(self, k) -> Union[bool, None]:
         try:
-            return super().__getitem__(key)
+            return super().pop(k)
         except KeyError:
             return False
-    def __setitem__(self, key, value) -> None:
-        return super().__setitem__(key, value)
-    
+    def __setitem__(self, k, v) -> None:
+        super().__setitem__(k, v)
+    def setMultipleValues(self, kwds, *values) -> None:
+        """
+        set's multiple items into the dictionary
+        """    
+        for kwd, val in zip(kwds, values):
+            self[kwd] = val
     
 class PoFileAutoTranslator:
     """
@@ -173,7 +195,7 @@ class PoFileAutoTranslator:
     NOTE: Babel has not been set up right now. 
     Do not use this class and finish setting up self.locale when Babel is present
     """
-    def __init__(self, file: str):
+    def __init__(self, file: Union[str, Type[Path]]):
         encoding = detect_encoding(file)
         self.pfile = pofile(file, encoding=encoding, check_for_duplicates=True)
         self.locale = self.pfile.metadata["Language"]
@@ -181,7 +203,7 @@ class PoFileAutoTranslator:
     
     def translate(self):
         """
-        Translates all msgtxt in the pofile
+        Translates all msgtxt in the pofile to the locale set by the self.locale attribute
         """
         percent_translated = self.pfile.percent_translated()
         if percent_translated == 100:
@@ -191,8 +213,6 @@ class PoFileAutoTranslator:
             entry.msgstr = translated.text
         self.pfile.save()
                 
-            
-    
 class unverfiedLogUtil:
     """
     Utilities for managing the unverified token log file.
@@ -200,9 +220,12 @@ class unverfiedLogUtil:
     The encoding kwarg for `open()` has been provided by default for each function.
     """
     def __init__(self):
+        dir = Path(_path.dirname(_path.abspath(__file__)))
         self.openKwargs = {}
         self.openKwargs["mode"] = "r+"
         self.openKwargs["encoding"] = "utf-8"
+        # to make testing much easier as it would allow for the file path to be changed easily
+        self.filepath = dir/"unverified"/"unverfied-log.txt"
     
     def addContent(self, line_content: Tuple[str, str]):
         """
@@ -211,7 +234,7 @@ class unverfiedLogUtil:
         Format:
             (email) token
         """
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **self.openKwargs) as f:
+        with open(self.filepath, **self.openKwargs) as f:
             line = f"({line_content[0]}) {line_content[1]}"
             lines = f.readlines()
             if lines == []:
@@ -228,13 +251,11 @@ class unverfiedLogUtil:
         
         :param content_identifier: : email string
         """
-        with open(f"{current_app.static_folder}/unverified/unverfied-log.txt", **self.openKwargs) as f:
+        with open(self.filepath, **self.openKwargs) as f:
             lines = f.readlines()
             print(lines)
             for line in lines:
                 potential_email = line[line.find("(")+1:line.rfind(")")]
-                print(potential_email)
-                print(content_identifier)
                 if potential_email == content_identifier:
                     lines.remove(line)
                     print(lines)
@@ -350,8 +371,7 @@ def is_valid_article_page(func):
     def validator(id):
         articles = Article.query.all()
         for article in articles:
-            article_id_number = str(article.id)
-            if id == article_id_number:
+            if id == str(article.id):
                 return func(id)
         return abort(404)
     return validator
@@ -525,8 +545,8 @@ def scrapeError(url: str, elem: str, attr: Tuple[str, str], field_err: List[str]
 current_user = LocalProxy(lambda: _get_user())
 
 def _get_user():
-    User, AnonymousUser = (import_string("ProjectsWebsite.database.models:User"),
-                          import_string("ProjectsWebsite.database.models:AnonymousUser"))
+    from ProjectsWebsite.database.models import User
+    from ProjectsWebsite.database.models import AnonymousUser
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del(g._cached_user)
@@ -614,6 +634,8 @@ def logout_user():
     Logs out user if user is logged in
     """
     User = import_string("ProjectsWebsite.database.models:User")
+    if current_user.is_anonymous:
+        return True
     if "_user_id" in session:
         if "_e-recipient" in session:
             user_email = b64decode(session["_e-recipient"])
@@ -626,30 +648,28 @@ def logout_user():
     if "_fresh" in session:
         session.pop("_fresh", None) 
     return True
-
-class staticproperty(property):
-    """
-    Makes Classmethod with property possible
-    """
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
     
-class AnonymousUserMixin(object):
+class AnonymousUserMixin:
     """
-    AnonymouseUserMixin
+    AnonymouseUserMixin functions
     """
-    @staticproperty
-    def is_authenticated(cls):
+    @property
+    def is_authenticated(self):
         return False
     
-    @staticproperty
-    def is_active(cls):
+    @property
+    def is_active(self):
         return False
 
-    @staticproperty
-    def is_anonymous(cls):
+    @property
+    def is_anonymous(self):
         return True
+    
+    @property
+    def is_blacklisted(self):
+        return False
 
+    @property
     def get_id(self):
         return
     

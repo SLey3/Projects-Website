@@ -17,6 +17,7 @@ from ProjectsWebsite.modules import (
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, appExitHandler
+from ProjectsWebsite.database.models.roles import Roles
 from http.client import HTTPConnection as reqlogConnection
 from json import load
 from rich import print as rprint
@@ -53,19 +54,18 @@ app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
 app.config["PERMANENT_SESSION_LIFETIME"] = pendulum.duration(5, 59, 1, 100, 59, 15)
 app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
 app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
-app.config["MSEARCH_LOGGER"] = logging.DEBUG
 app.config.from_pyfile("../.env")
-app.add_template_global(current_user, 'current_user')
-app.add_template_global(request, 'request')
-app.add_template_global(redirect, 'redirect')
 app.register_error_handler(PraetorianError, 
                            PraetorianError.build_error_handler(lambda e: logging.error(e.message)))
 app.debug = True
 
 app.env = "development"
 
-MonitorDashboard.config.init_from(file=path.parent/"monitor_config.cfg", log_verbose=True)
-MonitorDashboard.bind(app)
+app.config["TESTING"] = True
+
+if not app.config["TESTING"]:
+    MonitorDashboard.config.init_from(file=path.parent/"monitor_config.cfg", log_verbose=True)
+    MonitorDashboard.bind(app)
 
 db.init_app(app)
 
@@ -99,6 +99,19 @@ from ProjectsWebsite.dashboard import dash
 app.register_blueprint(dash)
 app.register_blueprint(admin)
 app.register_blueprint(main_app)
+
+# ------------------ template globals ------------------
+@app.template_global()
+def js_include(filename):
+    fpath = os.path.join(app.static_folder, "js", filename)
+    with open(fpath, 'r') as file:
+        lines = file.readlines()
+    
+
+app.add_template_global(current_user, 'current_user')
+app.add_template_global(request, 'request')
+app.add_template_global(redirect, 'redirect')
+app.add_template_global(Roles, 'Roles')
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)

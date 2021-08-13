@@ -73,13 +73,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for role in user.roles %}
+                    {% for role in user.iter_roles() %}
                     <tr>
                         <td>{{ role.id }}</td>
                         <td>{{ role.name }}</td>
                         <td>
                             <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}">
-                                {% if role.name == 'member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'editor' %}
+                                {% if role.name == 'Member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'Verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'Unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'Editor' %}
                                 {{ delete_role_forms.editor_field }} {% endif %}
                             </form>
                         </td>
@@ -224,288 +224,14 @@
     })();
 </script>
 <script type="text/javascript">
-    // need fix
-    (function() {
-        const spanOrderList = [
-            ".info-name",
-            ".info-email",
-            ".info-password",
-            ".info-active-status",
-            ".info-acc-create",
-            ".info-blacklist-status"
-        ];
-
-        $("#edit-name-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-name").replaceWith($('<form id="edit-name-form" name="name-form" action="{{ request.url }}" method="POST">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.name.label }}' + '{{ info_forms.name }}' + '{{ info_forms.name_sbmt }}' + '<div id="minus-icn" class="close-edit-name-align close-edit-name-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>'));
-            $("#minus-icn").click(function() {
-                $("form#edit-name-form").replaceWith($('<span id="order-1" name="info-txt-span" class="info-name">' + 'Name: {{ user.name }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-email-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-email").replaceWith('<form id="edit-email-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.email.label }}' + '{{ info_forms.email }}' + '{{ info_forms.email_sbmt }}' + '<div id="minus-icn" class="close-edit-email-align close-edit-email-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-email-form").replaceWith($('<span id="order-2" name="info-txt-span" class="info-email">' + 'Email: {{ user.email }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-pwd-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-password").replaceWith('<form id="edit-pwd-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.password.label }}' + '{{ info_forms.password }}' + '{{ info_forms.password_sbmt }}' + '<div id="minus-icn" class="close-edit-pwd-align close-edit-pwd-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-pwd-form").replaceWith($('<span id="order-3" name="info-txt-span" class="info-password">' + 'Password: ****' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-active-status-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-active-status").replaceWith('<form id="edit-active-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.active.label }}' + '{{ info_forms.active }}' + '{{ info_forms.active_sbmt }}' + '<div id="minus-icn" class="close-edit-active-status-align close-edit-active-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-active-status-form").replaceWith($('<span id="order-4" name="info-txt-span" class="info-active-status">' + 'Active Status: {{ user.active }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-        $("#edit-blacklist-status-icn").click(function() {
-            $(".edit-icon").each(function() {
-                $(this).css("opacity", 0);
-            });
-
-            $(".fa.fa-pencil-square").each(function() {
-                $(this).css('cursor', 'default');
-            });
-
-            $("information#prof-info span").each(function() {
-                $(this).addClass("prof-info-btn-clicked");
-                $(this).unbind('mouseenter mouseleave');
-            });
-            for (var s = 0; s < spanOrderList.length; s++) {
-                let Class = spanOrderList[s];
-                $(Class).hover(function() {
-                    $(this).css("letter-spacing", "1.1px");
-                    $(this).css("font-style", "normal");
-                    $(this).css("font-weight", 0);
-                    $(this).css("font-size", "16px");
-                }, function() {
-                    console.log("Form active, Will not proceed with hover effects.");
-                });
-            }
-            $(".info-blacklist-status").replaceWith('<form id="edit-blacklist-status-form" method="POST" action="{{ request.url }}">' + '{{ info_forms.csrf_token }}' + '{{ info_forms.blacklist.label }}' + '{{ info_forms.blacklist }}' + '{{ info_forms.blacklist_sbmt }}' + '<div id="minus-icn" class="close-edit-blacklist-status-align close-edit-blacklist-status-icon">' + '<i class="fa fa-minus-square-o" aria-hidden="true">' + '</i>' + '</div>' + '</form>');
-            $("#minus-icn").click(function() {
-                $("form#edit-blacklist-status-form").replaceWith($('<span id="order-6" name="info-txt-span" class="info-email">' + 'Blacklisted Status: {{ user.blacklisted }}' + '</span>'));
-                $(".edit-icon").each(function() {
-                    $(this).css("opacity", 1);
-                });
-                $(".fa.fa-pencil-square").each(function() {
-                    $(this).css("cursor", 'pointer');
-                });
-                $("information#prof-info span").each(function() {
-                    $(this).removeClass("prof-info-btn-clicked");
-                });
-                for (var s = 0; s < spanOrderList.length; s++) {
-                    let Class = spanOrderList[s];
-                    $(Class).hover(function() {
-                        $(this).css('content', '');
-                        $(this).css('z-index', 10);
-                        $(this).css('font-style', 'italic');
-                        $(this).css('font-weight', '650px');
-                        $(this).css('font-size', '35px');
-                    }, function() {
-                        $(this).css('z-index', 0);
-                        $(this).css('font-style', 'normal');
-                        $(this).css('font-weight', 0);
-                        $(this).css('font-size', '16px');
-                    });
-                    addHoverElement();
-                }
-            });
-        });
-    })();
+    '{{ js_include("ext/admin/accounts/edit_profile/src/ts/dist/editprof.js") | safe }}'
+</script>
+<script type="text/javascript">
+    editProfInit("edit-name-icn", "info-name", "name", {
+        elements: ['<input autocomplete="off" class="name-input" id="edit-name-input" name="name" placeholder="Edit name..." required="" type="text" value="">', '<input class="name-sbmt-btn" id="name-sbmt-btn" name="name_sbmt" type="submit" value="Submit">'],
+        label: "Name: ",
+        section_item: "{{ user.name }}"
+    });
 </script>
 <script type="text/javascript">
     (function() {
@@ -696,10 +422,7 @@
             method: 'POST',
             url: '{{ url_for("admin.adminAccountsUserManagementProcessSearch", user=user.name) }}',
             data: {
-                'search_data': $("#table-search").val(),
-                'name': '{{ user.name }}',
-                'page': '{{ article_info.page }}',
-                'pages': '{{ article_info.pages }}'
+                'search_data': $("#table-search").val()
             }
         }).done(function(data) {
             $("#article-tbody").fadeOut(5).fadeIn(1000);
