@@ -1,4 +1,0 @@
-1) Finish Account Management Dashboard
-    a) fix spacing problems for "edit_user" editing symbol 
-    b) Create managing controls for Articles Made by: ... section 
-2) start working on other admin management pages (e.g. article management, github page, and Web Settings, and possibly a mail section)
