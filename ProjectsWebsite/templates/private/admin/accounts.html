@@ -31,7 +31,7 @@
                     <td> {{ user.id }}</td>
                     <td>{{ user.name }}</td>
                     <td>{{ user.created_at }}</td>
-                    <td><button aria-label="edit {{ user.name }} account" class="acc-edit-btn"><a class="btn-wrap" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a></button></td>
+                    <td><button aria-label="edit {{ user.name }} account" class="acc-edit-btn"><a class="btn-wrap" href="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a></button></td>
                 </tr>
                 {% endfor %}
             </tbody>

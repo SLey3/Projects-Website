@@ -15,14 +15,29 @@ from ProjectsWebsite.util import (scrapeError as _scrapeError,
                                   temp_save as _temp_save, logout_user, InternalError_or_success
                                   )
 from ProjectsWebsite.util.mail import defaultMail, blacklistMail, unBlacklistMail
+from ProjectsWebsite.util.parsers.webargs import WebArgsNestedParser
 from ProjectsWebsite.modules import db, guard, mail
 from functools import partial
 from sqlalchemy.exc import OperationalError
+from webargs import fields
+from webargs.flaskparser import use_args
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint('admin', __name__, static_folder='static', template_folder='templates', url_prefix='/admin')
 
 temp_save = _temp_save()
+
+parser = WebArgsNestedParser("query")
+
+_account_user_manegement_webargs = {
+    "user": fields.Str(required=True),
+    "page": fields.Int(missing=1),
+    "actions": fields.Nested({
+        "action": fields.Str(missing=None),
+        "item_id": fields.Str(missing=None),
+        "page": fields.Int(missing=1)
+    })
+}
 
 # ------------------ Blueprint Routes ------------------
 @admin.route('/')
@@ -46,16 +61,17 @@ def adminHomePage():
     confirm_login()
     return render_template('private/admin/index.html')
 
-@admin.route('/manegement/accounts/', methods=['GET', 'POST'], defaults={'page': 1})
-@admin.route('/manegement/accounts/<int:page>', methods=['GET', 'POST'])
+@admin.route('/manegement/accounts/', methods=['GET', 'POST'])
+@use_args({"page": fields.Int(strict=True, missing=1)}, location="query")
 @roles_required(Roles.ADMIN, Roles.VERIFIED)
 @token_auth_required
-def adminAccountsManegement(page):
+def adminAccountsManegement(args):
     """
     Administrator Account Manegement page
     """
     search_form = AccountManegementForms.tableSearchForm()
-    page = page
+    print(args)
+    page = args["page"]
     pages = 3
     users = User.query.paginate(page, pages, error_out=False)
     users = makeResultsObject(users)
@@ -124,14 +140,20 @@ def adminAccountsUserManagementProcessSearch(user):
         article_info = QueryLikeSearch("Article", None, page, pages, user.name)
     return render_template("private/admin/render/_search_ajax.html", article_info=article_info, user=user, delete_article_forms=AccountManegementForms.ArticleDeleteForms())
 
-@admin.route('management/accounts/edit_user/<string:user>/', methods=['GET', 'POST'], defaults={'page': 1})
-@admin.route('management/accounts/edit_user/<string:user>/<int:page>', methods=['GET', 'POST'])
-@admin.route('management/accounts/edit_user/<string:user>/<action>/<item_id>/<int:page>', methods=['GET', 'POST'])
+@admin.route('management/accounts/edit_user/', methods=['GET', 'POST'])
+@parser.use_args(_account_user_manegement_webargs)
 @token_auth_required
-def adminAccountsUserManagement(user, page, action=None, item_id=None):
+def adminAccountsUserManagement(args):
+    page = args["page"] or args["actions"]["page"]
+    print(page)
+    action = args["actions"]["action"]
+    print(action)
+    item_id = args["actions"]["item_id"]
+    print(item_id)
+    user = args["user"]
+    print(user)
     article_pages = page + countSQLItems("Article")
-    user = str(user).replace('%20', ' ')
-    temp_save.setMultipleValues(["total_pages", "page", "user"], article_pages, page, user)
+    temp_save.setMultipleValues(("total_pages", "page", "user"), [article_pages, page, user])
     user_info = User.lookup_by_name(user)
     if user_info.is_blacklisted:
         blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()

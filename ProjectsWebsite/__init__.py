@@ -4,7 +4,8 @@ sys.path.insert(0, '.')
 del sys
 from flask import (
     Flask, request, render_template, 
-    redirect, url_for, send_from_directory
+    redirect, url_for, send_from_directory,
+    jsonify
     )
 from flask_praetorian import PraetorianError
 from flask_session import Session
@@ -144,6 +145,15 @@ def inauthorized_auth_error(e):
     """
     alert.setAlert('error', "4")
     return redirect(url_for('main_app.homePage'))
+
+@app.errorhandler(422)
+def unprocessable_err_handler(e):
+    headers = e.data.get("headers", None)
+    messages = e.data.get("messages", ["Invalid request."])
+    if headers:
+        return jsonify({"errors": messages}), e.code, headers
+    else:
+        return jsonify({"errors": messages}), e.code
 
 # ------------------ favicon ------------------
 @app.route('/favicon.ico')

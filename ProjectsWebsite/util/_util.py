@@ -1,4 +1,5 @@
 # ------------------ Imports ------------------
+import operator
 from flask import abort, g, session, current_app, request, url_for
 from flask_sqlalchemy import Pagination
 from flask_security import RoleMixin as _role_mixin
@@ -10,9 +11,9 @@ from ProjectsWebsite.util.helpers import (alertMessageType, InvalidType,
                                           reversed_date_re)
 from ProjectsWebsite.util.mail import automatedMail
 from typing import (
-    Dict, List, Tuple, Any, Optional, Callable, Type, Union
+    Dict, List, Tuple, Any, Optional, Callable, Type, Union, TypeVar
 )
-from collections import namedtuple
+from collections import namedtuple, UserDict
 from collections.abc import Iterator, Iterable
 from ProjectsWebsite.modules import guard, login_manager, mail
 try:
@@ -166,28 +167,41 @@ class InternalError_or_success(AbstractContextManager):
                 return abort(500)
         return 
 
-class temp_save(dict):
+K = TypeVar("K")
+
+class temp_save(UserDict):
     """
     temporary data save dictionary that allows returning false 
     if KeyError is raised when __getitem__ can't get an item due to the item being mistyped or not existing
-    """
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls, *args, **kwargs)
-        instance.__init__(*args, **kwargs)
-        return instance
-    def __getitem__(self, k) -> Union[bool, None]:
+    """        
+    def __getitem__(self, k: K, with_pop=True) -> Union[bool, None]:
         try:
-            return super().pop(k)
+            if with_pop:
+                return self.pop(k)
+            return super().__getitem__(k)
         except KeyError:
             return False
-    def __setitem__(self, k, v) -> None:
-        super().__setitem__(k, v)
-    def setMultipleValues(self, kwds, *values) -> None:
+        
+    def get_without_pop(self, k: K) -> Union[bool, None]:
+        """
+        gets item without the default behavior of popping the item
+        """
+        return self.__getitem__(k, False)
+    
+    def setMultipleValues(self, kwds: Union[Tuple[str, str], List[str]], values: Union[Tuple[str, str], List[str]]) -> None:
         """
         set's multiple items into the dictionary
         """    
         for kwd, val in zip(kwds, values):
             self[kwd] = val
+            self.get()
+            
+    def pop(self, k: K):
+        val = self.data[k]
+        super().__delitem__(k)
+        return val
+    def items(self):
+        return self.data.items()
     
 class PoFileAutoTranslator:
     """

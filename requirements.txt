@@ -60,6 +60,7 @@ jsmin==2.2.2              # via -r requirements.in
 lazy-object-proxy==1.6.0  # via astroid
 mako==1.1.4               # via alembic
 markupsafe==2.0.1         # via jinja2, mako, wtforms
+marshmallow==3.13.0       # via webargs
 mccabe==0.6.1             # via pylint
 numpy==1.21.0             # via flask-monitoringdashboard, scipy
 packaging==21.0           # via pytest
@@ -98,6 +99,7 @@ toml==0.10.2              # via pylint, pytest
 typing-extensions==3.10.0.0  # via rich
 tzlocal==2.1              # via apscheduler, flask-monitoringdashboard
 urllib3==1.26.6           # via requests
+webargs==8.0.1            # via -r requirements.in
 webassets==2.0            # via flask-assets
 webencodings==0.5.1       # via html5lib
 werkzeug==2.0.1           # via -r requirements.in, flask, flask-debugtoolbar
