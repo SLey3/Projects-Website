@@ -98,11 +98,6 @@ class ValidatePasswordStrength(object):
         if result == []:
             return None
         for test in result:
-            print(test)
-            print(type(test))
-            print(dir(test))
-            print(isinstance(test, Special))
-            print(isinstance(test, Uppercase))
             if isinstance(test, Uppercase) and not isinstance(test, (Numbers, Special, NonLetters)):
                 print("test is the instance of Uppercase")
                 self.failed_tests.append(f"uppercase letters (Missing: {test.count})")
@@ -114,10 +109,8 @@ class ValidatePasswordStrength(object):
             elif isinstance(test, NonLetters) and not isinstance(test, (Numbers, Special)):
                 self.failed_tests.append(f"non-letter characters  (Missing: {test.count})")
         err = "The Password has less than the required limit(s) of: "
-        print(self.failed_tests)
         for test in self.failed_tests:
             print(test)
             err +=  f'\n- {test}'
         err += "."
-        print(err)
         raise ValidationError(err)
