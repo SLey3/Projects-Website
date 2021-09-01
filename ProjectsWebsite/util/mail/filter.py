@@ -5,11 +5,12 @@ from copy import deepcopy
 # ------------------ Filter ------------------
 __all__ = ["letterFilter"]
 
+
 def letterFilter(template: List[str]) -> List[str]:
     """
     filters "escape newline" from the letter template
     """
-    filter_character = ['\n']
+    filter_character = ["\n"]
     new_template = deepcopy(template)
     for char in new_template[:]:
         i = new_template.index(char)

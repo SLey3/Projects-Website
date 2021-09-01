@@ -1,23 +1,35 @@
 # ------------------ Imports ------------------
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 del sys
 from flask import (
-    Flask, request, render_template, 
-    redirect, url_for, send_from_directory,
-    jsonify
-    )
+    Flask,
+    request,
+    render_template,
+    redirect,
+    url_for,
+    send_from_directory,
+    jsonify,
+)
 from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
 from flask_debugtoolbar import DebugToolbarExtension
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.modules import (
-    assets, db, guard, login_manager,
-    mail, security, img_set, migrate
+    assets,
+    db,
+    guard,
+    login_manager,
+    mail,
+    security,
+    img_set,
+    migrate,
 )
 from ProjectsWebsite.util.utilmodule import alert
 from ProjectsWebsite.util import current_user, appExitHandler
+from ProjectsWebsite.util.parsers.jinja import JinjaParser
 from ProjectsWebsite.database.models.roles import Roles
 from http.client import HTTPConnection as reqlogConnection
 from json import load
@@ -46,18 +58,22 @@ reqlogConnection.debuglevel = 1
 
 # ------------------ SSL ------------------
 context = ssl.SSLContext()
-context.load_cert_chain('cert/server.cert', 'cert/server.key')
+context.load_cert_chain("cert/server.cert", "cert/server.key")
 
 # ------------------ App Setup ------------------
-app = Flask(__name__, template_folder="templates", static_folder='static')
+app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["FLASK_SKIP_DOTENV"] = 1
-app.config["UPLOADS_DEFAULT_DEST"] = f'{app.static_folder}/assets/uploads'
+app.config["UPLOADS_DEFAULT_DEST"] = f"{app.static_folder}/assets/uploads"
 app.config["PERMANENT_SESSION_LIFETIME"] = pendulum.duration(5, 59, 1, 100, 59, 15)
-app.config["SESSION_FILE_DIR"] = f'{app.static_folder}/sess'
-app.config["ALERT_CODES_DICT"] = load(open(f'{app.static_folder}/assets/json/errors.json'))
+app.config["SESSION_FILE_DIR"] = f"{app.static_folder}/sess"
+app.config["ALERT_CODES_DICT"] = load(
+    open(f"{app.static_folder}/assets/json/errors.json")
+)
 app.config.from_pyfile("../.env")
-app.register_error_handler(PraetorianError, 
-                           PraetorianError.build_error_handler(lambda e: logging.error(e.message)))
+app.register_error_handler(
+    PraetorianError,
+    PraetorianError.build_error_handler(lambda e: logging.error(e.message)),
+)
 app.debug = True
 
 app.env = "development"
@@ -65,7 +81,9 @@ app.env = "development"
 app.config["TESTING"] = True
 
 if not app.config["TESTING"]:
-    MonitorDashboard.config.init_from(file=path.parent/"monitor_config.cfg", log_verbose=True)
+    MonitorDashboard.config.init_from(
+        file=path.parent / "monitor_config.cfg", log_verbose=True
+    )
     MonitorDashboard.bind(app)
 
 db.init_app(app)
@@ -97,6 +115,7 @@ if not PRODUCTION:
 from ProjectsWebsite.views import main_app
 from ProjectsWebsite.admin import admin
 from ProjectsWebsite.dashboard import dash
+
 app.register_blueprint(dash)
 app.register_blueprint(admin)
 app.register_blueprint(main_app)
@@ -104,15 +123,16 @@ app.register_blueprint(main_app)
 # ------------------ template globals ------------------
 @app.template_global()
 def js_include(filename):
-    fpath = os.path.join(app.static_folder, "js", filename)
-    with open(fpath, 'r') as file:
-        lines = file.readlines()
-    
+    fpath = Path(app.static_folder, "js", filename)
+    parser = JinjaParser(fpath)
+    lines = parser.parse()
+    return lines
 
-app.add_template_global(current_user, 'current_user')
-app.add_template_global(request, 'request')
-app.add_template_global(redirect, 'redirect')
-app.add_template_global(Roles, 'Roles')
+
+app.add_template_global(current_user, "current_user")
+app.add_template_global(request, "request")
+app.add_template_global(redirect, "redirect")
+app.add_template_global(Roles, "Roles")
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)
@@ -120,31 +140,35 @@ def page_not_found(e):
     """
     handles 404 status code and 404 error page
     """
-    return render_template('public/error_page/404/404.html')
+    return render_template("public/error_page/404/404.html")
+
 
 @app.errorhandler(500)
 def server_error(e):
     """
     handles 500 status code and redirects to HomePage
     """
-    alert.setAlert('error', "2")
-    return redirect(url_for('main_app.homePage'))
+    alert.setAlert("error", "2")
+    return redirect(url_for("main_app.homePage"))
+
 
 @app.errorhandler(403)
 def inauthorized_perm_error(e):
     """
     handles 403 status code and redirects to HomePage
     """
-    alert.setAlert('error', "3")
-    return redirect(url_for('main_app.homePage'))
+    alert.setAlert("error", "3")
+    return redirect(url_for("main_app.homePage"))
+
 
 @app.errorhandler(401)
 def inauthorized_auth_error(e):
     """
     handles 401 status code and redirects to HomePage
     """
-    alert.setAlert('error', "4")
-    return redirect(url_for('main_app.homePage'))
+    alert.setAlert("error", "4")
+    return redirect(url_for("main_app.homePage"))
+
 
 @app.errorhandler(422)
 def unprocessable_err_handler(e):
@@ -155,17 +179,25 @@ def unprocessable_err_handler(e):
     else:
         return jsonify({"errors": messages}), e.code
 
+
 # ------------------ favicon ------------------
-@app.route('/favicon.ico')
+@app.route("/favicon.ico")
 def favicon():
     """
     web logo
     """
-    return send_from_directory(os.path.join(app.root_path, 'static', 'assets', 'favicon'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-    
+    return send_from_directory(
+        os.path.join(app.root_path, "static", "assets", "favicon"),
+        "favicon.ico",
+        mimetype="image/vnd.microsoft.icon",
+    )
+
+
 # ------------------ Webstarter ------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     db.create_all(app=app)
-    rprint("[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]")
+    rprint(
+        "[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]"
+    )
     with appExitHandler():
         app.run()

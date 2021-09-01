@@ -12,9 +12,11 @@ from ProjectsWebsite.util.mail import __all__ as __mailall__
 from itertools import zip_longest
 
 __all__ = []
-for (func1, func2, func3, func4) in zip_longest(__mainall__, __helperall__, __utilmoduleall__, __mailall__, fillvalue=0):
+for (func1, func2, func3, func4) in zip_longest(
+    __mainall__, __helperall__, __utilmoduleall__, __mailall__, fillvalue=0
+):
     __all__.extend([func1, func2, func3, func4])
-    
+
 __all__ = list(dict.fromkeys(__all__))
 
 del zip_longest

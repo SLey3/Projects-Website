@@ -49,7 +49,7 @@
                 <ul class="pagination">
                     {% if accounts.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=accounts.next_num ) }}">Previous</a>
+                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement') }}/?page={{ accounts.next_num }}">Previous</a>
                     </li>
                     {% else %}
                     <li class="page-item">
@@ -57,13 +57,13 @@
                     </li>
                     {% endif %} {% for page in accounts.iter_pages(left_edge=3, right_edge=3) %} {% if page %} {% if page == accounts.page %}
                     <li class="page-item active">
-                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=page ) }}">
+                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement' ) }}/?page={{ page }}">
                                     {{ page }}
                                 </a>
                     </li>
                     {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=page ) }}">
+                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement' ) }}/?page={{ page }}">
                                     {{ page }}
                                 </a>
                     </li>
@@ -73,7 +73,7 @@
                     </li>
                     {% endif %} {% endfor %} {% if accounts.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement', page=accounts.next_num ) }}">Next</a>
+                        <a class="page-link" href="{{ url_for( 'admin.adminAccountsManegement' ) }}/?page={{ accounts.next_num }}">Next</a>
                     </li>
                     {% else %}
                     <li class="page-item">

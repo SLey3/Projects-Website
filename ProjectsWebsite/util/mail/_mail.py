@@ -4,9 +4,18 @@ from typing import List, Optional, Union
 from ProjectsWebsite.util.mail.filter import letterFilter
 
 # ------------------ Mail Utility ------------------
-__all__ = ["automatedMail", "defaultMail", "formatContact", "blacklistMail", "unBlacklistMail"]
+__all__ = [
+    "automatedMail",
+    "defaultMail",
+    "formatContact",
+    "blacklistMail",
+    "unBlacklistMail",
+]
 
-def _insert_content(letter: List[str], recipient: str, content: str, sender: Optional[str] = None) -> List[str]:
+
+def _insert_content(
+    letter: List[str], recipient: str, content: str, sender: Optional[str] = None
+) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
         if char == r"{name}":
@@ -25,7 +34,15 @@ def _insert_content(letter: List[str], recipient: str, content: str, sender: Opt
     return letter
 
 
-def _format_contact(letter: List[str], name: str, inquiry_selection: str, email: str, tel: str, msg: str, date: str) -> List[str]:
+def _format_contact(
+    letter: List[str],
+    name: str,
+    inquiry_selection: str,
+    email: str,
+    tel: str,
+    msg: str,
+    date: str,
+) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
         if char == "{name}":
@@ -42,7 +59,10 @@ def _format_contact(letter: List[str], name: str, inquiry_selection: str, email:
             letter[i] = char.replace("{msg}", msg)
     return letter
 
-def _format_blacklist(letter: List[str], name: str, id: str, reasons: Union[List[str], str]) -> List[str]:
+
+def _format_blacklist(
+    letter: List[str], name: str, id: str, reasons: Union[List[str], str]
+) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
         if char == "{name}":
@@ -61,7 +81,10 @@ def _format_blacklist(letter: List[str], name: str, id: str, reasons: Union[List
             letter[i] = char.replace("{contacturl}", f"{request.host_url}contact_us")
     return letter
 
-def _format_unblacklist(letter: List[str], name: str, reasons: Union[List[str], str]) -> List[str]:
+
+def _format_unblacklist(
+    letter: List[str], name: str, reasons: Union[List[str], str]
+) -> List[str]:
     for char in letter[:]:
         i = letter.index(char)
         if char == "{name}":
@@ -78,16 +101,22 @@ def _format_unblacklist(letter: List[str], name: str, reasons: Union[List[str], 
             letter[i] = char.replace("{contacturl}", f"{request.host_url}contact_us")
     return letter
 
+
 def automatedMail(recipient_name: str, body: str) -> str:
     """
     formats the automated Mail Letter
     """
-    with open("ProjectsWebsite/util/mail/email_template/automated_template.txt", 'r', encoding="utf-8") as a:
+    with open(
+        "ProjectsWebsite/util/mail/email_template/automated_template.txt",
+        "r",
+        encoding="utf-8",
+    ) as a:
         letter = a.readlines()
     filtered_letter = letterFilter(letter)
     letter = _insert_content(filtered_letter, recipient_name, body)
     mail = "".join(char for char in letter)
     return mail
+
 
 def defaultMail(recipient_name: str, body: str, sender: str) -> str:
     """
@@ -100,11 +129,16 @@ def defaultMail(recipient_name: str, body: str, sender: str) -> str:
     mail = "".join(char for char in new_letter)
     return mail
 
+
 def formatContact(**contactkwds):
     """
     formats Contact Us letter
     """
-    with open("ProjectsWebsite/util/mail/email_template/contact_us_template.txt", 'r', encoding="utf-8") as c:
+    with open(
+        "ProjectsWebsite/util/mail/email_template/contact_us_template.txt",
+        "r",
+        encoding="utf-8",
+    ) as c:
         contact = c.readlines()
     filtered_contact = letterFilter(contact)
     contactkwds.setdefault("letter", filtered_contact)
@@ -112,25 +146,34 @@ def formatContact(**contactkwds):
     mail = "".join(char for char in contact)
     return mail
 
+
 def blacklistMail(name: str, id: str, reasons: List[str]) -> str:
     """
     formats the blacklist Mail letter
     """
-    with open("ProjectsWebsite/util/mail/email_template/blacklist_template.txt", 'r', encoding="utf-8") as b:
+    with open(
+        "ProjectsWebsite/util/mail/email_template/blacklist_template.txt",
+        "r",
+        encoding="utf-8",
+    ) as b:
         letter = b.readlines()
     filtered_letter = letterFilter(letter)
     new_letter = _format_blacklist(filtered_letter, name, id, reasons)
     mail = "".join(char for char in new_letter)
     return mail
 
+
 def unBlacklistMail(name: str, reasons: Union[List[str], str]) -> str:
     """
     formats the unBlacklist letter
     """
-    with open("ProjectsWebsite/util/mail/email_template/unblacklist_template.txt", 'r', encoding="utf-8") as ub:
+    with open(
+        "ProjectsWebsite/util/mail/email_template/unblacklist_template.txt",
+        "r",
+        encoding="utf-8",
+    ) as ub:
         letter = ub.readlines()
     filtered_letter = letterFilter(letter)
     new_letter = _format_unblacklist(filtered_letter, name, reasons)
     mail = "".join(char for char in new_letter)
     return mail
-    

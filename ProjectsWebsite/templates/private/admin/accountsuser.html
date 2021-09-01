@@ -134,7 +134,7 @@
                         <td><a class="article-tbl-item-link" href="{{ url_for('main_app.articlePage', id=article.id) }}"><i class="fa fa-link" aria-hidden="true"></i></a></td>
                         <td></td>
                         <td>
-                            <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement', user=user.name, action='delete', item_id=article.id) }}">
+                            <form id="{{ article.id }}-delete-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}&actions.action='delete'&actions.item_id={{ article.id }}">
                                 {{ delete_article_forms.delete_article }}
                             </form>
                         </td>
@@ -158,7 +158,7 @@
                     <ul class="pagination">
                         {% if article_info.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num ) }}">Previous</a>
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}&page={{ article_info.next_num }}">Previous</a>
                         </li>
                         {% else %}
                         <li class="page-item">
@@ -166,13 +166,13 @@
                         </li>
                         {% endif %} {% for page in article_info.iter_pages(left_edge=4, right_edge=4) %} {% if page %} {% if page == article_info.page %}
                         <li class="page-item active">
-                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}&page={{ page }}">
                                         {{ page }}
                                 </a>
                         </li>
                         {% else %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=page) }}">
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}&page={{ page }}">
                                         {{ page }}
                                 </a>
                         </li>
@@ -182,7 +182,7 @@
                         </li>
                         {% endif %} {% endfor %} {% if article_info.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement', user=user.name, page=article_info.next_num) }}">Next</a>
+                            <a class="page-link" href="{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}&page={{ article_info.next_num }}">Next</a>
                         </li>
                         {% else %}
                         <li class="page-item">
@@ -238,7 +238,7 @@
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all() }}' + "</form>");
+                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.delete_all() }}' + "</form>");
                     $("#role-add-btn-icn").css("opacity", 0);
                     $("#role-add-btn-icn").css("cursor", "default");
                     $("#role-add-btn").css("cursor", "default");
@@ -251,7 +251,7 @@
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
                     $("#role-add-btn-icn").css("opacity", 0);
                     $("#role-add-btn").css("cursor", "default");
                     $("#role-add-btn-icn").css("cursor", "default");
@@ -285,7 +285,7 @@
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Add Role");
                 $("#add-role-btn-container").empty();
-                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
+                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
             });
         });
     }
@@ -295,14 +295,14 @@
         $(document).ready(function() {
             $("#article-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
                 } else {
                     $("#article-delete-all-container").empty();
                 }
             });
             $("#article-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement', user=user.name) }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
                 } else {
                     $("#article-delete-all-container").empty();
                 }
@@ -330,7 +330,7 @@
             closeAnimation: 'rotateXR',
             animationSpeed: 1500,
             content: '' +
-                '<form id="blacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement", user=user.name) }}">' +
+                '<form id="blacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}/?user={{ user.name }}">' +
                 '<div class="form-group">' +
                 '<label> Reason for Blacklist:</label>' +
                 '{{ ext_options.reason }}' +
@@ -345,7 +345,7 @@
                         $.alert("Blacklist confirmed");
                         $.ajax({
                             method: 'POST',
-                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist') }}/?user={{ user.name }}",
                             data: {
                                 'type': 'blacklist',
                                 'user': "{{ user.name }}",
@@ -377,7 +377,7 @@
             closeAnimation: 'rotateXR',
             animationSpeed: 1500,
             content: '' +
-                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement", user=user.name) }}">' +
+                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}/?user={{ user.name }}">' +
                 '<div class="form-group">' +
                 '<label> Reason for unBlacklist:</label>' +
                 '{{ ext_options.reason }}' +
@@ -392,7 +392,7 @@
                         $.alert("unBlacklist confirmed");
                         $.ajax({
                             method: 'POST',
-                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', user=user.name) }}",
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist') }}/?user={{ user.name }}",
                             data: {
                                 'type': 'unBlacklist',
                                 'user': "{{ user.name }}",
@@ -420,7 +420,7 @@
         e.preventDefault();
         $.ajax({
             method: 'POST',
-            url: '{{ url_for("admin.adminAccountsUserManagementProcessSearch", user=user.name) }}',
+            url: '{{ url_for("admin.adminAccountsUserManagementProcessSearch") }}',
             data: {
                 'search_data': $("#table-search").val()
             }
