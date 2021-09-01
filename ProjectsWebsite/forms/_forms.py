@@ -1,10 +1,11 @@
 # ------------------ Imports ------------------
 from flask_wtf import FlaskForm, RecaptchaField
-from wtforms import StringField, PasswordField, TextAreaField, SelectField, SubmitField
-from wtforms.fields.html5 import TelField, SearchField
-from ProjectsWebsite.modules import img_set
-from ProjectsWebsite.forms.validators import *
+from wtforms import PasswordField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms.fields.html5 import SearchField, TelField
+
 from ProjectsWebsite.forms.field import ButtonField
+from ProjectsWebsite.forms.validators import *
+from ProjectsWebsite.modules import img_set
 
 # ------------------ Forms------------------
 __all__ = [

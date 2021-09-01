@@ -1,9 +1,10 @@
 # ------------------ Imports ------------------
-from flask_security import SQLAlchemyUserDatastore
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
-from ProjectsWebsite.modules import db
-from ProjectsWebsite.util import AnonymousUserMixin, RoleMixin, DateUtil
+from flask_security import SQLAlchemyUserDatastore
+
 from ProjectsWebsite.database.models.roles import Roles
+from ProjectsWebsite.modules import db
+from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin
 
 # ------------------ SQL classes  ------------------
 dt = DateUtil(format_token="L LTS zzZ z")

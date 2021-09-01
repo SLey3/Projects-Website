@@ -1,12 +1,12 @@
 # ------------------ Imports ------------------
-from flask_sqlalchemy import SQLAlchemy
+from flask_assets import Bundle, Environment
 from flask_login import LoginManager
-from flask_security import Security
-from flask_assets import Environment, Bundle
-from flask_uploads import UploadSet, IMAGES
 from flask_mail import Mail
-from flask_praetorian import Praetorian
 from flask_migrate import Migrate
+from flask_praetorian import Praetorian
+from flask_security import Security
+from flask_sqlalchemy import SQLAlchemy
+from flask_uploads import IMAGES, UploadSet
 
 # ------------------ module variables ------------------
 db = SQLAlchemy()

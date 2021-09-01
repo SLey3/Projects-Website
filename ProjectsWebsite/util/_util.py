@@ -1,47 +1,52 @@
 # ------------------ Imports ------------------
-from flask import abort, g, session, current_app, request, url_for
-from flask_sqlalchemy import Pagination
-from flask_security import RoleMixin as _role_mixin
-from flask_principal import Permission, RoleNeed
+from collections import UserDict, namedtuple
+from collections.abc import Iterable, Iterator
+from functools import partial, partialmethod, wraps
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+
+from flask import abort, current_app, g, request, session, url_for
 from flask_mail import Message
-from functools import wraps, partialmethod, partial
+from flask_principal import Permission, RoleNeed
+from flask_security import RoleMixin as _role_mixin
+from flask_sqlalchemy import Pagination
+
+from ProjectsWebsite.modules import guard, login_manager, mail
 from ProjectsWebsite.util.helpers import (
-    alertMessageType,
     InvalidType,
     OperationError,
+    alertMessageType,
     date_re,
     reversed_date_re,
 )
 from ProjectsWebsite.util.mail import automatedMail
-from typing import Dict, List, Tuple, Any, Optional, Callable, Type, Union, TypeVar
-from collections import namedtuple, UserDict
-from collections.abc import Iterator, Iterable
-from ProjectsWebsite.modules import guard, login_manager, mail
 
 try:
     from werkzeug import LocalProxy
 except ImportError:
     from werkzeug.local import LocalProxy
-from werkzeug.utils import import_string
-from bs4 import BeautifulSoup as _beautifulsoup, NavigableString
-from base64 import b64encode, b64decode
-from itsdangerous import SignatureExpired
-from rich import print as rprint
-from time import sleep
-from contextlib import contextmanager, AbstractContextManager
-from sys import exit
-from sqlalchemy.exc import InvalidRequestError
-from googletrans import Translator
-from polib import pofile, detect_encoding
-from pathlib import Path
-from pendulum.datetime import DateTime
-import pendulum
+
+import os.path as _path
 import re
+import signal
+import threading
+from base64 import b64decode, b64encode
+from contextlib import AbstractContextManager, contextmanager
+from pathlib import Path
+from sys import exit
+from time import sleep
+
+import pendulum
 import requests
 import schedule
-import threading
-import signal
-import os.path as _path
+from bs4 import BeautifulSoup as _beautifulsoup
+from bs4 import NavigableString
+from googletrans import Translator
+from itsdangerous import SignatureExpired
+from pendulum.datetime import DateTime
+from polib import detect_encoding, pofile
+from rich import print as rprint
+from sqlalchemy.exc import InvalidRequestError
+from werkzeug.utils import import_string
 
 # ------------------ Utils ------------------
 __all__ = [
@@ -652,8 +657,7 @@ current_user = LocalProxy(lambda: _get_user())
 
 
 def _get_user():
-    from ProjectsWebsite.database.models import User
-    from ProjectsWebsite.database.models import AnonymousUser
+    from ProjectsWebsite.database.models import AnonymousUser, User
 
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):

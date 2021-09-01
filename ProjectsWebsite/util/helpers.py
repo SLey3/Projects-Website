@@ -1,9 +1,10 @@
 """
 Web helpers 
 """
+import re
+
 # ------------------ Helper Util: Import ------------------
 from typing import Union
-import re
 
 # ------------------ Helper Util ------------------
 

@@ -1,15 +1,17 @@
 """
 web utilities
 """
+from itertools import zip_longest
+
+import ProjectsWebsite.util.helpers
+import ProjectsWebsite.util.utilmodule
+
 # ------------------ Imports ------------------
 from ProjectsWebsite.util._util import *
 from ProjectsWebsite.util._util import __all__ as __mainall__
-import ProjectsWebsite.util.helpers
 from ProjectsWebsite.util.helpers import __all__ as __helperall__
-import ProjectsWebsite.util.utilmodule
-from ProjectsWebsite.util.utilmodule import __all__ as __utilmoduleall__
 from ProjectsWebsite.util.mail import __all__ as __mailall__
-from itertools import zip_longest
+from ProjectsWebsite.util.utilmodule import __all__ as __utilmoduleall__
 
 __all__ = []
 for (func1, func2, func3, func4) in zip_longest(

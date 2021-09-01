@@ -1,30 +1,22 @@
 # ------------------ Imports ------------------
-from flask import jsonify, redirect, url_for
-from flask.testing import FlaskClient
-
-from ProjectsWebsite.util._util import *
-from ProjectsWebsite.util._util import temp_save as _temp_save
-
-from ProjectsWebsite import app
-
-from ProjectsWebsite.util.tests.utils import (
-    _temp_save_expected_responces,
-    _pofile_expected_translations,
-)
-
-from polib import pofile, detect_encoding
-
+import os.path as _path
+import sys
+import traceback
 from pathlib import Path
-
 from random import choice
 
-import os.path as _path
-
 import pytest
+from flask import jsonify, redirect, url_for
+from flask.testing import FlaskClient
+from polib import detect_encoding, pofile
 
-import sys
-
-import traceback
+from ProjectsWebsite import app
+from ProjectsWebsite.util._util import *
+from ProjectsWebsite.util._util import temp_save as _temp_save
+from ProjectsWebsite.util.tests.utils import (
+    _pofile_expected_translations,
+    _temp_save_expected_responces,
+)
 
 test_directory = Path(_path.dirname(_path.abspath(__file__)))
 

@@ -1,40 +1,40 @@
 # ------------------ Imports ------------------
+from functools import partial
+
 from flask import (
     Blueprint,
-    render_template,
-    url_for,
-    redirect,
-    request,
-    jsonify,
     current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
 )
 from flask_login import confirm_login
 from flask_mail import Message
 from marshmallow import Schema
-from ProjectsWebsite.database.models import User, Article, Blacklist, user_datastore
-from ProjectsWebsite.database.models.roles import Roles
-from ProjectsWebsite.forms import AccountManegementForms
-from ProjectsWebsite.util import (
-    scrapeError as _scrapeError,
-    token_auth_required,
-    generate_err_request_url,
-    logout_user,
-    roles_required,
-    unverfiedLogUtil,
-    QueryLikeSearch,
-    makeResultsObject,
-    countSQLItems,
-    temp_save as _temp_save,
-    logout_user,
-    InternalError_or_success,
-)
-from ProjectsWebsite.util.mail import defaultMail, blacklistMail, unBlacklistMail
-from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
-from ProjectsWebsite.modules import db, guard, mail
-from functools import partial
 from sqlalchemy.exc import OperationalError
 from webargs import fields
 from webargs.flaskparser import use_args
+
+from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
+from ProjectsWebsite.database.models.roles import Roles
+from ProjectsWebsite.forms import AccountManegementForms
+from ProjectsWebsite.modules import db, guard, mail
+from ProjectsWebsite.util import (
+    InternalError_or_success,
+    QueryLikeSearch,
+    countSQLItems,
+    generate_err_request_url,
+    logout_user,
+    makeResultsObject,
+    roles_required,
+)
+from ProjectsWebsite.util import scrapeError as _scrapeError
+from ProjectsWebsite.util import temp_save as _temp_save
+from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
+from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint(

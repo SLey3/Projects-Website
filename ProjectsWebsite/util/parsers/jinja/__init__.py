@@ -1,8 +1,10 @@
-from flask import current_app
-from ProjectsWebsite.util.parsers.jinja.constants import *
+import re
 from pathlib import Path
 from typing import Union
-import re
+
+from flask import current_app
+
+from ProjectsWebsite.util.parsers.jinja.constants import *
 
 
 class JinjaParser:

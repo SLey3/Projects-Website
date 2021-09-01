@@ -1,12 +1,15 @@
-from pytest import fixture
-from polib import POFile, POEntry
 from pathlib import Path
+
+from polib import POEntry, POFile
+from pytest import fixture
 
 try:
     from .. import PoFileAutoTranslator
 except ImportError:
     from ProjectsWebsite.util import PoFileAutoTranslator
+
 import os.path as _path
+
 import pendulum
 
 test_directory = Path(_path.dirname(_path.abspath(__file__)))

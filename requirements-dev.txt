@@ -1,2 +1,5 @@
 pre-commit
 black
+isort
+
+# pycln # interferes with the required click version in requirements.txt

@@ -1,49 +1,50 @@
 # ------------------ Imports ------------------
+import base64
+import os
+from tempfile import TemporaryFile
+
+import pdfkit
 from flask import (
     Blueprint,
-    render_template,
-    redirect,
-    request,
-    url_for,
     current_app,
+    redirect,
+    render_template,
+    request,
     send_file,
+    url_for,
 )
-from sqlalchemy.orm.session import Session as SQLSession
 from flask_mail import Message
-from ProjectsWebsite.util import (
-    InternalError_or_success,
-    is_valid_article_page,
-    formatPhoneNumber,
-    DateUtil,
-    current_user,
-    login_user,
-    logout_user,
-    token_auth_required,
-    roles_required,
-    roles_accepted,
-    unverfiedLogUtil,
-    temp_save as _temp_save,
-)
-from ProjectsWebsite.util.mail import automatedMail, formatContact
-from ProjectsWebsite.util.helpers import date_re
-from ProjectsWebsite.util.utilmodule import alert
-from ProjectsWebsite.modules import db, img_set, mail, guard
+from itsdangerous import SignatureExpired, URLSafeTimedSerializer
+from sqlalchemy.orm.session import Session as SQLSession
+from werkzeug.utils import secure_filename
+
+from ProjectsWebsite.database.models import Article, User, user_datastore
+from ProjectsWebsite.database.models.roles import Roles
 from ProjectsWebsite.forms import (
-    loginForm,
-    registerForm,
     articleForm,
     contactForm,
     forgotForm,
     forgotRequestForm,
+    loginForm,
+    registerForm,
 )
-from ProjectsWebsite.database.models import Article, User, user_datastore
-from ProjectsWebsite.database.models.roles import Roles
-from werkzeug.utils import secure_filename
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from tempfile import TemporaryFile
-import base64
-import pdfkit
-import os
+from ProjectsWebsite.modules import db, guard, img_set, mail
+from ProjectsWebsite.util import (
+    DateUtil,
+    InternalError_or_success,
+    current_user,
+    formatPhoneNumber,
+    is_valid_article_page,
+    login_user,
+    logout_user,
+    roles_accepted,
+    roles_required,
+)
+from ProjectsWebsite.util import temp_save as _temp_save
+from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+from ProjectsWebsite.util.helpers import date_re
+from ProjectsWebsite.util.mail import automatedMail, formatContact
+from ProjectsWebsite.util.utilmodule import alert
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint(

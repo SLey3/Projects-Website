@@ -1,0 +1,4 @@
+pycln:
+  path: ProjectsWebsite
+  exclude: ProjectsWebsite/util/tests/*.py
+  no_gitignore: false

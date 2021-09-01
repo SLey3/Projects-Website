@@ -1,5 +1,6 @@
 # ------------------ Imports ------------------
-from flask import Blueprint, redirect, url_for, request, render_template, abort
+from flask import Blueprint, abort, redirect, render_template, request, url_for
+
 from ProjectsWebsite.util import roles_accepted, roles_required, token_auth_required
 
 # ------------------ Blueprint Config ------------------

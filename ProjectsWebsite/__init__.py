@@ -3,43 +3,45 @@ import sys
 
 sys.path.insert(0, ".")
 del sys
+import logging
+import os
+import ssl
+from http.client import HTTPConnection as reqlogConnection
+from json import load
+from pathlib import Path
+
+import flask_monitoringdashboard as MonitorDashboard
+import pendulum
 from flask import (
     Flask,
-    request,
-    render_template,
-    redirect,
-    url_for,
-    send_from_directory,
     jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
 )
+from flask_debugtoolbar import DebugToolbarExtension
 from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
-from flask_debugtoolbar import DebugToolbarExtension
+from rich import print as rprint
+
+from ProjectsWebsite.database.models.roles import Roles
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.modules import (
     assets,
     db,
     guard,
+    img_set,
     login_manager,
     mail,
-    security,
-    img_set,
     migrate,
+    security,
 )
-from ProjectsWebsite.util.utilmodule import alert
-from ProjectsWebsite.util import current_user, appExitHandler
+from ProjectsWebsite.util import appExitHandler, current_user
 from ProjectsWebsite.util.parsers.jinja import JinjaParser
-from ProjectsWebsite.database.models.roles import Roles
-from http.client import HTTPConnection as reqlogConnection
-from json import load
-from rich import print as rprint
-from pathlib import Path
-import flask_monitoringdashboard as MonitorDashboard
-import pendulum
-import ssl
-import logging
-import os
+from ProjectsWebsite.util.utilmodule import alert
 
 path = Path(os.path.dirname(os.path.abspath(__file__)))
 
@@ -111,10 +113,11 @@ Session(app)
 if not PRODUCTION:
     toolbar = DebugToolbarExtension(app)
 
-# ------------------ Blueprint registration ------------------
-from ProjectsWebsite.views import main_app
 from ProjectsWebsite.admin import admin
 from ProjectsWebsite.dashboard import dash
+
+# ------------------ Blueprint registration ------------------
+from ProjectsWebsite.views import main_app
 
 app.register_blueprint(dash)
 app.register_blueprint(admin)

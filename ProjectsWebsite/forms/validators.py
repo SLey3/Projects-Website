@@ -1,19 +1,21 @@
 # ------------------ Imports ------------------
-from wtforms import ValidationError
-from wtforms.validators import (
-    InputRequired,
-    Length,
-    Email,
-    DataRequired,
-    EqualTo,
-    Optional,
-)
-from flask_wtf.file import FileField, FileAllowed
 from typing import Optional as optional
-from ProjectsWebsite.util.helpers import bool_re
+
+import phonenumbers
+from flask_wtf.file import FileAllowed, FileField
 from password_strength import PasswordPolicy
 from password_strength.tests import NonLetters, Numbers, Special, Uppercase
-import phonenumbers
+from wtforms import ValidationError
+from wtforms.validators import (
+    DataRequired,
+    Email,
+    EqualTo,
+    InputRequired,
+    Length,
+    Optional,
+)
+
+from ProjectsWebsite.util.helpers import bool_re
 
 # ------------------ Validators ------------------
 __all__ = [

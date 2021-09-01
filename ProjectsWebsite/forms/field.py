@@ -3,6 +3,7 @@ Custom Field for Website
 """
 # ------------------ Imports ------------------
 from wtforms import SubmitField
+
 from ProjectsWebsite.forms.widget import ButtonWidget
 
 # ------------------ Field ------------------

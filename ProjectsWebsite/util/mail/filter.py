@@ -1,6 +1,6 @@
 # ------------------ Imports ------------------
-from typing import List
 from copy import deepcopy
+from typing import List
 
 # ------------------ Filter ------------------
 __all__ = ["letterFilter"]

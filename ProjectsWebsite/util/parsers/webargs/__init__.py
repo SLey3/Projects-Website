@@ -2,12 +2,14 @@
 WebArgs Parser for Nested url parameters
 source: https://webargs.readthedocs.io/en/latest/advanced.html#custom-parsers
 """
+import re
+from functools import partialmethod
 from typing import TypeVar
+
 from webargs import core
 from webargs.flaskparser import FlaskParser
+
 from ProjectsWebsite.util import temp_save
-from functools import partialmethod
-import re
 
 __all__ = ["EditProfUrlParser"]
 

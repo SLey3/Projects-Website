@@ -1,6 +1,8 @@
 # ------------------ Imports ------------------
-from flask import request
 from typing import List, Optional, Union
+
+from flask import request
+
 from ProjectsWebsite.util.mail.filter import letterFilter
 
 # ------------------ Mail Utility ------------------

@@ -1,6 +1,7 @@
 # ------------------ Import ------------------
 from enum import Enum
 
+
 # ------------------ Roles Enum ------------------
 class Roles(Enum):
     MEMBER = "<member>"
