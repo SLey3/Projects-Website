@@ -83,5 +83,4 @@ def _structureddict(dict_):
     for k, v in dict_.items():
         print("Key: ", k, "Value: ", v)
         _pair(r, k, v)
-    print(r.items())
     return r
