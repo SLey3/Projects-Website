@@ -2,7 +2,7 @@
 from collections import UserDict, namedtuple
 from collections.abc import Iterable, Iterator
 from functools import partial, partialmethod, wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 from flask import abort, current_app, g, request, session, url_for
 from flask_mail import Message
@@ -11,13 +11,7 @@ from flask_security import RoleMixin as _role_mixin
 from flask_sqlalchemy import Pagination
 
 from ProjectsWebsite.modules import guard, login_manager, mail
-from ProjectsWebsite.util.helpers import (
-    InvalidType,
-    OperationError,
-    alertMessageType,
-    date_re,
-    reversed_date_re,
-)
+from ProjectsWebsite.util.helpers import OperationError, date_re, reversed_date_re
 from ProjectsWebsite.util.mail import automatedMail
 
 try:
@@ -57,7 +51,6 @@ __all__ = [
     "temp_save",
     "PoFileAutoTranslator",
     "unverfiedLogUtil",
-    "AlertUtil",
     "is_valid_article_page",
     "formatPhoneNumber",
     "DateUtil",
@@ -334,91 +327,6 @@ class unverfiedLogUtil:
                     else:
                         f.writelines(lines)
                         f.close()
-
-
-class AlertUtil(object):
-    """
-    Util for alert management
-    """
-
-    alert_dict = {"type": "", "message": ""}
-
-    def __init__(self, app=None):
-        if isinstance(app, type(None)):
-            pass
-        else:
-            self.init_app(app)
-
-    def init_app(self, app):
-        """
-        Initializes AlertUtil
-        """
-        if not hasattr(self, "config"):
-            setattr(self, "config", app.config)
-            if not (
-                self.config.get("ALERT_CODES_NUMBER_LIST")
-                or self.config.get("ALERT_CODES_DICT")
-                or self.config.get("ALERT_TYPES")
-            ):
-                raise ValueError(
-                    """Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                ALERT_TYPES was not found in the apps Config"""
-                )
-        else:
-            if not (
-                self.config.get("ALERT_CODES_NUMBER_LIST")
-                or self.config.get("ALERT_CODES_DICT")
-                or self.config.get("ALERT_TYPES")
-            ):
-                raise ValueError(
-                    """Either ALERT_CODES_NUMBER_LIST or ALERT_CODES_DICT or
-                                ALERT_TYPES was not found in the apps Config"""
-                )
-
-        app.extensions["AlertUtil"] = self
-
-    def getConfigValue(self, configValue: str):
-        try:
-            response = self.config.get(configValue)
-            return response
-        except:
-            raise ValueError(f"Value: {configValue} was not found in the apps Config")
-
-    def setAlert(self, alertType: str, msg: alertMessageType):
-        """
-        Set Alert for webpages that supports Alert messages
-        """
-        alert_types: List[str] = self.getConfigValue("ALERT_TYPES")
-        if alertType not in alert_types:
-            raise InvalidType(f"{alertType} is an Invalid Type")
-        self.alert_dict["type"] = alertType
-        self.alert_dict["message"] = msg
-        return True
-
-    def getAlert(self) -> Dict[str, str]:
-        """
-        Gets the Alert Type and message
-        Returns:
-            valueDict
-        """
-        alert_codes_list: List[str] = self.getConfigValue("ALERT_CODES_NUMBER_LIST")
-        alert_codes_dict: Dict[str, str] = self.getConfigValue("ALERT_CODES_DICT")
-        alertType = self.alert_dict["type"]
-        alertMsg = self.alert_dict["message"]
-        self.alert_dict.update(type="", message="")
-        if alertType == "error":
-            if isinstance(alertMsg, int):
-                raise TypeError("type int is not allowed")
-            for code in alert_codes_list:
-                if code != alertMsg:
-                    continue
-                else:
-                    alertMsg = alert_codes_dict[code]
-            valueDict = {"Type": alertType, "Msg": alertMsg}
-            return valueDict
-        else:
-            valueDict = {"Type": alertType, "Msg": alertMsg}
-            return valueDict
 
 
 def is_valid_article_page(func):

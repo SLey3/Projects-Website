@@ -2,7 +2,6 @@
 WebArgs Parser for Nested url parameters
 source: https://webargs.readthedocs.io/en/latest/advanced.html#custom-parsers
 """
-import re
 from functools import partialmethod
 from typing import TypeVar
 
@@ -65,22 +64,13 @@ class EditProfUrlParser(FlaskParser):
 
 def _structureddict(dict_):
     # modified to use ProjectsWebsite.utils._utils.temp_save dictionary
-    def _pair(r: temp_save, key: K, value: V):
+    def _pair(r: temp_save):
         # modified to use ProjectsWebsite.utils._utils.temp_save dictionary
-        print(r)
-        m = re.match(r"(\w+)\.(.*)", key)
-        if m:
-            print(m.group(0))
-            if r.get_without_pop(m.group(1)) is None:
-                r[m.group(1)] = temp_save()
-                print(r.get_without_pop(m.group(1)))
-            _pair(r.get_without_pop(m.group(1)), m.group(2), value)
-        else:
-            r[key] = value
-            print("Current dict value with key: ", r.get_without_pop(key))
+        ...
 
     r = temp_save()
-    for k, v in dict_.items():
-        print("Key: ", k, "Value: ", v)
-        _pair(r, k, v)
+    _pair(r, k, v)
     return r
+
+
+# current regex: (\?|\&)([^=]+)\=([^&]+)*

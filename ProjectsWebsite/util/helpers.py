@@ -3,21 +3,14 @@ Web helpers
 """
 import re
 
-# ------------------ Helper Util: Import ------------------
-from typing import Union
-
 # ------------------ Helper Util ------------------
 
 __all__ = [
-    "alertMessageType",
     "email_re",
     "date_re",
     "bool_re",
-    "InvalidType",
     "OperationError",
 ]
-
-alertMessageType = Union[str, int]
 
 email_re = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
@@ -40,15 +33,6 @@ reversed_date_re = re.compile(
 )
 
 bool_re = re.compile(r"True|False")
-
-
-class InvalidType(Exception):
-    """
-    Raised when theres an Invalid type
-    """
-
-    def __init__(self, msg):
-        super().__init__(msg)
 
 
 class OperationError(Exception):

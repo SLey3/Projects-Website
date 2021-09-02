@@ -6,7 +6,7 @@ from pathlib import Path
 from random import choice
 
 import pytest
-from flask import jsonify, redirect, url_for
+from flask import jsonify, url_for
 from flask.testing import FlaskClient
 from polib import detect_encoding, pofile
 
@@ -17,6 +17,7 @@ from ProjectsWebsite.util.tests.utils import (
     _pofile_expected_translations,
     _temp_save_expected_responces,
 )
+from ProjectsWebsite.util.utilmodule import AlertUtil
 
 test_directory = Path(_path.dirname(_path.abspath(__file__)))
 
