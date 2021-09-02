@@ -2,6 +2,7 @@
 WebArgs Parser for Nested url parameters
 source: https://webargs.readthedocs.io/en/latest/advanced.html#custom-parsers
 """
+import re
 from functools import partialmethod
 from typing import TypeVar
 
@@ -54,22 +55,34 @@ class EditProfUrlParser(FlaskParser):
     """
 
     def load_querystring(self, req, schema):
-        print(type(req))
-        print(req.args)
-        print(req.query_string)
-        return _structureddict(req.args)
+        return _structureddict(req.query_string)
 
     use_args = partialmethod(FlaskParser.use_args, location="query")
 
 
-def _structureddict(dict_):
-    # modified to use ProjectsWebsite.utils._utils.temp_save dictionary
-    def _pair(r: temp_save):
-        # modified to use ProjectsWebsite.utils._utils.temp_save dictionary
-        ...
+def _structureddict(params_):
+    nested_dict_created = False
+
+    def _pair(r: temp_save, params: str):
+        nonlocal nested_dict_created
+        nested_or_not = re.search(r"([^.]+)\.([^=]+)", params)
+        if nested_or_not is not None:
+            if r.get_without_pop(nested_or_not.group(1)) is None:
+                nested_dict_created = True
+                r[nested_or_not.group(1)] = temp_save()
+                param_value = params.replace(
+                    f"{nested_or_not.group(1)}.{nested_or_not.group}=", ""
+                )
+                i = param_value.index("&")
+                value = param_value[:i]
+                r[nested_or_not.group(1)][nested_or_not.group(2)] = value
+                params = params.replace(
+                    f"{nested_or_not.group(1)}.{nested_or_not.group}={value}&", ""
+                )
+                _pair(r, params)
 
     r = temp_save()
-    _pair(r, k, v)
+    _pair(r)
     return r
 
 
