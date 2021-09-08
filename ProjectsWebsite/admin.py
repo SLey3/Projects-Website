@@ -12,13 +12,13 @@ from flask import (
 )
 from flask_login import confirm_login
 from flask_mail import Message
-from marshmallow import Schema
+from marshmallow import fields
 from sqlalchemy.exc import OperationalError
-from webargs import fields
 from webargs.flaskparser import use_args
 
 from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
 from ProjectsWebsite.database.models.roles import Roles
+from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.modules import db, guard, mail
 from ProjectsWebsite.util import (
@@ -48,15 +48,6 @@ admin = Blueprint(
 temp_save = _temp_save()
 
 parser = EditProfUrlParser()
-
-_account_user_manegement_webargs = {
-    "user": fields.Str(required=True, validate=lambda val: type(val) == str),
-    "page": fields.Int(missing=1, validate=lambda val: type(val) == int),
-    "actions": fields.Nested(
-        {"action": fields.Str(missing=None), "item_id": fields.Str(missing=None)}
-    ),
-}
-_account_user_manegement_webargs = Schema.from_dict(_account_user_manegement_webargs)
 
 
 @admin.before_app_first_request
@@ -183,7 +174,7 @@ def adminAccountsUserManagementProcessSearch():
 
 
 @admin.route("management/accounts/edit_user/", methods=["GET", "POST"])
-@parser.use_args(_account_user_manegement_webargs)
+@parser.use_args(AccountUserManagementWebArgs)
 @token_auth_required
 def adminAccountsUserManagement(args):
     print(args)

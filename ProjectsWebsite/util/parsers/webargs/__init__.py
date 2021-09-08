@@ -2,19 +2,18 @@
 WebArgs Parser for Nested url parameters
 source: https://webargs.readthedocs.io/en/latest/advanced.html#custom-parsers
 """
+# ------------------ Imports ------------------
 import re
 from functools import partialmethod
-from typing import TypeVar
+from typing import Optional
 
-from webargs import core
 from webargs.flaskparser import FlaskParser
 
 from ProjectsWebsite.util import temp_save
 
 __all__ = ["EditProfUrlParser"]
 
-K = TypeVar("K")
-V = TypeVar("V")
+# ------------------ Parser ------------------
 
 
 class EditProfUrlParser(FlaskParser):
@@ -55,35 +54,98 @@ class EditProfUrlParser(FlaskParser):
     """
 
     def load_querystring(self, req, schema):
-        return _structureddict(req.query_string)
+        return _structureddict(str(req.query_string, encoding="utf-8"))
 
     use_args = partialmethod(FlaskParser.use_args, location="query")
 
 
+def _check_and_or_false(
+    string_base: str,
+    match_obj: Optional[re.Match] = None,
+    nested_value: Optional[str] = None,
+) -> bool:
+    index = (
+        string_base.index(match_obj.group(2))
+        if not nested_value
+        else string_base.index(nested_value)
+    )
+    print(index)
+    match = string_base[index:]
+    print(match)
+    if string_base.count("&") >= 1:
+        return True
+    return False
+
+
 def _structureddict(params_):
-    nested_dict_created = False
-
-    def _pair(r: temp_save, params: str):
-        nonlocal nested_dict_created
-        nested_or_not = re.search(r"([^.]+)\.([^=]+)", params)
+    # sys.setrecursionlimit(10 ** 6)
+    def _pair(dict_: temp_save, params: str):
+        print(params)
+        nested_or_not = re.match(r"([^.]+)\.([^=]+)", params)
+        print(type(nested_or_not))
         if nested_or_not is not None:
-            if r.get_without_pop(nested_or_not.group(1)) is None:
-                nested_dict_created = True
-                r[nested_or_not.group(1)] = temp_save()
-                param_value = params.replace(
-                    f"{nested_or_not.group(1)}.{nested_or_not.group}=", ""
+            print(nested_or_not.group(1))
+            if dict_.get_without_pop(nested_or_not.group(1)) is None:
+                dict_[nested_or_not.group(1)] = temp_save()
+                value = re.search(
+                    r"({})([^&]+|$)".format(
+                        f"{nested_or_not.group(1)}.{nested_or_not.group(2)}="
+                    ),
+                    params,
+                ).group(2)
+                print(value)
+                and_ = _check_and_or_false(params, nested_value=value)
+                dict_[nested_or_not.group(1)][nested_or_not.group(2)] = value
+                if and_:
+                    params = params.replace(
+                        f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}&",
+                        "",
+                    )
+                else:
+                    params = params.replace(
+                        f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}", ""
+                    )
+                print(params)
+                print(dict_)
+                _pair(dict_, params)
+            else:
+                value = re.search(
+                    r"({})([^&+|$)".format(
+                        f"{nested_or_not.group(1)}.{nested_or_not.group(2)}="
+                    ),
+                    params,
+                ).group(2)
+                print(value)
+                dict_[nested_or_not.group(1)][nested_or_not.group(2)] = value
+                replace_string = (
+                    f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}"
                 )
-                i = param_value.index("&")
-                value = param_value[:i]
-                r[nested_or_not.group(1)][nested_or_not.group(2)] = value
-                params = params.replace(
-                    f"{nested_or_not.group(1)}.{nested_or_not.group}={value}&", ""
-                )
-                _pair(r, params)
+                if "&" in replace_string:
+                    params = params.replace(replace_string, "")
+                else:
+                    params = params.replace(
+                        f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}", ""
+                    )
+                print(params)
+                print(dict_)
+                _pair(dict_, params)
+        elif params == "":
+            print("no more values for param")
+            return dict_
+        param = re.search(r"([^=]+)\=([^\&]+|$)", params)
+        and_ = _check_and_or_false(params, param)
+        print(and_)
+        dict_[param.group(1)] = param.group(2)
+        replace_string = f"{param.group(1)}={param.group(2)}"
+        if and_:
+            params = params.replace(f"{param.group(1)}={param.group(2)}&", "")
+        else:
+            params = params.replace(f"{param.group(1)}={param.group(2)}", "")
+        print(params)
+        print(dict_)
+        _pair(dict_, params)
 
-    r = temp_save()
-    _pair(r)
-    return r
-
-
-# current regex: (\?|\&)([^=]+)\=([^&]+)*
+    print(len(params_))
+    dict_ = temp_save()
+    _pair(dict_, params_)
+    return dict_

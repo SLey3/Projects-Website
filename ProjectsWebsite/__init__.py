@@ -178,9 +178,13 @@ def unprocessable_err_handler(e):
     headers = e.data.get("headers", None)
     messages = e.data.get("messages", ["Invalid request."])
     if headers:
-        return jsonify({"errors": messages}), e.code, headers
+        return (
+            jsonify({"errors": messages, "code": e.code, "headers": headers}),
+            e.code,
+            headers,
+        )
     else:
-        return jsonify({"errors": messages}), e.code
+        return jsonify({"errors": messages, "Code": e.code}), e.code
 
 
 # ------------------ favicon ------------------
