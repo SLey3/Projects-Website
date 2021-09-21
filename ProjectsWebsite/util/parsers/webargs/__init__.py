@@ -1,12 +1,23 @@
 """
-WebArgs Parser for Nested url parameters
-source: https://webargs.readthedocs.io/en/latest/advanced.html#custom-parsers
+WebArgs Parser for parsing Nested url parameters
 """
 # ------------------ Imports ------------------
 import re
-from functools import partialmethod
-from typing import Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
+import marshmallow as ma
 from webargs.flaskparser import FlaskParser
 
 from ProjectsWebsite.util import temp_save
@@ -14,15 +25,24 @@ from ProjectsWebsite.util import temp_save
 __all__ = ["EditProfUrlParser"]
 
 # ------------------ Parser ------------------
+Request = TypeVar("Request")
+ValidateArg = Union[None, Callable, Iterable[Callable]]
+ArgMap = Union[
+    ma.Schema,
+    Mapping[str, ma.fields.Field],
+    Callable[[Request], ma.Schema],
+]
+del ma
 
 
 class EditProfUrlParser(FlaskParser):
     """
     Parses nested query args
 
-    This parser handles nested query args. It expects nested levels
-    delimited by a period and then deserializes the query args into a
-    nested dict.
+    This parser handles both nested and normal query args.
+    It expects nested levels delimited by a period
+    and then deserialize the query args into a
+    temp_save dict.
 
     For example, the URL query params `?name.first=John&name.last=Boone`
     will yield the following dict:
@@ -45,7 +65,7 @@ class EditProfUrlParser(FlaskParser):
     the URL query params `?name=John%20Boone&actions.action=delete&actions.item_id=9`
     will yield the following dict:
         {
-            'name': 'John Boone',
+            'name': 'John%20Boone',
             actions: {
                 'action': 'delete',
                 'item_id': 9
@@ -53,10 +73,66 @@ class EditProfUrlParser(FlaskParser):
         }
     """
 
-    def load_querystring(self, req, schema):
-        return _structureddict(str(req.query_string, encoding="utf-8"))
+    def __init__(
+        self,
+        defaults: Optional[Dict[str, Type]] = None,
+        location: Optional[str] = None,
+        *,
+        unknown: Optional[str] = "_default",
+        error_handler: Optional[Callable[..., NoReturn]] = None,
+        schema_class: Optional[Type] = None,
+    ):
+        self.defaults = defaults
+        super().__init__(
+            location=location,
+            unknown=unknown,
+            error_handler=error_handler,
+            schema_class=schema_class,
+        )
 
-    use_args = partialmethod(FlaskParser.use_args, location="query")
+    def load_querystring(self, req, schema):
+        return _structureddict(str(req.query_string, encoding="utf-8"), self.defaults)
+
+    def use_args(
+        self,
+        argmap: ArgMap,
+        defaults: Optional[Dict[str, Type]] = None,
+        req: Optional[Request] = None,
+        *,
+        location: Optional[str] = None,
+        unknown: Optional[str] = ...,
+        as_kwargs: bool = False,
+        validate: ValidateArg = None,
+        error_status_code: Optional[int] = None,
+        error_headers: Optional[Mapping[str, str]] = None,
+    ) -> Callable[..., Callable]:
+        if defaults:
+            self.defaults = defaults
+        return super().use_args(
+            argmap=argmap,
+            req=req,
+            location=location,
+            unknown=unknown,
+            as_kwargs=as_kwargs,
+            validate=validate,
+            error_status_code=error_status_code,
+            error_headers=error_headers,
+        )
+
+    def _update_args_kwargs(
+        self,
+        args: Tuple,
+        kwargs: Dict[str, Any],
+        parsed_args: temp_save,
+        as_kwargs: bool,
+    ) -> Dict[Dict, Mapping]:
+        """Update args or kwargs with parsed_args depending on as_kwargs"""
+        for k in self.defaults.keys():
+            # even though _setdefaults for _structureddict sets the defaults value, some of those values may be removed by the main Parser
+            # so this serves as a double check to make sure all values are in the temp_save dict
+            if k not in parsed_args:
+                parsed_args[k] = self.defaults[k]
+        return super()._update_args_kwargs(args, kwargs, parsed_args, as_kwargs)
 
 
 def _check_and_or_false(
@@ -69,22 +145,26 @@ def _check_and_or_false(
         if not nested_value
         else string_base.index(nested_value)
     )
-    print(index)
     match = string_base[index:]
-    print(match)
-    if string_base.count("&") >= 1:
+    if match.count("&") >= 1:
         return True
     return False
 
 
-def _structureddict(params_):
-    # sys.setrecursionlimit(10 ** 6)
+def _setdefaults(dict_: temp_save, defaults: Union[Dict[str, Type], Type[None]]):
+    if not defaults:
+        return dict_
+    for k, v in defaults.items():
+        if dict_.get_without_pop(k):
+            continue
+        dict_[k] = v
+    return dict_
+
+
+def _structureddict(params_, defaults: Optional[Dict[str, Type]] = None):
     def _pair(dict_: temp_save, params: str):
-        print(params)
         nested_or_not = re.match(r"([^.]+)\.([^=]+)", params)
-        print(type(nested_or_not))
         if nested_or_not is not None:
-            print(nested_or_not.group(1))
             if dict_.get_without_pop(nested_or_not.group(1)) is None:
                 dict_[nested_or_not.group(1)] = temp_save()
                 value = re.search(
@@ -93,7 +173,6 @@ def _structureddict(params_):
                     ),
                     params,
                 ).group(2)
-                print(value)
                 and_ = _check_and_or_false(params, nested_value=value)
                 dict_[nested_or_not.group(1)][nested_or_not.group(2)] = value
                 if and_:
@@ -105,8 +184,6 @@ def _structureddict(params_):
                     params = params.replace(
                         f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}", ""
                     )
-                print(params)
-                print(dict_)
                 _pair(dict_, params)
             else:
                 value = re.search(
@@ -115,7 +192,9 @@ def _structureddict(params_):
                     ),
                     params,
                 ).group(2)
-                print(value)
+                is_int = re.fullmatch(r"[^a-zA-Z]+", value)
+                if is_int:
+                    value = int(value)
                 dict_[nested_or_not.group(1)][nested_or_not.group(2)] = value
                 replace_string = (
                     f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}"
@@ -126,26 +205,25 @@ def _structureddict(params_):
                     params = params.replace(
                         f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}", ""
                     )
-                print(params)
-                print(dict_)
                 _pair(dict_, params)
         elif params == "":
-            print("no more values for param")
             return dict_
         param = re.search(r"([^=]+)\=([^\&]+|$)", params)
+        value = param.group(2)
+        is_int = re.fullmatch(r"[^a-zA-Z]+", value)
+        if is_int:
+            value = int(value)
         and_ = _check_and_or_false(params, param)
-        print(and_)
-        dict_[param.group(1)] = param.group(2)
-        replace_string = f"{param.group(1)}={param.group(2)}"
+        dict_[param.group(1)] = value
+        replace_string = f"{param.group(1)}={value}"
         if and_:
-            params = params.replace(f"{param.group(1)}={param.group(2)}&", "")
+            params = params.replace(f"{param.group(1)}={value}&", "")
         else:
-            params = params.replace(f"{param.group(1)}={param.group(2)}", "")
-        print(params)
-        print(dict_)
+            params = params.replace(f"{param.group(1)}={value}", "")
         _pair(dict_, params)
 
-    print(len(params_))
     dict_ = temp_save()
     _pair(dict_, params_)
+    dict_ = _setdefaults(dict_, defaults)
+
     return dict_

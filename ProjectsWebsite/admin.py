@@ -47,7 +47,7 @@ admin = Blueprint(
 
 temp_save = _temp_save()
 
-parser = EditProfUrlParser()
+parser = EditProfUrlParser({"actions": _temp_save(), "page": 1})
 
 
 @admin.before_app_first_request
@@ -89,7 +89,6 @@ def adminAccountsManegement(args):
     Administrator Account Manegement page
     """
     search_form = AccountManegementForms.tableSearchForm()
-    print(args)
     page = args["page"]
     pages = 3
     users = User.query.paginate(page, pages, error_out=False)
@@ -174,18 +173,13 @@ def adminAccountsUserManagementProcessSearch():
 
 
 @admin.route("management/accounts/edit_user/", methods=["GET", "POST"])
-@parser.use_args(AccountUserManagementWebArgs)
+@parser.use_args(AccountUserManagementWebArgs(), location="querystring")
 @token_auth_required
 def adminAccountsUserManagement(args):
-    print(args)
     page = args["page"]
-    print(page)
     action = args["actions"]["action"]
-    print(action)
     item_id = args["actions"]["item_id"]
-    print(item_id)
-    user = args["user"]
-    print(user)
+    user = args["user"].replace("%20", " ")
     article_pages = page + countSQLItems("Article")
     temp_save.setMultipleValues(
         ("total_pages", "page", "user"), [article_pages, page, user]
