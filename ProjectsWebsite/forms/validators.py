@@ -15,7 +15,10 @@ from wtforms.validators import (
     Optional,
 )
 
-from ProjectsWebsite.util.helpers import bool_re
+try:
+    from ProjectsWebsite.util.helpers import bool_re
+except ModuleNotFoundError:
+    from ..util.helpers import bool_re
 
 # ------------------ Validators ------------------
 __all__ = [

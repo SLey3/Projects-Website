@@ -1,10 +1,16 @@
 # ------------------ Import ------------------
 from itertools import zip_longest
 
-import ProjectsWebsite.util.mail.filter
-from ProjectsWebsite.util.mail._mail import *
-from ProjectsWebsite.util.mail._mail import __all__ as __mainmailall__
-from ProjectsWebsite.util.mail.filter import __all__ as __filterall__
+try:
+    import ProjectsWebsite.util.mail.filter
+    from ProjectsWebsite.util.mail._mail import *
+    from ProjectsWebsite.util.mail._mail import __all__ as __mainmailall__
+    from ProjectsWebsite.util.mail.filter import __all__ as __filterall__
+except ModuleNotFoundError:
+    from ._mail import *
+    from ._mail import __all__ as __mainmailall__
+    from .filter import __all__ as __filterall__
+    from .filter import letterFilter
 
 __all__ = []
 

@@ -4,7 +4,10 @@ Custom Field for Website
 # ------------------ Imports ------------------
 from wtforms import SubmitField
 
-from ProjectsWebsite.forms.widget import ButtonWidget
+try:
+    from ProjectsWebsite.forms.widget import ButtonWidget
+except ModuleNotFoundError:
+    from .widget import ButtonWidget
 
 # ------------------ Field ------------------
 __all__ = ["ButtonField"]

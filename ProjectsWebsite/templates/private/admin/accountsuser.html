@@ -26,30 +26,81 @@
             <span name="sep" class="management-header-sep acc-info-title-sep-align"></span>
         </div>
         <div class="text-body">
-            <information id="prof-info" class="text-wrap">
-                <span id="order-1" name="info-txt-span" class="info-name">Name: {{ user.name }}</span>
-                <div id="edit-name-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div> <br> {% if name_error %} {{ name_error | safe }} {% else %}
-                <p id="name-err-p" class="name-err err-txt"></p> {% endif %} <br> <span id="order-2" name="info-txt-span" class="info-email">Email: {{ user.username }}</span>
-                <div id="edit-email-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if email_error %} {{ email_error | safe }} {% else %}
-                <p id="email-err-p" class="email-err err-txt"></p> {% endif %}<br> <span id="order-3" name="info-txt-span" class="info-password">Password: **** </span>
-                <div id="edit-pwd-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if pwd_error %} {{ pwd_error | safe }} {% else %}
-                <p id="pwd-err-p" class="pwd-err err-txt"></p> {% endif %} <br>
-                <span id="order-4" name="info-txt-span" class="info-active-status">Active Status: {{ user.active }}</span>
-                <div id="edit-active-status-icn" class="edit-icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></div><br> {% if active_error %} {{ active_error | safe }} {% else %}
-                <p id="active-status-err-p" class="active-status-err err-txt"></p>{% endif %}
-                <span id="order-5" name="info-txt-span" class="info-acc-create"> Account Created: {{ user.created_at }}</span><br><br><br>
-                <span id="order-6" name="info-txt-span" class="info-blacklist-status"> Blacklisted Status: {{ user.blacklisted }}</span> {% if user.is_blacklisted %}
-                <br>
-                <hr>
-                <span id="blacklist-order-1" class="blacklist-reason">
-                        Reason: {{ blacklist_info.reason | safe }}
-                    </span>
-                <br>
-                <span id="blacklist-order-2" class="blacklist-date">
-                        Date Blacklisted: {{ blacklist_info.date_blacklisted }}
-                    </span> {% endif %}
-                <br>
-            </information>
+            <!-- <i class="fa fa-pencil-square-o" aria-hidden="true"></i> -->
+            <div id="prof-info" class="text-wrap">
+                <table id="acc-info-tbl" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Information</th>
+                            <th scope="col">Value</th>
+                            <th scope="col">Edit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Name: </th>
+                            <td>{{ user.name }}</td>
+                            <td>
+                                <div id="name-edit-btn">
+                                    <i name="acc-info-syml" class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                </div>
+                            </td>
+                            <tr>
+                                <th scope="row">Username: </th>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    <div id="username-edit-btn">
+                                        <i name="acc-info-syml" class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Password: </th>
+                                <td>****</td>
+                                <td>
+                                    <div id="password-edit-btn">
+                                        <i id="acc-info-syml" class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Data Created: </th>
+                                <td>{{ user.created_at }}</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Blacklist Status: </th>
+                                <td>{{ user.blacklisted }}</td>
+                                <td></td>
+                            </tr>
+                            {% if user.is_blacklisted %}
+                            <tr>
+                                <td colspan="4">
+                                    <table id="nested-blacklist-info-tbl" class="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Information</th>
+                                                <th scope="col">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row">Reason: </th>
+                                                <td>{{ blacklist_info.reason | safe }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row">Date Blacklisted: </th>
+                                                <td>{{ blacklist_info.date_blacklisted }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     <div class="role-table">
@@ -224,21 +275,11 @@
     })();
 </script>
 <script type="text/javascript">
-    '{{ js_include("ext/admin/accounts/edit_profile/src/ts/dist/editprof.js") | safe }}'
-</script>
-<script type="text/javascript">
-    editProfInit("edit-name-icn", "info-name", "name", {
-        elements: ['<input autocomplete="off" class="name-input" id="edit-name-input" name="name" placeholder="Edit name..." required="" type="text" value="">', '<input class="name-sbmt-btn" id="name-sbmt-btn" name="name_sbmt" type="submit" value="Submit">'],
-        label: "Name: ",
-        section_item: "{{ user.name }}"
-    });
-</script>
-<script type="text/javascript">
     (function() {
         $(document).ready(function() {
             $("#role-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.delete_all() }}' + "</form>");
+                    $("#delete-all-btn-container").append("<form id='delete-all-role-form' method='POST' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}?user={{ user.name }}'>" + '{{ role_form.delete_all() }}' + "</form>");
                     $("#role-add-btn-icn").css("opacity", 0);
                     $("#role-add-btn-icn").css("cursor", "default");
                     $("#role-add-btn").css("cursor", "default");
@@ -251,7 +292,7 @@
             });
             $("#role-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
+                    $("#delete-all-role-btn-container").append("<form method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}?user={{ user.name }}'>" + '{{ role_form.delete_all(onclick="confirm_deletion()") }}' + "</form>");
                     $("#role-add-btn-icn").css("opacity", 0);
                     $("#role-add-btn").css("cursor", "default");
                     $("#role-add-btn-icn").css("cursor", "default");
@@ -285,7 +326,7 @@
                 $("#role-select-all-txt").empty();
                 $("#role-select-all-txt").append("Add Role");
                 $("#add-role-btn-container").empty();
-                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
+                $("#add-role-btn-container").append("<form id='add-role-form' method='POST' action='{{ url_for('admin.adminAccountsUserManagement') }}?user={{ user.name }}'>" + '{{ role_form.add_role }}' + '{{ role_form.add_role_sbmt }}' + "</form><div id='add-back-btn' onclick='addRoleCollapse()'><i id='add-back-btn-icn' class='fa fa-minus-square-o' aria-hidden='true' aria_label='back'></i></div>");
             });
         });
     }
@@ -295,14 +336,14 @@
         $(document).ready(function() {
             $("#article-head-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
                 } else {
                     $("#article-delete-all-container").empty();
                 }
             });
             $("#article-foot-selectAll").click(function() {
                 if ($(this).prop("checked")) {
-                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}/?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
+                    $("#article-delete-all-container").append("<form id='delete-all-article-form' method='post' onsubmit='return confirm_deletion()' action='{{ url_for('admin.adminAccountsUserManagement') }}?user={{ user.name }}'>" + '{{  delete_article_forms.delete_all() }}' + "</form>");
                 } else {
                     $("#article-delete-all-container").empty();
                 }
@@ -330,7 +371,7 @@
             closeAnimation: 'rotateXR',
             animationSpeed: 1500,
             content: '' +
-                '<form id="blacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}/?user={{ user.name }}">' +
+                '<form id="blacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}?user={{ user.name }}">' +
                 '<div class="form-group">' +
                 '<label> Reason for Blacklist:</label>' +
                 '{{ ext_options.reason }}' +
@@ -345,7 +386,7 @@
                         $.alert("Blacklist confirmed");
                         $.ajax({
                             method: 'POST',
-                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist') }}/?user={{ user.name }}",
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', client=user.name) }}",
                             data: {
                                 'type': 'blacklist',
                                 'user': "{{ user.name }}",
@@ -377,7 +418,7 @@
             closeAnimation: 'rotateXR',
             animationSpeed: 1500,
             content: '' +
-                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}/?user={{ user.name }}">' +
+                '<form id="unblacklist-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}?user={{ user.name }}">' +
                 '<div class="form-group">' +
                 '<label> Reason for unBlacklist:</label>' +
                 '{{ ext_options.reason }}' +
@@ -392,7 +433,7 @@
                         $.alert("unBlacklist confirmed");
                         $.ajax({
                             method: 'POST',
-                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist') }}/?user={{ user.name }}",
+                            url: "{{ url_for('admin.adminAccountsUserManagementProcessBlacklist', client=user.name) }}",
                             data: {
                                 'type': 'unBlacklist',
                                 'user': "{{ user.name }}",

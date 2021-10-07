@@ -18,10 +18,6 @@ config = context.config
 fileConfig(config.config_file_name)
 logger = logging.getLogger("alembic.env")
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 config.set_main_option(
     "sqlalchemy.url",
     str(current_app.extensions["migrate"].db.get_engine().url).replace("%", "%%"),

@@ -20,7 +20,10 @@ from typing import (
 import marshmallow as ma
 from webargs.flaskparser import FlaskParser
 
-from ProjectsWebsite.util import temp_save
+try:
+    from ProjectsWebsite.util import temp_save
+except ModuleNotFoundError:
+    from .. import temp_save
 
 __all__ = ["EditProfUrlParser"]
 
@@ -199,7 +202,8 @@ def _structureddict(params_, defaults: Optional[Dict[str, Type]] = None):
                 replace_string = (
                     f"{nested_or_not.group(1)}.{nested_or_not.group(2)}={value}"
                 )
-                if "&" in replace_string:
+                and_ = _check_and_or_false(params, nested_value=value)
+                if and_:
                     params = params.replace(replace_string, "")
                 else:
                     params = params.replace(
@@ -225,5 +229,4 @@ def _structureddict(params_, defaults: Optional[Dict[str, Type]] = None):
     dict_ = temp_save()
     _pair(dict_, params_)
     dict_ = _setdefaults(dict_, defaults)
-
     return dict_

@@ -10,9 +10,14 @@ from flask_principal import Permission, RoleNeed
 from flask_security import RoleMixin as _role_mixin
 from flask_sqlalchemy import Pagination
 
-from ProjectsWebsite.modules import guard, login_manager, mail
-from ProjectsWebsite.util.helpers import OperationError, date_re, reversed_date_re
-from ProjectsWebsite.util.mail import automatedMail
+try:
+    from ProjectsWebsite.modules import guard, login_manager, mail
+    from ProjectsWebsite.util.helpers import OperationError, date_re, reversed_date_re
+    from ProjectsWebsite.util.mail import automatedMail
+except ModuleNotFoundError:
+    from ..modules import guard, login_manager, mail
+    from .helpers import OperationError, date_re, reversed_date_re
+    from .mail import automatedMail
 
 try:
     from werkzeug import LocalProxy
@@ -23,10 +28,11 @@ import os.path as _path
 import re
 import signal
 import threading
+import warnings
 from base64 import b64decode, b64encode
 from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from sys import exit
+from sys import exc_info, exit
 from time import sleep
 
 import pendulum
@@ -185,15 +191,15 @@ class InternalError_or_success(AbstractContextManager):
     Object checks if an Exception occurred, if it did then a 500 Internal Server error would occur
     """
 
-    def __init__(self, *exceptions):
+    def __init__(self, exceptions: Tuple[str, str], log=False):
         self._exceptions = exceptions
-
-    def __enter__(self):
-        ...
+        self.log = log
 
     def __exit__(self, exctype, excinst, exctb):
         if exctype is not None:
             if issubclass(exctype, self._exceptions):
+                if self.log:
+                    warnings.warn(f"{exctype}: {exc_info()[1]}", UserWarning)
                 return abort(500)
         return
 
@@ -336,7 +342,10 @@ def is_valid_article_page(func):
     Returns:
         404 http code
     """
-    Article = import_string("ProjectsWebsite.database.models:Article")
+    try:
+        Article = import_string("ProjectsWebsite.database.models:Article")
+    except ModuleNotFoundError:
+        Article = import_string("..database.models:Article")
 
     @wraps(func)
     def validator(id):
@@ -482,7 +491,10 @@ def QueryLikeSearch(
         Results
     """
     model_name = model_name.capitalize()
-    Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    try:
+        Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    except ModuleNotFoundError:
+        Model = import_string(f"..database.models:{model_name}")
     args = _pagination_args(page, total_pages, False, 3)
     if not kw:
         if name:
@@ -523,7 +535,10 @@ def countSQLItems(model_name) -> int:
     """
     count the number of items in an SQL Database
     """
-    Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    try:
+        Model = import_string(f"ProjectsWebsite.database.models:{model_name}")
+    except ModuleNotFoundError:
+        Model = import_string(f"..database.models:{model_name}")
     items = Model.query.all()
     item_count = len(items)
     return item_count
@@ -565,8 +580,12 @@ current_user = LocalProxy(lambda: _get_user())
 
 
 def _get_user():
-    from ProjectsWebsite.database.models import AnonymousUser, User
-
+    try:
+        AnonymousUser = import_string("ProjectsWebsite.database.models:AnonymousUser")
+        User = import_string("ProjectsWebsite.database.models:User")
+    except ModuleNotFoundError:
+        AnonymousUser = import_string("..database.models:AnonymousUser")
+        User = import_string("..database.models:User")
     if "_user_id" not in session:
         if hasattr(g, "_cached_user"):
             del g._cached_user
@@ -652,7 +671,10 @@ def login_user(token, user):
     """
     Logs in user
     """
-    User = import_string("ProjectsWebsite.database.models:User")
+    try:
+        User = import_string("ProjectsWebsite.database.models:User")
+    except ModuleNotFoundError:
+        User = import_string("..database.models:User")
     session["_id"] = login_manager._session_identifier_generator()
     session["_user_id"] = user.identity
     session["_e-recipient"] = b64encode(bytes(user.username, encoding="utf-8"))
@@ -666,7 +688,10 @@ def logout_user():
     """
     Logs out user if user is logged in
     """
-    User = import_string("ProjectsWebsite.database.models:User")
+    try:
+        User = import_string("ProjectsWebsite.database.models:User")
+    except ModuleNotFoundError:
+        User = import_string("..database.models:User")
     if current_user.is_anonymous:
         return True
     if "_user_id" in session:

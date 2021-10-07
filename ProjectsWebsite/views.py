@@ -18,33 +18,62 @@ from itsdangerous import SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.orm.session import Session as SQLSession
 from werkzeug.utils import secure_filename
 
-from ProjectsWebsite.database.models import Article, User, user_datastore
-from ProjectsWebsite.database.models.roles import Roles
-from ProjectsWebsite.forms import (
-    articleForm,
-    contactForm,
-    forgotForm,
-    forgotRequestForm,
-    loginForm,
-    registerForm,
-)
-from ProjectsWebsite.modules import db, guard, img_set, mail
-from ProjectsWebsite.util import (
-    DateUtil,
-    InternalError_or_success,
-    current_user,
-    formatPhoneNumber,
-    is_valid_article_page,
-    login_user,
-    logout_user,
-    roles_accepted,
-    roles_required,
-)
-from ProjectsWebsite.util import temp_save as _temp_save
-from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
-from ProjectsWebsite.util.helpers import date_re
-from ProjectsWebsite.util.mail import automatedMail, formatContact
-from ProjectsWebsite.util.utilmodule import alert
+try:
+    from ProjectsWebsite.database.models import Article, User, user_datastore
+    from ProjectsWebsite.database.models.roles import Roles
+    from ProjectsWebsite.forms import (
+        articleForm,
+        contactForm,
+        forgotForm,
+        forgotRequestForm,
+        loginForm,
+        registerForm,
+    )
+    from ProjectsWebsite.modules import db, guard, img_set, mail
+    from ProjectsWebsite.util import (
+        DateUtil,
+        InternalError_or_success,
+        current_user,
+        formatPhoneNumber,
+        is_valid_article_page,
+        login_user,
+        logout_user,
+        roles_accepted,
+        roles_required,
+    )
+    from ProjectsWebsite.util import temp_save as _temp_save
+    from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+    from ProjectsWebsite.util.helpers import date_re
+    from ProjectsWebsite.util.mail import automatedMail, formatContact
+    from ProjectsWebsite.util.utilmodule import alert
+except ModuleNotFoundError:
+    from .database.models import Article, User, user_datastore
+    from .database.models.roles import Roles
+    from .forms import (
+        articleForm,
+        contactForm,
+        forgotForm,
+        forgotRequestForm,
+        loginForm,
+        registerForm,
+    )
+    from .modules import db, guard, img_set, mail
+    from .util import (
+        DateUtil,
+        InternalError_or_success,
+        current_user,
+        formatPhoneNumber,
+        is_valid_article_page,
+        login_user,
+        logout_user,
+        roles_accepted,
+        roles_required,
+    )
+    from .util import temp_save as _temp_save
+    from .util import token_auth_required, unverfiedLogUtil
+    from .util.helpers import date_re
+    from .util.mail import automatedMail, formatContact
+    from .util.utilmodule import alert
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint(

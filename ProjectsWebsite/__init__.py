@@ -27,21 +27,37 @@ from flask_session import Session
 from flask_uploads import configure_uploads
 from rich import print as rprint
 
-from ProjectsWebsite.database.models.roles import Roles
-from ProjectsWebsite.forms import loginForm
-from ProjectsWebsite.modules import (
-    assets,
-    db,
-    guard,
-    img_set,
-    login_manager,
-    mail,
-    migrate,
-    security,
-)
-from ProjectsWebsite.util import appExitHandler, current_user
-from ProjectsWebsite.util.parsers.jinja import JinjaParser
-from ProjectsWebsite.util.utilmodule import alert
+try:
+    from ProjectsWebsite.database.models.roles import Roles
+    from ProjectsWebsite.forms import loginForm
+    from ProjectsWebsite.modules import (
+        assets,
+        db,
+        guard,
+        img_set,
+        login_manager,
+        mail,
+        migrate,
+        security,
+    )
+    from ProjectsWebsite.util import appExitHandler, current_user
+    from ProjectsWebsite.util.utilmodule import alert
+except ModuleNotFoundError:
+    from .database.models.roles import Roles
+    from .forms import loginForm
+    from .modules import (
+        assets,
+        db,
+        guard,
+        img_set,
+        login_manager,
+        mail,
+        migrate,
+        security,
+    )
+    from .util import appExitHandler, current_user
+    from .util.parsers.jinja import JinjaParser
+    from .util.utilmodule import alert
 
 path = Path(os.path.dirname(os.path.abspath(__file__)))
 
@@ -102,7 +118,10 @@ assets.init_app(app)
 
 alert.init_app(app)
 
-from ProjectsWebsite.database.models import User, user_datastore
+try:
+    from ProjectsWebsite.database.models import User, user_datastore
+except ModuleNotFoundError:
+    from .database.models import User, user_datastore
 
 security.init_app(app, user_datastore, login_form=loginForm)
 
@@ -113,25 +132,24 @@ Session(app)
 if not PRODUCTION:
     toolbar = DebugToolbarExtension(app)
 
-from ProjectsWebsite.admin import admin
-from ProjectsWebsite.dashboard import dash
+try:
+    from ProjectsWebsite.admin import admin
+    from ProjectsWebsite.dashboard import dash
+except ModuleNotFoundError:
+    from .admin import admin
+    from .dashboard import dash
 
 # ------------------ Blueprint registration ------------------
-from ProjectsWebsite.views import main_app
+try:
+    from ProjectsWebsite.views import main_app
+except ModuleNotFoundError:
+    from .views import main_app
 
 app.register_blueprint(dash)
 app.register_blueprint(admin)
 app.register_blueprint(main_app)
 
 # ------------------ template globals ------------------
-@app.template_global()
-def js_include(filename):
-    fpath = Path(app.static_folder, "js", filename)
-    parser = JinjaParser(fpath)
-    lines = parser.parse()
-    return lines
-
-
 app.add_template_global(current_user, "current_user")
 app.add_template_global(request, "request")
 app.add_template_global(redirect, "redirect")

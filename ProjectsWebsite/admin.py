@@ -14,27 +14,47 @@ from flask_login import confirm_login
 from flask_mail import Message
 from marshmallow import fields
 from sqlalchemy.exc import OperationalError
-from webargs.flaskparser import use_args
 
-from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
-from ProjectsWebsite.database.models.roles import Roles
-from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
-from ProjectsWebsite.forms import AccountManegementForms
-from ProjectsWebsite.modules import db, guard, mail
-from ProjectsWebsite.util import (
-    InternalError_or_success,
-    QueryLikeSearch,
-    countSQLItems,
-    generate_err_request_url,
-    logout_user,
-    makeResultsObject,
-    roles_required,
-)
-from ProjectsWebsite.util import scrapeError as _scrapeError
-from ProjectsWebsite.util import temp_save as _temp_save
-from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
-from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
-from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
+try:
+    from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
+    from ProjectsWebsite.database.models.roles import Roles
+    from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
+    from ProjectsWebsite.forms import AccountManegementForms
+    from ProjectsWebsite.modules import db, guard, mail
+    from ProjectsWebsite.util import (
+        InternalError_or_success,
+        QueryLikeSearch,
+        countSQLItems,
+        generate_err_request_url,
+        logout_user,
+        makeResultsObject,
+        roles_required,
+    )
+    from ProjectsWebsite.util import scrapeError as _scrapeError
+    from ProjectsWebsite.util import temp_save as _temp_save
+    from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+    from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
+    from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
+except ModuleNotFoundError:
+    from .database.models import Article, Blacklist, User, user_datastore
+    from .database.models.roles import Roles
+    from .database.models.schemas import AccountUserManagementWebArgs
+    from .forms import AccountManegementForms
+    from .modules import db, guard, mail
+    from .util import (
+        InternalError_or_success,
+        QueryLikeSearch,
+        countSQLItems,
+        generate_err_request_url,
+        logout_user,
+        makeResultsObject,
+        roles_required,
+    )
+    from .util import scrapeError as _scrapeError
+    from .util import temp_save as _temp_save
+    from .util import token_auth_required, unverfiedLogUtil
+    from .util.mail import blacklistMail, defaultMail, unBlacklistMail
+    from .util.parsers.webargs import EditProfUrlParser
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint(
@@ -48,13 +68,6 @@ admin = Blueprint(
 temp_save = _temp_save()
 
 parser = EditProfUrlParser({"actions": _temp_save(), "page": 1})
-
-
-@admin.before_app_first_request
-def before_first_request():
-    info_forms = AccountManegementForms.adminUserInfoForm()
-    current_app.add_template_global(info_forms, "info_forms")
-
 
 # ------------------ Blueprint Routes ------------------
 @admin.route("/")
@@ -81,7 +94,7 @@ def adminHomePage():
 
 
 @admin.route("/manegement/accounts/", methods=["GET", "POST"])
-@use_args({"page": fields.Int(missing=1)}, location="query")
+@parser.use_args({"page": fields.Int()}, location="query")
 @roles_required(Roles.ADMIN, Roles.VERIFIED)
 @token_auth_required
 def adminAccountsManegement(args):
@@ -102,10 +115,10 @@ def adminAccountsManegement(args):
 
 
 @admin.route(
-    "management/accounts/edit_user/<string:user>/process_blacklist/", methods=["POST"]
+    "management/accounts/edit_user/process_blacklist/<string:client>", methods=["POST"]
 )
-def adminAccountsUserManagementProcessBlacklist(user):
-    user_name = request.form["user"] or user
+def adminAccountsUserManagementProcessBlacklist(client):
+    user_name = request.form["user"] or client
     if "%20" in user_name:
         user_name = user_name.replace("%20", " ")
     if user_name:
@@ -133,7 +146,7 @@ def adminAccountsUserManagementProcessBlacklist(user):
             user_info.blacklisted = True
             user_datastore.put(blacklist_query)
             user_datastore.commit()
-            logout_user()
+            # logout_user()
         elif request.form["type"] == "unBlacklist":
             reason = request.form.get("reasons", None)
             if reason:
@@ -176,19 +189,21 @@ def adminAccountsUserManagementProcessSearch():
 @parser.use_args(AccountUserManagementWebArgs(), location="querystring")
 @token_auth_required
 def adminAccountsUserManagement(args):
+    print(args)
     page = args["page"]
     action = args["actions"]["action"]
     item_id = args["actions"]["item_id"]
-    user = args["user"].replace("%20", " ")
+    user = args["user"].replace("%20", " ").replace("+", " ")
     article_pages = page + countSQLItems("Article")
     temp_save.setMultipleValues(
         ("total_pages", "page", "user"), [article_pages, page, user]
     )
     user_info = User.lookup_by_name(user)
-    if user_info.is_blacklisted:
-        blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()
-    else:
-        blacklist_info = None
+    with InternalError_or_success((AttributeError,), True):
+        if user_info.is_blacklisted:
+            blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()
+        else:
+            blacklist_info = None
     URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
     scrapeError = partial(_scrapeError, URL, "p", auth=True)
     (

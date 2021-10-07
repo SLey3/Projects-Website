@@ -10,14 +10,21 @@ from flask import jsonify, url_for
 from flask.testing import FlaskClient
 from polib import detect_encoding, pofile
 
-from ProjectsWebsite import app
-from ProjectsWebsite.util._util import *
-from ProjectsWebsite.util._util import temp_save as _temp_save
-from ProjectsWebsite.util.tests.utils import (
-    _pofile_expected_translations,
-    _temp_save_expected_responces,
-)
-from ProjectsWebsite.util.utilmodule import AlertUtil
+try:
+    from ProjectsWebsite import app
+    from ProjectsWebsite.util._util import *
+    from ProjectsWebsite.util._util import temp_save as _temp_save
+    from ProjectsWebsite.util.tests.utils import (
+        _pofile_expected_translations,
+        _temp_save_expected_responces,
+    )
+    from ProjectsWebsite.util.utilmodule import AlertUtil
+except ModuleNotFoundError:
+    from ... import app
+    from .._util import *
+    from .._util import temp_save as _temp_save
+    from ..utilmodule import AlertUtil
+    from .utils import _pofile_expected_translations, _temp_save_expected_responces
 
 test_directory = Path(_path.dirname(_path.abspath(__file__)))
 

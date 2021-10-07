@@ -1,10 +1,18 @@
 # ------------------ Imports ------------------
+
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from flask_security import SQLAlchemyUserDatastore
 
-from ProjectsWebsite.database.models.roles import Roles
-from ProjectsWebsite.modules import db
-from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin
+from ProjectsWebsite import modules
+
+try:
+    from ProjectsWebsite.database.models.roles import Roles
+    from ProjectsWebsite.modules import db
+    from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin
+except ModuleNotFoundError:
+    from ...modules import db
+    from ...util import AnonymousUserMixin, DateUtil, RoleMixin
+    from .roles import Roles
 
 # ------------------ SQL classes  ------------------
 dt = DateUtil(format_token="L LTS zzZ z")
@@ -132,8 +140,6 @@ class AnonymousUser(AnonymousUserMixin):
     """
     AnonymousUser class for not logged in users
     """
-
-    pass
 
 
 class Article(db.Model):

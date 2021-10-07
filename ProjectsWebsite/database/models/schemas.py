@@ -1,14 +1,14 @@
 # ------------------ Imports ------------------
-from marshmallow import Schema, fields
+import marshmallow as ma
 
 # ------------------ Schemas ------------------
 __all__ = ["AccountUserManagementWebArgs"]
 
 
-class AccountUserManagementWebArgs(Schema):
+class AccountUserManagementWebArgs(ma.Schema):
     """
     account user management schema
     """
 
-    user = fields.String(required=True)
-    page = fields.Integer(default=1)
+    user = ma.fields.String(required=True)
+    page = ma.fields.Integer(default=1)

@@ -3,9 +3,14 @@ from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import PasswordField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.fields.html5 import SearchField, TelField
 
-from ProjectsWebsite.forms.field import ButtonField
-from ProjectsWebsite.forms.validators import *
-from ProjectsWebsite.modules import img_set
+try:
+    from ProjectsWebsite.forms.field import ButtonField
+    from ProjectsWebsite.forms.validators import *
+    from ProjectsWebsite.modules import img_set
+except ModuleNotFoundError:
+    from ..modules import img_set
+    from .field import ButtonField
+    from .validators import *
 
 # ------------------ Forms------------------
 __all__ = [
