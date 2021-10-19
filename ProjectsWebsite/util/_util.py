@@ -798,14 +798,14 @@ def validate_multiple_forms(config: MultipleFormsConfig) -> bool:
     result_list = []
     for form_name in config.iter_obj_name():
         _obj = getattr(config, form_name)
-        form_obj = getattr(_obj, "obj")
-        validate_all = getattr(_obj, "all")
+        form_obj = _obj.obj
+        validate_all = _obj.all
         if validate_all:
             res = form_obj.validate(form_obj)
             result_list.append(res)
             continue
-        field = getattr(_obj, "fields")
-        ignore_list = getattr(_obj, "ignore")
+        field = _obj.fields
+        ignore_list = _obj.ignore
         if isinstance(field, list):
             for f in field:
                 field = getattr(form_obj, f, None)
