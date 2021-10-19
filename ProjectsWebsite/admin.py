@@ -1,6 +1,4 @@
 # ------------------ Imports ------------------
-from functools import partial
-
 from flask import (
     Blueprint,
     current_app,
@@ -23,16 +21,19 @@ try:
     from ProjectsWebsite.modules import db, guard, mail
     from ProjectsWebsite.util import (
         InternalError_or_success,
+        MultipleFormsConfig,
         QueryLikeSearch,
         countSQLItems,
-        generate_err_request_url,
         logout_user,
         makeResultsObject,
         roles_required,
     )
-    from ProjectsWebsite.util import scrapeError as _scrapeError
     from ProjectsWebsite.util import temp_save as _temp_save
-    from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+    from ProjectsWebsite.util import (
+        token_auth_required,
+        unverfiedLogUtil,
+        validate_multiple_forms,
+    )
     from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
     from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
 except ModuleNotFoundError:
@@ -45,14 +46,12 @@ except ModuleNotFoundError:
         InternalError_or_success,
         QueryLikeSearch,
         countSQLItems,
-        generate_err_request_url,
         logout_user,
         makeResultsObject,
         roles_required,
     )
-    from .util import scrapeError as _scrapeError
     from .util import temp_save as _temp_save
-    from .util import token_auth_required, unverfiedLogUtil
+    from .util import token_auth_required, unverfiedLogUtil, validate_multiple_forms
     from .util.mail import blacklistMail, defaultMail, unBlacklistMail
     from .util.parsers.webargs import EditProfUrlParser
 
@@ -189,7 +188,6 @@ def adminAccountsUserManagementProcessSearch():
 @parser.use_args(AccountUserManagementWebArgs(), location="querystring")
 @token_auth_required
 def adminAccountsUserManagement(args):
-    print(args)
     page = args["page"]
     action = args["actions"]["action"]
     item_id = args["actions"]["item_id"]
@@ -204,8 +202,6 @@ def adminAccountsUserManagement(args):
             blacklist_info = Blacklist.query.filter_by(name=user_info.name).first()
         else:
             blacklist_info = None
-    URL = generate_err_request_url(in_admin_acc_edit_page=True, account_name=user)
-    scrapeError = partial(_scrapeError, URL, "p", auth=True)
     (
         info_forms,
         search_form,
@@ -226,23 +222,47 @@ def adminAccountsUserManagement(args):
             "Article", None, page, article_pages, user_info.name
         )
     action = request.args.get("action")
-    if request.method == "POST":
-        if info_forms.name.data and info_forms.name.validate(info_forms):
+    _validate_mutiple_forms_config = MultipleFormsConfig(
+        [
+            info_forms,
+            role_form,
+            search_form,
+            role_form,
+            delete_role_forms,
+            delete_article_forms,
+        ],
+        [
+            ["name", "email", "password", "active"],
+            ["command", "command_sbmt"],
+            "add_role",
+            ["member_field", "verified_field", "unverified_field", "editor_field"],
+            ["delete_article"],
+        ],
+        [
+            ["name", "email", "password", "active"],
+            [],
+            ["add_role"],
+            ["member_field", "verified_field", "unverified_field", "editor_field"],
+            ["delete_article"],
+        ],
+        [False, True, False, False, False],
+    )
+    if request.method == "POST" and validate_multiple_forms(
+        _validate_mutiple_forms_config
+    ):
+        print("IN POST METHOD")
+        print(info_forms.email.data)
+        print(info_forms.email.errors)
+        print(info_forms.email_sbmt.data)
+        if info_forms.name.data:
             user_info.name = info_forms.name.data
             user = info_forms.name.data
-        elif not info_forms.name.validate(info_forms) and info_forms.name.data:
-            name_error = scrapeError(("id", "name-err-p"), info_forms.name.errors)
-        elif info_forms.email.data and info_forms.email.validate(info_forms):
-            user_info.email = info_forms.email.data
-        elif not info_forms.email.validate(info_forms) and info_forms.email.data:
-            email_error = scrapeError(("id", "email-err-p"), info_forms.email.data)
-        elif info_forms.password.data and info_forms.password.validate(info_forms):
+        elif info_forms.email_sbmt.data:
+            user_info.username = info_forms.email.data
+            user_datastore.commit()
+        elif info_forms.password.data:
             user_info.hashed_password = guard.hash_password(info_forms.password.data)
-        elif not info_forms.password.validate(info_forms) and info_forms.password.data:
-            password_error = scrapeError(
-                ("id", "pwd-err-p"), info_forms.password.errors
-            )
-        elif info_forms.active.data and info_forms.active.validate(info_forms):
+        elif info_forms.active.data:
             if info_forms.active.data == "False":
                 data = False
                 logout_user()
@@ -250,23 +270,15 @@ def adminAccountsUserManagement(args):
                 data = True
             user_info.active = data
             db.session.commit()
-        elif not info_forms.active.validate(info_forms) and info_forms.active.data:
-            active_error = scrapeError(
-                ("id", "active-status-err-p"), info_forms.active.errors
-            )
         elif role_form.delete_all.data:
             for role in user_info.iter_roles():
                 if role not in ("admin", "verified", "unverified"):
                     user_datastore.remove_role_from_user(user_info, role)
                     user_datastore.commit()
-        elif role_form.add_role.data and role_form.add_role.validate(role_form):
+        elif role_form.add_role.data:
             role = getattr(Roles, role_form.add_role.data.upper())
             user_datastore.add_role_to_user(user_info, role)
             user_datastore.commit()
-        elif not role_form.add_role.validate(role_form) and role_form.add_role.data:
-            add_role_error = scrapeError(
-                ("id", "add-role-err-p"), role_form.add_role.errors
-            )
         elif delete_role_forms.member_field.data:
             user_datastore.remove_role_from_user(user_info, "member")
             user_datastore.commit()
@@ -283,7 +295,6 @@ def adminAccountsUserManagement(args):
             user_datastore.commit()
         elif delete_article_forms.delete_article.data:
             if action == "delete":
-                item_id = request.args.get("item_id")
                 Article.delete(item_id)
                 user_datastore.commit()
         elif delete_article_forms.delete_all.data:

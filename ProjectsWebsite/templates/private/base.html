@@ -19,8 +19,7 @@
 </style>
 
 <body>
-    {% from "public/render/_render_alert.html" import render_alert %} {% from "private/admin/render/_render_form.html" import render_field %} {% include "private/admin/navbar/navbar.html" %}
-    <main>{% block content %}{% endblock %}</main> {% block js %}{% endblock %}
+    {% from "public/render/_render_alert.html" import render_alert %} {% from "private/admin/render/_render_form.html" import render_field %} {% include "private/admin/navbar/navbar.html" %} {% block content %}{% endblock %} {% block js %}{% endblock %}
 </body>
 
 </html>

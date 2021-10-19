@@ -48,6 +48,10 @@ class loginForm(FlaskForm):
         ],
     )
 
+    @property
+    def __name__(self):
+        return "loginForm"
+
 
 class registerForm(FlaskForm):
     """
@@ -96,6 +100,10 @@ class registerForm(FlaskForm):
     )
     recaptcha = RecaptchaField()
 
+    @property
+    def __name__(self):
+        return "registerForm"
+
 
 class articleForm(FlaskForm):
     """
@@ -112,6 +120,10 @@ class articleForm(FlaskForm):
     front_image = FileField(
         "front_img", id="front-image", validators=[FileAllowed(img_set, "Images only")]
     )
+
+    @property
+    def __name__(self):
+        return "articleForm"
 
 
 class contactForm(FlaskForm):
@@ -173,6 +185,10 @@ class contactForm(FlaskForm):
         render_kw={"cols": 30, "rows": 10, "class": "form-control"},
     )
 
+    @property
+    def __name__(self):
+        return "contactForm"
+
 
 class forgotForm(FlaskForm):
     """
@@ -200,6 +216,10 @@ class forgotForm(FlaskForm):
         render_kw={"placeholder": "Confirm Password"},
     )
 
+    @property
+    def __name__(self):
+        return "forgotForm"
+
 
 class forgotRequestForm(FlaskForm):
     """
@@ -220,6 +240,10 @@ class forgotRequestForm(FlaskForm):
     back_button = ButtonField(
         "Back to Login", id="btn-redirect", render_kw={"href": "/"}
     )
+
+    @property
+    def __name__(self):
+        return "forgotRequestForm"
 
 
 class AccountManegementForms:
@@ -247,6 +271,10 @@ class AccountManegementForms:
             render_kw={"class": "article-search-btn"},
         )
 
+        @property
+        def __name__(self):
+            return "tableSearchForm"
+
     class ArticleDeleteForms(FlaskForm):
         """
         Submit fields for deleting article starting with the delete all field
@@ -260,6 +288,10 @@ class AccountManegementForms:
             "<i class='fa fa-trash-o' aria-hidden='true'></i>",
             render_kw={"class": "inner-article-delete-btn"},
         )
+
+        @property
+        def __name__(self):
+            return "ArticleDeleteForms"
 
     class roleForm(FlaskForm):
         """
@@ -285,6 +317,10 @@ class AccountManegementForms:
             id="add-role-sbmt", render_kw={"class": "add-role-sbmt-btn", "value": "Add"}
         )
 
+        @property
+        def __name__(self):
+            return "roleForm"
+
         class deleteRoleTableForms(FlaskForm):
             member_field = ButtonField(
                 '<i class="fa fa-trash-o" aria-hidden="true"></i>',
@@ -309,6 +345,10 @@ class AccountManegementForms:
                 id="editor-data-role-type-container",
                 render_kw={"class": "inner-delete-btn", "data-role-type": "editor"},
             )
+
+            @property
+            def __name__(self):
+                return "deleteRoleTableForms"
 
     class extOptionForm(FlaskForm):
         """
@@ -341,6 +381,10 @@ class AccountManegementForms:
             },
         )
 
+        @property
+        def __name__(self):
+            return "extOptionForm"
+
     class adminUserInfoForm(FlaskForm):
         """
         Creates Info Ediit form Inputs
@@ -357,13 +401,14 @@ class AccountManegementForms:
             ],
             render_kw={
                 "placeholder": "Edit name...",
-                "class": "name-input",
+                "class": "form-control me-1",
                 "autocomplete": "off",
             },
         )
 
         name_sbmt = SubmitField(
-            id="name-sbmt-btn", render_kw={"value": "Submit", "class": "name-sbmt-btn"}
+            id="name-sbmt-btn",
+            render_kw={"value": "Submit", "class": "btn btn-primary"},
         )
 
         email = StringField(
@@ -378,14 +423,14 @@ class AccountManegementForms:
             ],
             render_kw={
                 "placeholder": "Edit email...",
-                "class": "email-input",
+                "class": "form-control me-1",
                 "autocomplete": "off",
             },
         )
 
         email_sbmt = SubmitField(
             id="email-sbmt-btn",
-            render_kw={"value": "Submit", "class": "email-sbmt-btn"},
+            render_kw={"value": "Submit", "class": "btn btn-primary"},
         )
 
         password = PasswordField(
@@ -399,7 +444,6 @@ class AccountManegementForms:
             ],
             render_kw={
                 "placeholder": "Edit password...",
-                "class": "pwd-input",
                 "autocomplete": "off",
             },
         )
@@ -414,12 +458,15 @@ class AccountManegementForms:
             validators=[DataRequired("Field may not be blank"), ValidateBool()],
             render_kw={
                 "placeholder": "Edit active status...",
-                "class": "active-status-input",
                 "autocomplete": "off",
             },
         )
 
         active_sbmt = SubmitField(
             id="active-status-sbmt-btn",
-            render_kw={"value": "Submit", "class": "active-status-sbmt-btn"},
+            render_kw={"value": "Submit"},
         )
+
+        @property
+        def __name__(self):
+            return "adminUserInfoForm"

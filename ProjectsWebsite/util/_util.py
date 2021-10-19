@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 from collections import UserDict, namedtuple
 from collections.abc import Iterable, Iterator
-from functools import partial, partialmethod, wraps
+from functools import partialmethod, wraps
 from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 from flask import abort, current_app, g, request, session, url_for
@@ -9,6 +9,7 @@ from flask_mail import Message
 from flask_principal import Permission, RoleNeed
 from flask_security import RoleMixin as _role_mixin
 from flask_sqlalchemy import Pagination
+from flask_wtf import FlaskForm
 
 try:
     from ProjectsWebsite.modules import guard, login_manager, mail
@@ -24,6 +25,7 @@ try:
 except ImportError:
     from werkzeug.local import LocalProxy
 
+import inspect
 import os.path as _path
 import re
 import signal
@@ -36,10 +38,7 @@ from sys import exc_info, exit
 from time import sleep
 
 import pendulum
-import requests
 import schedule
-from bs4 import BeautifulSoup as _beautifulsoup
-from bs4 import NavigableString
 from googletrans import Translator
 from itsdangerous import SignatureExpired
 from pendulum.datetime import DateTime
@@ -63,22 +62,17 @@ __all__ = [
     "makeResultsObject",
     "QueryLikeSearch",
     "countSQLItems",
-    "scrapeError",
     "current_user",
     "roles_required",
     "roles_accepted",
     "token_auth_required",
     "login_user",
     "logout_user",
-    "generate_err_request_url",
     "AnonymousUserMixin",
     "RoleMixin",
+    "validate_multiple_forms",
+    "MultipleFormsConfig",
 ]
-
-
-BeautifulSoup = partial(_beautifulsoup, features="html5lib")
-del _beautifulsoup
-del partial
 
 _pagination_args = namedtuple(
     "_pagination_args", "page total_pages error_out max_per_page"
@@ -196,7 +190,7 @@ class InternalError_or_success(AbstractContextManager):
         self.log = log
 
     def __exit__(self, exctype, excinst, exctb):
-        if exctype is not None:
+        if inspect.istraceback(exctb) and exctype is not None:
             if issubclass(exctype, self._exceptions):
                 if self.log:
                     warnings.warn(f"{exctype}: {exc_info()[1]}", UserWarning)
@@ -214,16 +208,20 @@ class temp_save(UserDict):
     if KeyError is raised when __getitem__ can't get an item due to the item being mistyped or not existing
     """
 
+    def __init__(self, default_return: Any = False, *args, **kwargs):
+        self.default_return = default_return
+        super(temp_save, self).__init__(*args, **kwargs)
+
     def __setitem__(self, key: K, val: V) -> None:
         self.data[key] = val
 
-    def __getitem__(self, k: K, with_pop=True) -> Union[bool, None]:
+    def __getitem__(self, k: K, with_pop=True) -> Union[Union[bool, Any], None]:
         try:
             if with_pop:
                 return self.pop(k)
             return super().__getitem__(k)
         except KeyError:
-            return False
+            return self.default_return
 
     def get_without_pop(self, k: K) -> Union[Any, None]:
         """
@@ -231,7 +229,7 @@ class temp_save(UserDict):
         """
         val = self.__getitem__(k, False)
         if not val:
-            return None
+            return self.default_return
         return val
 
     def setMultipleValues(
@@ -252,6 +250,9 @@ class temp_save(UserDict):
 
     def items(self):
         return self.data.items()
+
+
+del K, V
 
 
 class PoFileAutoTranslator:
@@ -456,10 +457,9 @@ class Results(Pagination):
     """
 
     def __init__(self, results: Pagination):
-        self.per_page = results.per_page
-        self.total = results.total
-        self.items = results.items
-        self.page = results.page
+        super().__init__(
+            results.query, results.page, results.per_page, results.total, results.items
+        )
 
     def __iter__(self) -> Iterator[Any]:
         if isinstance(self.items, Iterable):
@@ -468,7 +468,7 @@ class Results(Pagination):
             raise TypeError(f"Object {type(self.results)} is not iterable")
 
 
-def makeResultsObject(object: Callable[[Pagination], Results]) -> Results:
+def makeResultsObject(object: Callable[..., Pagination]) -> Results:
     """
     makes a results object from the provided object
     """
@@ -542,38 +542,6 @@ def countSQLItems(model_name) -> int:
     items = Model.query.all()
     item_count = len(items)
     return item_count
-
-
-def scrapeError(
-    url: str, elem: str, attr: Tuple[str, str], field_err: List[str], auth: bool = False
-) -> str:
-    """
-    Scrapes input error from argument: url
-    """
-    if auth:
-        token = b64decode(session["token"])
-        token = str(token, encoding="utf-8")
-        web_page = requests.request(
-            "GET",
-            url,
-            headers={"User-Agent": f"{request.user_agent}"},
-            params={"token": token},
-            allow_redirects=False,
-        )
-    else:
-        web_page = requests.request(
-            "GET",
-            url,
-            headers={"User-Agent": f"{request.user_agent}"},
-            allow_redirects=False,
-        )
-    soup = BeautifulSoup(web_page.content)
-    elem_tag = soup.find_all(f"{elem}", {f"{attr[0]}": f"{attr[1]}"})
-    for i in elem_tag:
-        for err in field_err:
-            i.insert(0, NavigableString(f"- {err}\n"))
-            error = i
-            return error
 
 
 current_user = LocalProxy(lambda: _get_user())
@@ -734,28 +702,6 @@ class AnonymousUserMixin:
         return
 
 
-def generate_err_request_url(
-    page: str = "",
-    *,
-    in_admin_acc_edit_page: bool = False,
-    account_name: Optional[str] = None,
-) -> str:
-    """
-    Utility for admin to generate the url for any admin accounts management errors
-    Returns:
-        generated url
-    """
-    if in_admin_acc_edit_page:
-        if isinstance(account_name, type(None)):
-            raise ValueError("account_name arg cannot be None")
-        base_url = "{}admin/management/accounts/edit_user/{}/"
-        account_name = account_name.replace(" ", "%20")
-        url = base_url.format(request.host_url, account_name)
-    else:
-        url = f"{request.host_url}{page}"
-    return url
-
-
 class RoleMixin(_role_mixin):
     """
     RoleMixin with Flask-Security RoleMixin
@@ -776,3 +722,114 @@ class RoleMixin(_role_mixin):
 
     def __repr__(self):
         raise NotImplementedError()
+
+
+form_class = TypeVar("form_class", bound=Type[FlaskForm])  # type: ignore
+
+form_field = TypeVar("form_field", str, List[str])
+
+form_ignore = TypeVar("form_ignore", bound=List[str])
+
+
+class MultipleFormsConfig:
+    """
+    `validate_multiple_forms` config object
+    """
+
+    objs_name = []
+
+    def __init__(
+        self,
+        objs: List[form_class],
+        fields: List[Union[List[form_field], form_field]],
+        ignores: List[form_ignore] = [],
+        all: Union[bool, List[bool]] = False,
+    ):
+        self.objs_name.extend([name for name in objs.__name__])
+        self._make_attrs(objs=objs, fields=fields, ignores=ignores, all=all)
+
+    def _make_str_attr(self, string: str, key: str, value: Any):
+        class tmp(type(string)):
+            def attr(self, k, v):
+                setattr(self, k, v)
+                return self
+
+        return tmp(string).attr(key, value)
+
+    def _make_attrs(
+        self,
+        objs: List[form_class],
+        fields: List[Union[List[form_field], form_field]],
+        ignores: List[form_ignore] = [],
+        all: Union[bool, List[bool]] = False,
+    ):
+        for obj, fields in zip(objs, fields):
+            _obj = self._make_str_attr(obj.__name__, "obj", obj)
+            _obj = _obj.attr("fields", fields)
+
+            if ignores == []:
+                _obj = _obj.attr("ignore", ignores)
+                if not all:
+                    _obj = _obj.attr("all", all)
+                    continue
+            else:
+                ignores = ignores.pop(0)
+                all = all.pop(0)
+                _obj = _obj.attr("ignore", ignores)
+                _obj = _obj.attr("all", all)
+            setattr(self, obj.__name__, _obj)
+
+    def iter_obj_name(self):
+        """
+        iter the name of form objects
+        """
+        yield from self.objs_name
+
+
+def validate_multiple_forms(config: MultipleFormsConfig) -> bool:
+    """
+    validates multiple wtforms at once:
+
+    returns if all forms validation returns True
+    if one form validation returns False, this validator will also return False
+
+    :param ignore: will not ignore the field if data is present
+    """
+    result_list = []
+    for form_name in config.iter_obj_name():
+        _obj = getattr(config, form_name)
+        form_obj = getattr(_obj, "obj")
+        validate_all = getattr(_obj, "all")
+        if validate_all:
+            res = form_obj.validate(form_obj)
+            result_list.append(res)
+            continue
+        field = getattr(_obj, "fields")
+        ignore_list = getattr(_obj, "ignore")
+        if isinstance(field, list):
+            for f in field:
+                field = getattr(form_obj, f, None)
+                if not field:
+                    continue
+                if f in ignore_list:
+                    if not field.data:
+                        continue
+                res = field.validate(form_obj)
+                result_list.append(res)
+            continue
+        f = getattr(form_obj, field, None)
+        if not f:
+            continue
+        if field in ignore_list:
+            if not f.data:
+                continue
+        res = f.validate(form_obj)
+        result_list.append(res)
+    if False in result_list:
+        return False
+    return True
+
+
+del form_class
+del form_field
+del form_ignore
