@@ -169,7 +169,7 @@ def _structureddict(params_, defaults: Optional[Dict[str, Type]] = None):
         nested_or_not = re.match(r"([^.]+)\.([^=]+)", params)
         if nested_or_not is not None:
             if dict_.get_without_pop(nested_or_not.group(1)) is None:
-                dict_[nested_or_not.group(1)] = temp_save()
+                dict_[nested_or_not.group(1)] = temp_save(None)
                 value = re.search(
                     r"({})([^&]+|$)".format(
                         f"{nested_or_not.group(1)}.{nested_or_not.group(2)}="
@@ -226,7 +226,7 @@ def _structureddict(params_, defaults: Optional[Dict[str, Type]] = None):
             params = params.replace(f"{param.group(1)}={value}", "")
         _pair(dict_, params)
 
-    dict_ = temp_save()
+    dict_ = temp_save(None)
     _pair(dict_, params_)
     dict_ = _setdefaults(dict_, defaults)
     return dict_

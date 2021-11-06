@@ -39,7 +39,8 @@
     font-family: 'Montserrat', sans-serif;
 }
 
-#username-edit-btn {
+#username-edit-btn,
+#name-edit-btn {
     cursor: pointer;
 }
 

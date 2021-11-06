@@ -96,7 +96,7 @@ app.debug = True
 
 app.env = "development"
 
-app.config["TESTING"] = True
+app.config["TESTING"] = False
 
 if not app.config["TESTING"]:
     MonitorDashboard.config.init_from(

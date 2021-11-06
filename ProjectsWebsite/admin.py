@@ -1,10 +1,13 @@
 # ------------------ Imports ------------------
+import inspect
+
 from flask import (
     Blueprint,
     current_app,
     jsonify,
     redirect,
     render_template,
+    render_template_string,
     request,
     url_for,
 )
@@ -13,47 +16,28 @@ from flask_mail import Message
 from marshmallow import fields
 from sqlalchemy.exc import OperationalError
 
-try:
-    from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
-    from ProjectsWebsite.database.models.roles import Roles
-    from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
-    from ProjectsWebsite.forms import AccountManegementForms
-    from ProjectsWebsite.modules import db, guard, mail
-    from ProjectsWebsite.util import (
-        InternalError_or_success,
-        MultipleFormsConfig,
-        QueryLikeSearch,
-        countSQLItems,
-        logout_user,
-        makeResultsObject,
-        roles_required,
-    )
-    from ProjectsWebsite.util import temp_save as _temp_save
-    from ProjectsWebsite.util import (
-        token_auth_required,
-        unverfiedLogUtil,
-        validate_multiple_forms,
-    )
-    from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
-    from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
-except ModuleNotFoundError:
-    from .database.models import Article, Blacklist, User, user_datastore
-    from .database.models.roles import Roles
-    from .database.models.schemas import AccountUserManagementWebArgs
-    from .forms import AccountManegementForms
-    from .modules import db, guard, mail
-    from .util import (
-        InternalError_or_success,
-        QueryLikeSearch,
-        countSQLItems,
-        logout_user,
-        makeResultsObject,
-        roles_required,
-    )
-    from .util import temp_save as _temp_save
-    from .util import token_auth_required, unverfiedLogUtil, validate_multiple_forms
-    from .util.mail import blacklistMail, defaultMail, unBlacklistMail
-    from .util.parsers.webargs import EditProfUrlParser
+from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
+from ProjectsWebsite.database.models.roles import Roles
+from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
+from ProjectsWebsite.forms import AccountManegementForms
+from ProjectsWebsite.modules import db, guard, mail
+from ProjectsWebsite.util import (
+    InternalError_or_success,
+    MultipleFormsConfig,
+    QueryLikeSearch,
+    countSQLItems,
+    logout_user,
+    makeResultsObject,
+    roles_required,
+)
+from ProjectsWebsite.util import temp_save as _temp_save
+from ProjectsWebsite.util import (
+    token_auth_required,
+    unverfiedLogUtil,
+    validate_multiple_forms,
+)
+from ProjectsWebsite.util.mail import blacklistMail, defaultMail, unBlacklistMail
+from ProjectsWebsite.util.parsers.webargs import EditProfUrlParser
 
 # ------------------ Blueprint Config ------------------
 admin = Blueprint(
@@ -114,9 +98,13 @@ def adminAccountsManegement(args):
 
 
 @admin.route(
-    "management/accounts/edit_user/process_blacklist/<string:client>", methods=["POST"]
+    "management/accounts/edit_user/process_blacklist/api/<string:client>",
+    methods=["GET", "POST"],
 )
 def adminAccountsUserManagementProcessBlacklist(client):
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsUserManagementProcessBlacklist)
+        return render_template_string(source_code)
     user_name = request.form["user"] or client
     if "%20" in user_name:
         user_name = user_name.replace("%20", " ")
@@ -162,8 +150,13 @@ def adminAccountsUserManagementProcessBlacklist(client):
         return jsonify({"reasons": reason})
 
 
-@admin.route("management/accounts/edit_user/process_search/", methods=["POST"])
+@admin.route(
+    "management/accounts/edit_user/api/process_search/", methods=["GET", "POST"]
+)
 def adminAccountsUserManagementProcessSearch():
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsUserManagementProcessSearch)
+        return render_template_string(source_code)
     ajax_data = request.form["search_data"] or None
     user = User.lookup_by_name(temp_save["user"])
     page = temp_save["page"]
@@ -184,10 +177,26 @@ def adminAccountsUserManagementProcessSearch():
     )
 
 
+@admin.route("managements/accounts/edit_user/api/process", methods=["GET", "POST"])
+def adminAccountsUSerManagementProcessName():
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsUSerManagementProcessName)
+        return render_template_string(source_code)
+    old_name, new_name = (
+        request.form["oldname"],
+        request.form["newname"],
+    )
+    user = User.lookup_by_name(old_name)
+    user.name = new_name
+    user_datastore.commit()
+    return jsonify({"old_name": old_name, "new_name": new_name})
+
+
 @admin.route("management/accounts/edit_user/", methods=["GET", "POST"])
 @parser.use_args(AccountUserManagementWebArgs(), location="querystring")
 @token_auth_required
 def adminAccountsUserManagement(args):
+    print(args)
     page = args["page"]
     action = args["actions"]["action"]
     item_id = args["actions"]["item_id"]
@@ -250,14 +259,7 @@ def adminAccountsUserManagement(args):
     if request.method == "POST" and validate_multiple_forms(
         _validate_mutiple_forms_config
     ):
-        print("IN POST METHOD")
-        print(info_forms.email.data)
-        print(info_forms.email.errors)
-        print(info_forms.email_sbmt.data)
-        if info_forms.name.data:
-            user_info.name = info_forms.name.data
-            user = info_forms.name.data
-        elif info_forms.email_sbmt.data:
+        if info_forms.email_sbmt.data:
             user_info.username = info_forms.email.data
             user_datastore.commit()
         elif info_forms.password.data:

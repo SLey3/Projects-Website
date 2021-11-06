@@ -43,7 +43,6 @@ from googletrans import Translator
 from itsdangerous import SignatureExpired
 from pendulum.datetime import DateTime
 from polib import detect_encoding, pofile
-from rich import print as rprint
 from sqlalchemy.exc import InvalidRequestError
 from werkzeug.utils import import_string
 
@@ -80,9 +79,7 @@ _pagination_args = namedtuple(
 
 
 def checkExpireRegistrationCodes():
-    rprint(
-        "[black][Scheduler Thread][/black][bold green]Commencing token check[/bold green]"
-    )
+    print("[Scheduler Thread]Commencing token check")
     urlSerializer, user_datastore, User = (
         import_string("ProjectsWebsite.views:urlSerializer"),
         import_string("ProjectsWebsite.database.models:user_datastore"),
@@ -147,16 +144,14 @@ def runSchedulerInspect():
             """
             runs thread if cease_operation.is_set() returns false
             """
-            rprint(
-                "[black][Schedule][/black][bold green]Starting operation[/bold green]"
-            )
+            print("[Schedule]Starting operation...")
             while not cease_operation.is_set():
                 schedule.run_pending()
                 sleep(1)
 
     thread = tokenCheckThread()
     thread.daemon = True
-    rprint("[black][Schedule][/black][red]Starting Schedule Thread...[/red]")
+    print("[Schedule]Starting Schedule Thread...")
     thread.start()
     return cease_operation
 
@@ -173,11 +168,9 @@ def appExitHandler():
     try:
         yield
     finally:
-        rprint("[black]Schedule[/black][red]Stopping schedule operation[/red]")
+        print("ScheduleStopping schedule operation")
         signal.signal(signal.SIGINT, _signal_handler)
-        rprint(
-            "[black]Schedule[/black][bold green]Schedule Operation stopped successfully...[/bold green]"
-        )
+        print("ScheduleSchedule Operation stopped successfully...")
 
 
 class InternalError_or_success(AbstractContextManager):
@@ -736,7 +729,7 @@ class MultipleFormsConfig:
     `validate_multiple_forms` config object
     """
 
-    objs_name = []
+    objs_name = set()
 
     def __init__(
         self,
@@ -745,7 +738,6 @@ class MultipleFormsConfig:
         ignores: List[form_ignore] = [],
         all: Union[bool, List[bool]] = False,
     ):
-        self.objs_name.extend([name for name in objs.__name__])
         self._make_attrs(objs=objs, fields=fields, ignores=ignores, all=all)
 
     def _make_str_attr(self, string: str, key: str, value: Any):
@@ -766,18 +758,23 @@ class MultipleFormsConfig:
         for obj, fields in zip(objs, fields):
             _obj = self._make_str_attr(obj.__name__, "obj", obj)
             _obj = _obj.attr("fields", fields)
-
             if ignores == []:
                 _obj = _obj.attr("ignore", ignores)
-                if not all:
-                    _obj = _obj.attr("all", all)
-                    continue
             else:
-                ignores = ignores.pop(0)
-                all = all.pop(0)
-                _obj = _obj.attr("ignore", ignores)
+                _ignores = ignores.pop(0)
+                _obj = _obj.attr("ignore", _ignores)
+            if not all:
                 _obj = _obj.attr("all", all)
-            setattr(self, obj.__name__, _obj)
+            else:
+                _obj = _obj.attr("all", all.pop(0))
+            self.objs_name.add(_obj)
+            setattr(self, _obj, _obj)
+
+    def getobj(self, name: str):
+        """
+        gets config object by name
+        """
+        return getattr(self, name)
 
     def iter_obj_name(self):
         """
@@ -797,7 +794,7 @@ def validate_multiple_forms(config: MultipleFormsConfig) -> bool:
     """
     result_list = []
     for form_name in config.iter_obj_name():
-        _obj = getattr(config, form_name)
+        _obj = config.getobj(form_name)
         form_obj = _obj.obj
         validate_all = _obj.all
         if validate_all:
@@ -833,3 +830,8 @@ def validate_multiple_forms(config: MultipleFormsConfig) -> bool:
 del form_class
 del form_field
 del form_ignore
+
+
+def generate_password():
+    # TODO make random salt that will be stored in random names per user
+    ...
