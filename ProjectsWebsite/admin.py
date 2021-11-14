@@ -17,7 +17,6 @@ from marshmallow import fields
 from sqlalchemy.exc import OperationalError
 
 from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
-from ProjectsWebsite.database.models.roles import Roles
 from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.modules import db, guard, mail
@@ -54,7 +53,7 @@ parser = EditProfUrlParser({"actions": _temp_save(), "page": 1})
 
 # ------------------ Blueprint Routes ------------------
 @admin.route("/")
-@roles_required(Roles.ADMIN, Roles.VERIFIED)
+@roles_required("admin", "verified")
 @token_auth_required
 def adminRedirectHomePage():
     """
@@ -66,7 +65,7 @@ def adminRedirectHomePage():
 
 @admin.route("/dashboard")
 @admin.route("/dashboard/")
-@roles_required(Roles.ADMIN, Roles.VERIFIED)
+@roles_required("admin", "verified")
 @token_auth_required
 def adminHomePage():
     """
@@ -78,7 +77,7 @@ def adminHomePage():
 
 @admin.route("/manegement/accounts/", methods=["GET", "POST"])
 @parser.use_args({"page": fields.Int()}, location="query")
-@roles_required(Roles.ADMIN, Roles.VERIFIED)
+@roles_required("admin", "verified")
 @token_auth_required
 def adminAccountsManegement(args):
     """

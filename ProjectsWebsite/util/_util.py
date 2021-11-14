@@ -25,11 +25,14 @@ try:
 except ImportError:
     from werkzeug.local import LocalProxy
 
+import hashlib
+import hmac
 import inspect
 import os.path as _path
 import re
 import signal
 import threading
+import uuid
 import warnings
 from base64 import b64decode, b64encode
 from contextlib import AbstractContextManager, contextmanager
@@ -39,6 +42,7 @@ from time import sleep
 
 import pendulum
 import schedule
+from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from googletrans import Translator
 from itsdangerous import SignatureExpired
 from pendulum.datetime import DateTime
@@ -71,6 +75,9 @@ __all__ = [
     "RoleMixin",
     "validate_multiple_forms",
     "MultipleFormsConfig",
+    "create_password",
+    "verify_password",
+    "UserMixin",
 ]
 
 _pagination_args = namedtuple(
@@ -709,15 +716,22 @@ class RoleMixin(_role_mixin):
             False = if role does not exist
         """
         r = cls.query.filter_by(name=role).first()
-        if isinstance(r, type(None)):
+        if not r:
             return False
         return True
+
+    @classmethod
+    def find_role(cls, role):
+        r = cls.query.filter_by(name=role).first()
+        if not r:
+            return None
+        return r
 
     def __repr__(self):
         raise NotImplementedError()
 
 
-form_class = TypeVar("form_class", bound=Type[FlaskForm])  # type: ignore
+form_class = TypeVar("form_class", bound=FlaskForm)
 
 form_field = TypeVar("form_field", str, List[str])
 
@@ -832,6 +846,130 @@ del form_field
 del form_ignore
 
 
-def generate_password():
-    # TODO make random salt that will be stored in random names per user
-    ...
+def create_password(original: str):
+    """
+    Creates an encrypted password with salt. Returns two values in the following order:
+    salt - the randomly created salt implemented into the password
+    password - the encrypted password with salt
+    """
+    _salt = uuid.uuid4().hex
+    salt = _salt.encode("utf-8")
+    original = original.encode("utf-8")
+    encrypt = hashlib.pbkdf2_hmac("sha256", original, salt, 200000)
+    return _salt, encrypt
+
+
+def verify_password(salt, pw_hash, input_pw) -> bool:
+    """
+    verifies inputed password from the existing password hash
+    """
+    input_pw = input_pw.encode("utf-8")
+    if not isinstance(input_pw, bytes):
+        input_pw = bytes(input_pw)
+    salt = salt.encode("utf-8")
+    return hmac.compare_digest(
+        pw_hash, hashlib.pbkdf2_hmac("sha256", input_pw, salt, 200000)
+    )
+
+
+class UserMixin(SQLAlchemyUserMixin):
+    """
+    UserMixin for User SQL table
+    """
+
+    db = import_string("ProjectsWebsite.modules:db")
+
+    @classmethod
+    def lookup_by_name(cls, name):
+        """
+        looks up user by name
+        """
+        return cls.query.filter_by(name=name).one_or_none()
+
+    @classmethod
+    def activate(cls, email):
+        """
+        Activates user
+        """
+        user = cls.lookup(email)
+        if user.active:
+            return False
+        else:
+            user.active = True
+            cls.put(user)
+            cls.commit()
+            return True
+
+    @classmethod
+    def deactivate(cls, email):
+        """
+        deactivates user
+        """
+        user = cls.lookup(email)
+        if user.active:
+            user.active = False
+            cls.put(user)
+            cls.commit()
+            return True
+        return False
+
+    @classmethod
+    def put(cls, obj):
+        """
+        adds object to Sql session
+        """
+        cls.db.session.add(obj)
+
+    @classmethod
+    def commit(cls):
+        """
+        Commits SQL Session
+        """
+        cls.db.session.commit()
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    @property
+    def is_authenticated(self):
+        """
+        returns if user is authenticated
+        """
+        return True
+
+    @property
+    def is_blacklisted(self):
+        """
+        returns if user is blacklisted
+        """
+        if self.blacklisted:
+            return True
+        return False
+
+    def has_role(self, role):
+        """
+        Checks if role is in the users role
+        """
+        return role in self.roles
+
+    def get_id(self):
+        """
+        for Flask-Login
+        """
+        return self.identity
+
+    def verify_password(self, pwd):
+        """
+        Returns True if pwd equals the users hashed password
+        """
+        return verify_password(self.user_salt, self.hashed_password, pwd)
+
+    def iter_roles(self):
+        """
+        Iter's through the users roles
+        """
+        yield from self.roles
+
+    def __repr__(self):
+        return self.name

@@ -15,65 +15,41 @@ from flask import (
 )
 from flask_mail import Message
 from itsdangerous import SignatureExpired, URLSafeTimedSerializer
-from sqlalchemy.orm.session import Session as SQLSession
-from werkzeug.utils import secure_filename
+from werkzeug.utils import import_string, secure_filename
 
-try:
-    from ProjectsWebsite.database.models import Article, User, user_datastore
-    from ProjectsWebsite.database.models.roles import Roles
-    from ProjectsWebsite.forms import (
-        articleForm,
-        contactForm,
-        forgotForm,
-        forgotRequestForm,
-        loginForm,
-        registerForm,
-    )
-    from ProjectsWebsite.modules import db, guard, img_set, mail
-    from ProjectsWebsite.util import (
-        DateUtil,
-        InternalError_or_success,
-        current_user,
-        formatPhoneNumber,
-        is_valid_article_page,
-        login_user,
-        logout_user,
-        roles_accepted,
-        roles_required,
-    )
-    from ProjectsWebsite.util import temp_save as _temp_save
-    from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
-    from ProjectsWebsite.util.helpers import date_re
-    from ProjectsWebsite.util.mail import automatedMail, formatContact
-    from ProjectsWebsite.util.utilmodule import alert
-except ModuleNotFoundError:
-    from .database.models import Article, User, user_datastore
-    from .database.models.roles import Roles
-    from .forms import (
-        articleForm,
-        contactForm,
-        forgotForm,
-        forgotRequestForm,
-        loginForm,
-        registerForm,
-    )
-    from .modules import db, guard, img_set, mail
-    from .util import (
-        DateUtil,
-        InternalError_or_success,
-        current_user,
-        formatPhoneNumber,
-        is_valid_article_page,
-        login_user,
-        logout_user,
-        roles_accepted,
-        roles_required,
-    )
-    from .util import temp_save as _temp_save
-    from .util import token_auth_required, unverfiedLogUtil
-    from .util.helpers import date_re
-    from .util.mail import automatedMail, formatContact
-    from .util.utilmodule import alert
+from ProjectsWebsite.database.models import (
+    Article,
+    Role,
+    User,
+    initialize_user,
+    user_datastore,
+)
+from ProjectsWebsite.forms import (
+    articleForm,
+    contactForm,
+    forgotForm,
+    forgotRequestForm,
+    loginForm,
+    registerForm,
+)
+from ProjectsWebsite.modules import db, guard, img_set, mail
+from ProjectsWebsite.util import (
+    DateUtil,
+    InternalError_or_success,
+    create_password,
+    current_user,
+    formatPhoneNumber,
+    is_valid_article_page,
+    login_user,
+    logout_user,
+    roles_accepted,
+    roles_required,
+)
+from ProjectsWebsite.util import temp_save as _temp_save
+from ProjectsWebsite.util import token_auth_required, unverfiedLogUtil
+from ProjectsWebsite.util.helpers import date_re
+from ProjectsWebsite.util.mail import automatedMail, formatContact
+from ProjectsWebsite.util.utilmodule import alert
 
 # ------------------ Blueprint Config ------------------
 main_app = Blueprint(
@@ -81,9 +57,6 @@ main_app = Blueprint(
 )
 
 temp_save = _temp_save()
-
-# ------------------  SQLAlchemy Session Config ------------------
-sql_sess = SQLSession(autoflush=False)
 
 # ------------------ Application Import ------------------
 from ProjectsWebsite import app
@@ -107,7 +80,7 @@ def loginPage():
     if request.method == "POST":
         user = User.lookup(form.username.data)
         if user:
-            if guard._verify_password(form.password.data, user.hashed_password):
+            if user.verify_password(form.password.data):
                 if user.is_blacklisted:
                     alert.setAlert("error", "This Account is Banned.")
                     return redirect(url_for(".loginPage"))
@@ -141,28 +114,23 @@ def registerPage():
     form = registerForm()
     dt = DateUtil(format_token="L")
     if request.method == "POST" and form.validate_on_submit():
-        with sql_sess.no_autoflush:
-            user_datastore.find_or_create_role(Roles.ADMIN)
-            user_datastore.find_or_create_role(Roles.MEMBER)
-            user_datastore.find_or_create_role(Roles.UNVERIFIED)
-            user_datastore.find_or_create_role(Roles.VERIFIED)
-            user_datastore.find_or_create_role(Roles.EDITOR)
-        user_datastore.create_user(
+        salt, password = create_password(form.password.data)
+        initialize_user(
+            ["admin", "member", "unverified"],
             name=form.name.data.capitalize(),
             username=form.email.data.lower(),
             email=form.email.data.lower(),
-            hashed_password=guard.hash_password(form.password.data),
+            hashed_password=password,
+            user_salt=salt,
             created_at=dt.subDate(),
             blacklisted=False,
-            roles=[Roles.MEMBER, Roles.UNVERIFIED],
         )
-        user_datastore.commit()
 
         temp_save["registration_email"] = form.email.data.lower()
 
         token = urlSerializer.dumps(form.email.data, salt="email-confirm")
         verify_msg = Message("Confirm Account", recipients=[form.email.data.lower()])
-        confirm_link = "http://127.0.0.1:5000" + url_for(
+        confirm_link = request.host_url + url_for(
             ".confirmation_recieved", token=token, external=True
         )
         verify_msg.html = automatedMail(
@@ -174,9 +142,15 @@ def registerPage():
         )
         mail.send(verify_msg)
         alert.setAlert(
-            "success", "Registration Succesful. Check your email for confirmation link."
+            "success",
+            "Registration Succesful. Check your email for confirmation link. If you can't find the email, check your spam.",
         )
-        unverlog.addContent(form.email.data.lower(), token)
+        unverlog.addContent(
+            (
+                form.email.data.lower(),
+                token,
+            )
+        )
         return redirect(url_for(".homePage"))
     else:
         return render_template("public/registerpage.html", form=form)
@@ -192,8 +166,8 @@ def confirmation_recieved(token):
 
     try:
         urlSerializer.loads(token, salt="email-confirm", max_age=3600 / 2)
-        user_datastore.remove_role_from_user(User.lookup(email), Roles.UNVERIFIED)
-        user_datastore.add_role_to_user(User.lookup(email), Roles.VERIFIED)
+        user_datastore.remove_role_from_user(User.lookup(email), "unverified")
+        user_datastore.add_role_to_user(User.lookup(email), Role(name="verified"))
         user_datastore.commit()
         unverlog.removeContent(email)
         alert.setAlert("success", "Email Verified")
@@ -233,7 +207,7 @@ def initialForgotPage():
         if not form.submit.data and form.back_button.data:
             return redirect(url_for(".loginPage"))
         reset_token = urlSerializer.dumps(recipient_email, salt="forgot-pass")
-        reset_url = "http://127.0.0.1:5000" + url_for(
+        reset_url = request.base_url + url_for(
             ".resetRequestRecieved", token=reset_token, email=recipient_email
         )
         reset_msg = Message("Reset Password", recipients=[recipient_email])
@@ -318,7 +292,7 @@ def aboutPage():
 
 
 @main_app.route("/articles/create_article/", methods=["GET", "POST"])
-@roles_accepted(Roles.ADMIN, Roles.EDITOR)
+@roles_accepted("admin", "editor")
 @token_auth_required
 def articleCreation():
     form = articleForm()
@@ -418,7 +392,7 @@ def contact_us():
 
 
 @main_app.route("/home/admin/")
-@roles_required(Roles.ADMIN, Roles.VERIFIED)
+@roles_required("admin", "verified")
 def adminPage():
     """
     Administrator Page

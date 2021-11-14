@@ -21,45 +21,31 @@ from flask import (
     send_from_directory,
     url_for,
 )
+from flask.logging import create_logger
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_praetorian import PraetorianError
 from flask_session import Session
 from flask_uploads import configure_uploads
 from rich import print as rprint
+from sqlalchemy.orm.session import Session as SQLSession
 
-try:
-    from ProjectsWebsite.database.models.roles import Roles
-    from ProjectsWebsite.forms import loginForm
-    from ProjectsWebsite.modules import (
-        assets,
-        db,
-        guard,
-        img_set,
-        login_manager,
-        mail,
-        migrate,
-        security,
-    )
-    from ProjectsWebsite.util import appExitHandler, current_user
-    from ProjectsWebsite.util.utilmodule import alert
-except ModuleNotFoundError:
-    from .database.models.roles import Roles
-    from .forms import loginForm
-    from .modules import (
-        assets,
-        db,
-        guard,
-        img_set,
-        login_manager,
-        mail,
-        migrate,
-        security,
-    )
-    from .util import appExitHandler, current_user
-    from .util.parsers.jinja import JinjaParser
-    from .util.utilmodule import alert
+from ProjectsWebsite.forms import loginForm
+from ProjectsWebsite.modules import (
+    assets,
+    db,
+    guard,
+    img_set,
+    login_manager,
+    mail,
+    migrate,
+    security,
+)
+from ProjectsWebsite.util import appExitHandler, current_user
+from ProjectsWebsite.util.utilmodule import alert
 
 path = Path(os.path.dirname(os.path.abspath(__file__)))
+
+sql_sess = SQLSession(autoflush=False)
 
 # ------------------ Production Status ------------------
 # set true if website is in production, else set false if website is in development
@@ -153,7 +139,19 @@ app.register_blueprint(main_app)
 app.add_template_global(current_user, "current_user")
 app.add_template_global(request, "request")
 app.add_template_global(redirect, "redirect")
-app.add_template_global(Roles, "Roles")
+
+
+# ------------------ before first request ------------------
+@app.before_first_request
+def find_or_create_roles():
+    print("Activated before first request")
+    user_datastore.find_or_create_role("admin")
+    user_datastore.find_or_create_role("member")
+    user_datastore.find_or_create_role("unverified")
+    user_datastore.find_or_create_role("verified")
+    user_datastore.find_or_create_role("editor")
+    create_logger(app)
+
 
 # ------------------ error handlers ------------------
 @app.errorhandler(404)

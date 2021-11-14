@@ -1,18 +1,11 @@
 # ------------------ Imports ------------------
+from typing import List
 
-from flask_praetorian.user_mixins import SQLAlchemyUserMixin
 from flask_security import SQLAlchemyUserDatastore
+from sqlalchemy import text
 
-from ProjectsWebsite import modules
-
-try:
-    from ProjectsWebsite.database.models.roles import Roles
-    from ProjectsWebsite.modules import db
-    from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin
-except ModuleNotFoundError:
-    from ...modules import db
-    from ...util import AnonymousUserMixin, DateUtil, RoleMixin
-    from .roles import Roles
+from ProjectsWebsite.modules import db
+from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin, UserMixin
 
 # ------------------ SQL classes  ------------------
 dt = DateUtil(format_token="L LTS zzZ z")
@@ -27,13 +20,13 @@ class Role(db.Model, RoleMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    name = db.Column(db.Enum(Roles), unique=True)
+    name = db.Column(db.String(50), unique=True)
 
     def __repr__(self):
         return f"{self.name}"
 
 
-class User(db.Model, SQLAlchemyUserMixin):
+class User(db.Model, UserMixin):
     """
     User Model for all users with accounts
     """
@@ -45,6 +38,7 @@ class User(db.Model, SQLAlchemyUserMixin):
     email = db.Column("email", db.String(100))
     username = db.Column("username", db.String(100), unique=True)
     hashed_password = db.Column("hashed_password", db.String(255))
+    user_salt = db.Column(db.String, unique=True)
     active = db.Column("active", db.Boolean)
     created_at = db.Column("date", db.String(30))
     blacklisted = db.Column(db.Boolean)
@@ -54,92 +48,13 @@ class User(db.Model, SQLAlchemyUserMixin):
         primaryjoin="and_(User.id==Role.user_id)",
     )
 
-    def has_role(self, role):
-        """
-        Checks if role is in the users role
-        """
-        return role in self.roles
-
-    @classmethod
-    def lookup_by_name(cls, name):
-        """
-        looks up user by name
-        """
-        return cls.query.filter_by(name=name).one_or_none()
-
-    @classmethod
-    def activate(cls, email):
-        """
-        Activates user
-        """
-        user = cls.lookup(email)
-        if user.active:
-            return False
-        else:
-            user.active = True
-            db.session.add(user)
-            db.session.commit()
-            return True
-
-    @classmethod
-    def deactivate(cls, email):
-        """
-        deactivates user
-        """
-        user = cls.lookup(email)
-        if user.active:
-            user.active = False
-            db.session.add(user)
-            db.session.commit()
-            return True
-        return False
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        """
-        for Flask-Login
-        """
-        return self.identity
-
-    def verify_password(self, hashed_pwd):
-        """
-        Returns True if hashed_pwd equals the users password
-        """
-        return hashed_pwd == self.hashed_password
-
-    @property
-    def is_authenticated(self):
-        """
-        returns if user is authenticated
-        """
-        return True
-
-    @property
-    def is_blacklisted(self):
-        """
-        returns if user is blacklisted
-        """
-        if self.blacklisted:
-            return True
-        return False
-
-    def iter_roles(self):
-        for role in self.roles:
-            current_name = str(role.name.value).replace("<", "").replace(">", "")
-            role.name = current_name.capitalize()
-            yield role
-
-    def __repr__(self):
-        return self.name
-
 
 class AnonymousUser(AnonymousUserMixin):
     """
     AnonymousUser class for not logged in users
     """
+
+    ...
 
 
 class Article(db.Model):
@@ -208,3 +123,22 @@ class Blacklist(db.Model):
 
 # ------------------ user_datastore  ------------------
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+
+# ------------------ User Initialization Function ------------------
+def initialize_user(roles: List[str], **kwargs):
+    """
+    Creates and adds role's to specified user and commits the changes
+    """
+
+    def _add_roles(user, *roles):
+        for role in roles:
+            print(role)
+            user_datastore.add_role_to_user(user, Role(name=role))
+        User.commit()
+
+    user = kwargs.get("name")
+    user_datastore.create_user(**kwargs)
+    User.commit()
+    user = User.lookup_by_name(user)
+    print(user)
+    _add_roles(user, *roles)

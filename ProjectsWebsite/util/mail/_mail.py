@@ -27,7 +27,7 @@ def _insert_content(
             char = char.replace(r"{body}", content)
             letter[i] = char
         elif char == r"{contacturl}":
-            char = char.replace(r"{contacturl}", f"{request.host_url}contact_us")
+            char = char.replace(r"{contacturl}", f"{request.host_url}contact")
             letter[i] = char
         if isinstance(sender, str):
             if char == r"{sender}":
