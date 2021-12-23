@@ -147,7 +147,6 @@ app.add_template_global(redirect, "redirect")
 # ------------------ before first request ------------------
 @app.before_first_request
 def find_or_create_roles():
-    print("Activated before first request")
     user_datastore.find_or_create_role("admin")
     user_datastore.find_or_create_role("member")
     user_datastore.find_or_create_role("unverified")
