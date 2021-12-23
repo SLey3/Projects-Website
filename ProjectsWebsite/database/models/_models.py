@@ -132,7 +132,6 @@ def initialize_user(roles: List[str], **kwargs):
 
     def _add_roles(user, *roles):
         for role in roles:
-            print(role)
             user_datastore.add_role_to_user(user, Role(name=role))
         User.commit()
 
@@ -140,5 +139,4 @@ def initialize_user(roles: List[str], **kwargs):
     user_datastore.create_user(**kwargs)
     User.commit()
     user = User.lookup_by_name(user)
-    print(user)
     _add_roles(user, *roles)

@@ -16,7 +16,13 @@ from flask_mail import Message
 from marshmallow import fields
 from sqlalchemy.exc import OperationalError
 
-from ProjectsWebsite.database.models import Article, Blacklist, User, user_datastore
+from ProjectsWebsite.database.models import (
+    Article,
+    Blacklist,
+    Role,
+    User,
+    user_datastore,
+)
 from ProjectsWebsite.database.models.schemas import AccountUserManagementWebArgs
 from ProjectsWebsite.forms import AccountManegementForms
 from ProjectsWebsite.modules import db, guard, mail
@@ -25,6 +31,7 @@ from ProjectsWebsite.util import (
     MultipleFormsConfig,
     QueryLikeSearch,
     countSQLItems,
+    create_password,
     logout_user,
     makeResultsObject,
     roles_required,
@@ -97,7 +104,7 @@ def adminAccountsManegement(args):
 
 
 @admin.route(
-    "management/accounts/edit_user/process_blacklist/api/<string:client>",
+    "management/accounts/edit_user/api/process_blacklist/<string:client>",
     methods=["GET", "POST"],
 )
 def adminAccountsUserManagementProcessBlacklist(client):
@@ -150,7 +157,7 @@ def adminAccountsUserManagementProcessBlacklist(client):
 
 
 @admin.route(
-    "management/accounts/edit_user/api/process_search/", methods=["GET", "POST"]
+    "management/accounts/edit_user/api/process/search", methods=["GET", "POST"]
 )
 def adminAccountsUserManagementProcessSearch():
     if request.method == "GET":
@@ -176,10 +183,10 @@ def adminAccountsUserManagementProcessSearch():
     )
 
 
-@admin.route("managements/accounts/edit_user/api/process", methods=["GET", "POST"])
-def adminAccountsUSerManagementProcessName():
+@admin.route("management/accounts/edit_user/api/process/name", methods=["GET", "POST"])
+def adminAccountsUserManagementProcessName():
     if request.method == "GET":
-        source_code = inspect.getsource(adminAccountsUSerManagementProcessName)
+        source_code = inspect.getsource(adminAccountsUserManagementProcessName)
         return render_template_string(source_code)
     old_name, new_name = (
         request.form["oldname"],
@@ -187,8 +194,39 @@ def adminAccountsUSerManagementProcessName():
     )
     user = User.lookup_by_name(old_name)
     user.name = new_name
-    user_datastore.commit()
+    user.commit()
     return jsonify({"old_name": old_name, "new_name": new_name})
+
+
+@admin.route(
+    "management/accounts/edit_user/api/process/name/presend", methods=["GET", "POST"]
+)
+def adminAccountsValidateUserManagementProcessName():
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsValidateUserManagementProcessName)
+        return render_template_string(source_code)
+    form = AccountManegementForms.adminUserInfoForm()
+    field = form.name
+    data = request.get_json()
+    old_name = data.get("oldname")
+    new_name = data.get("newname")
+    field.process_data(new_name)
+    result = field.validate(form)
+    return jsonify(status=result, field_errs=field.errors)
+
+
+@admin.route("management/accounts/edit_user/api/delrole", methods=["GET", "POST"])
+def adminAccountsUserManagementDelRole():
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsUserManagementDelRole)
+        return render_template_string(source_code)
+    user, role_name = (
+        request.form["user"],
+        request.form["role"],
+    )
+    user_datastore.remove_role_from_user(User.lookup_by_name(user), role_name)
+    user_datastore.commit()
+    return jsonify({"role_deleted": role_name})
 
 
 @admin.route("management/accounts/edit_user/", methods=["GET", "POST"])
@@ -262,7 +300,9 @@ def adminAccountsUserManagement(args):
             user_info.username = info_forms.email.data
             user_datastore.commit()
         elif info_forms.password.data:
-            user_info.hashed_password = guard.hash_password(info_forms.password.data)
+            salt, pwd = create_password(info_forms.password.data)
+            user_info.hashed_password = pwd
+            user_info.user_salt = salt
         elif info_forms.active.data:
             if info_forms.active.data == "False":
                 data = False
@@ -277,9 +317,19 @@ def adminAccountsUserManagement(args):
                     user_datastore.remove_role_from_user(user_info, role)
                     user_datastore.commit()
         elif role_form.add_role.data:
-            role = getattr(Roles, role_form.add_role.data.upper())
-            user_datastore.add_role_to_user(user_info, role)
-            user_datastore.commit()
+            _role = role_form.add_role.data.lower()
+            if _role == "unverified":
+                pass
+            role = Role.find_role(_role)
+            if not role:
+                if _role == "editor":
+                    user_datastore.add_role_to_user(user_info, Role(name=role))
+                    user_datastore.commit()
+                else:
+                    pass
+            else:
+                user_datastore.add_role_to_user(user_info, role)
+                user_datastore.commit()
         elif delete_role_forms.member_field.data:
             user_datastore.remove_role_from_user(user_info, "member")
             user_datastore.commit()

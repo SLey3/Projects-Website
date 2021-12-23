@@ -84,7 +84,7 @@
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <th scope="row">Reason: </th>
+                                                <th scope="row">Reason(s): </th>
                                                 <td>{{ blacklist_info.reason | safe }}</td>
                                             </tr>
                                             <tr>
@@ -128,10 +128,11 @@
                         <td>{{ role.id }}</td>
                         <td>{{ role.name }}</td>
                         <td>
-                            <form id="inner-delete-role-form" method="POST" action="{{ url_for('admin.adminAccountsUserManagement') }}?user=user.name">
-                                {% if role.name == 'Member' %} {{ delete_role_forms.member_field }} {% elif role.name == 'Verified' %} {{ delete_role_forms.verified_field }} {% elif role.name == 'Unverified' %} {{ delete_role_forms.unverified_field }} {% elif role.name == 'Editor' %}
-                                {{ delete_role_forms.editor_field }} {% endif %}
-                            </form>
+                            {% if role.name != "admin" %}
+                            <div id="del-{{ role.name }}-btn" class="inner-delete-btn">
+                                <i class="fa fa-trash-o" aria-hidden="true"></i>
+                            </div>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -252,8 +253,9 @@
     </div>
 </div>
 {% endblock %} {% block js %}
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.4/jquery-confirm.min.js" integrity="sha512-zP5W8791v1A6FToy+viyoyUUyjCzx+4K8XZCKzW28AnCoepPNIXecxh9mvGuy3Rt78OzEsU+VCvcObwAMvBAww==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js" integrity="sha512-u9akINsQsAkG9xjc1cnGF4zw5TFDwkxuc9vUp5dltDWYCSmyd0meygbvgXrlc/z7/o4a19Fb5V0OUE58J7dcyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script type="text/javascript">
     // html elements variable definitions
     let page_url = '{{ request.url }}'
@@ -261,25 +263,12 @@
     let username_input_field = `{{ render_field(info_forms.email) }}`;
     let username_sbmt_field = `{{ info_forms.email_sbmt }}`;
 
-    // onclick functions
-    function onDone() {
-        $("#name-sbmt-btn").ajax({
-            method: 'POST',
-            url: "{{ url_for('admin.adminAccountsUSerManagementProcessName') }}",
-            data: {
-                newname: $("#edit-name-input").val()
-            }
-        }).done(setTimeout(function() {
-            location.reload(true);
-        }, 1500));
-    }
-
-
     $(document).ready(function() {
         $("#name-edit-btn").click(function() {
             $.confirm({
                 title: 'Edit Name',
-                autoClose: 'cancel|6500',
+                theme: 'supervan',
+                autoClose: 'cancel|16500',
                 draggable: false,
                 columnClass: 'medium',
                 animation: 'rotateYR',
@@ -290,6 +279,8 @@
                     '<div class="form-group">' +
                     '<label> New Name:</label>' +
                     '{{ info_forms.name }}' +
+                    '<input id="hidden-inpt" type="hidden" />' +
+                    '</div>' +
                     '</div>' +
                     '</form>',
                 buttons: {
@@ -298,17 +289,57 @@
                         text: 'Submit',
                         btnClass: 'btn-blue',
                         keys: ['enter'],
-                        action: function() {
-                            $.ajax({
-                                method: 'POST',
-                                url: "{{ url_for('admin.adminAccountsUSerManagementProcessName') }}",
-                                data: {
-                                    oldname: "{{ user.name }}",
-                                    newname: $("#edit-name-input").val()
+                        action: async() => {
+                            const validationResult = async(oldname, newname) => {
+                                console.log(oldname, " ", newname);
+                                let url = "{{ url_for('admin.adminAccountsValidateUserManagementProcessName') }}"
+                                try {
+                                    const res = await axios.post(url, {
+                                        oldname: oldname,
+                                        newname: newname
+                                    });
+                                    return res.data;
+                                } catch (error) {
+                                    return false;
                                 }
-                            }).done(setTimeout(function() {
-                                location.reload(true);
-                            }, 1500));
+                            }
+
+                            let result = await validationResult("{{ user.name }}", $("#edit-name-input").val());
+
+                            if (typeof result === 'boolean' || typeof result === 'undefined') {
+                                $.alert({
+                                    content: "Something went wrong",
+                                    title: "ERROR",
+                                    type: "red"
+                                })
+                                return false;
+                            }
+
+                            if (!result.status) {
+                                let errs = result.field_errs;
+                                let content = "The name did not meet the following requirements:";
+                                for (let err of errs) {
+                                    content += `\n - ${err}`;
+                                }
+                                $.alert({
+                                    title: "Form Validation",
+                                    content: content,
+                                    type: "red"
+                                })
+                                return false;
+                            } else {
+                                $.ajax({
+                                    method: 'POST',
+                                    url: "{{ url_for('admin.adminAccountsUserManagementProcessName') }}",
+                                    data: {
+                                        oldname: "{{ user.name }}",
+                                        newname: $("#edit-name-input").val()
+                                    }
+                                }).done(
+                                    setTimeout(function() {
+                                        location.reload(true);
+                                    }, 1500));
+                            }
                         }
                     }
                 },
@@ -329,6 +360,48 @@
             $("#username-edit-btn > i").replaceWith(`<form id='acc-info-edit-form'  method='POST' action=${page_url}>${username_input_field}${username_sbmt_field}</form>`);
         })
     }
+</script>
+<script type="text/javascript">
+    function addRoleForm(container_str, role_name) {
+        $(document).ready(function() {
+            $(container_str).click(function() {
+                $.confirm({
+                    title: "Confirm Action",
+                    type: "blue",
+                    draggable: false,
+                    columnClass: "small",
+                    animation: "rotateYR",
+                    closeAnimation: "rotateXR",
+                    animationSpeed: 1500,
+                    content: `Are you sure you want to delete: ${role_name} role?`,
+                    buttons: {
+                        yes: {
+                            text: "Yes",
+                            btnClass: "btn-blue",
+                            action: function() {
+                                $.ajax({
+                                    method: 'POST',
+                                    url: "{{ url_for('admin.adminAccountsUserManagementDelRole') }}",
+                                    data: {
+                                        user: "{{ user.name }}",
+                                        role: role_name
+                                    }
+                                }).done(setTimeout(function() {
+                                    location.reload(true)
+                                }, 1500));
+                            }
+                        },
+                        no: {
+                            text: "No",
+                            action: function() {}
+                        }
+                    }
+                });
+            });
+        });
+    }
+    addRoleForm("#del-member-btn", "member");
+    addRoleForm("#del-verified-btn", "verified");
 </script>
 <script type="text/javascript">
     (function() {
@@ -440,7 +513,6 @@
     $("#blacklist-btn").click(function() {
         $.confirm({
             title: 'Confirm Blacklist',
-            autoClose: 'cancel|5500',
             draggable: false,
             columnClass: 'small',
             animation: 'rotateYR',

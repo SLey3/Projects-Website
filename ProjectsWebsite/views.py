@@ -234,10 +234,11 @@ def resetRequestRecieved(token, email):
         form = forgotForm()
         if request.method == "POST":
             email = str(email).replace("%40", "@")
-            replacementPassword = guard.hash_password(form.confirm_new_password.data)
+            salt, pwd = create_password(form.confirm_new_password.data)
             user = User.lookup(email)
-            if not user.verify_password(replacementPassword):
-                user.hashed_password = replacementPassword
+            if not user.verify_password(pwd):
+                user.hashed_password = pwd
+                user.user_salt = salt
                 db.session.commit()
                 alert.setAlert("success", "Password has been Successfully reset.")
             else:
@@ -314,7 +315,7 @@ def articleCreation():
         temp_file = TemporaryFile(delete=True)
         pdfkit_config = pdfkit.configuration(
             wkhtmltopdf=os.path.join(
-                os.environ["ProgramFiles"], "wkhtmltopdf", "bin", "wkhtmltopdf.exe"
+                main_app.static_folder, "wkhtmltopdf", "bin", "wkhtmltopdf.exe"
             )
         )
         pdf = pdfkit.from_string(

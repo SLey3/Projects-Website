@@ -24,7 +24,6 @@ from flask import (
 from flask.logging import create_logger
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_praetorian import PraetorianError
-from flask_session import Session
 from flask_uploads import configure_uploads
 from rich import print as rprint
 from sqlalchemy.orm.session import Session as SQLSession
@@ -32,6 +31,7 @@ from sqlalchemy.orm.session import Session as SQLSession
 from ProjectsWebsite.forms import loginForm
 from ProjectsWebsite.modules import (
     assets,
+    cors,
     db,
     guard,
     img_set,
@@ -39,6 +39,7 @@ from ProjectsWebsite.modules import (
     mail,
     migrate,
     security,
+    sess,
 )
 from ProjectsWebsite.util import appExitHandler, current_user
 from ProjectsWebsite.util.utilmodule import alert
@@ -113,7 +114,9 @@ security.init_app(app, user_datastore, login_form=loginForm)
 
 guard.init_app(app, User)
 
-Session(app)
+cors.init_app(app)
+
+sess.init_app(app)
 
 if not PRODUCTION:
     toolbar = DebugToolbarExtension(app)

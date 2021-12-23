@@ -1,10 +1,12 @@
 # ------------------ Imports ------------------
 from flask_assets import Bundle, Environment
+from flask_cors import CORS
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_praetorian import Praetorian
 from flask_security import Security
+from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import IMAGES, UploadSet
 
@@ -26,6 +28,10 @@ guard = Praetorian()
 assets = Environment()
 
 migrate = Migrate()
+
+sess = Session()
+
+cors = CORS()
 
 js_main_bundle = Bundle(
     "js/main/src/confirm.js",

@@ -853,8 +853,8 @@ def create_password(original: str):
     password - the encrypted password with salt
     """
     _salt = uuid.uuid4().hex
-    salt = _salt.encode("utf-8")
-    original = original.encode("utf-8")
+    salt = _salt.encode()
+    original = original.encode()
     encrypt = hashlib.pbkdf2_hmac("sha256", original, salt, 200000)
     return _salt, encrypt
 
@@ -863,10 +863,10 @@ def verify_password(salt, pw_hash, input_pw) -> bool:
     """
     verifies inputed password from the existing password hash
     """
-    input_pw = input_pw.encode("utf-8")
+    input_pw = input_pw.encode()
     if not isinstance(input_pw, bytes):
         input_pw = bytes(input_pw)
-    salt = salt.encode("utf-8")
+    salt = salt.encode()
     return hmac.compare_digest(
         pw_hash, hashlib.pbkdf2_hmac("sha256", input_pw, salt, 200000)
     )
