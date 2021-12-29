@@ -3,8 +3,7 @@ from typing import Optional as optional
 
 import phonenumbers
 from flask_wtf.file import FileAllowed, FileField
-from password_strength import PasswordPolicy
-from password_strength.tests import NonLetters, Numbers, Special, Uppercase
+from password_strength.tests import Numbers, Special, Uppercase
 from wtforms import ValidationError
 from wtforms.validators import (
     DataRequired,
@@ -15,10 +14,8 @@ from wtforms.validators import (
     Optional,
 )
 
-try:
-    from ProjectsWebsite.util.helpers import bool_re
-except ModuleNotFoundError:
-    from ..util.helpers import bool_re
+from ProjectsWebsite.util import NonDuplicateList, PasswordTestManager
+from ProjectsWebsite.util.helpers import bool_re
 
 # ------------------ Validators ------------------
 __all__ = [
@@ -108,37 +105,26 @@ class ValidatePasswordStrength(object):
     Checks Password Strength
     """
 
-    failed_tests = []
+    failed_tests = NonDuplicateList()
 
     def __call__(self, form, field):
-        policy = PasswordPolicy.from_names(
-            uppercase=2, numbers=4, special=2, nonletters=2
-        )
+        policy = PasswordTestManager.from_names(uppercase=2, numbers=4, special=2)
         result = policy.test(field.data)
         if result == []:
-            return None
+            return
         for test in result:
-            if isinstance(test, Uppercase) and not isinstance(
-                test, (Numbers, Special, NonLetters)
-            ):
-                self.failed_tests.append(f"uppercase letters (Missing: {test.count})")
-            elif isinstance(test, Numbers) and not isinstance(
-                test, (Special, NonLetters)
-            ):
-                self.failed_tests.append(f"numbers (Missing: {test.count})")
-            elif isinstance(test, Special) and not isinstance(
-                test, (Numbers, NonLetters)
-            ):
-                self.failed_tests.append(f"special characters (Missing: {test.count})")
-            elif isinstance(test, NonLetters) and not isinstance(
-                test, (Numbers, Special)
-            ):
-                self.failed_tests.append(
-                    f"non-letter characters  (Missing: {test.count})"
-                )
+            if isinstance(test, Uppercase) and not isinstance(test, (Numbers, Special)):
+                count = policy.find_missing_upper_characters(test)
+                self.failed_tests.append(f"uppercase letters (Missing: {count})")
+            elif isinstance(test, Numbers) and not isinstance(test, (Special)):
+                count = policy.find_missing_number_characters(test)
+                self.failed_tests.append(f"numbers (Missing: {count})")
+            elif isinstance(test, Special) and not isinstance(test, (Numbers)):
+                count = policy.find_missing_special_characters(test)
+                self.failed_tests.append(f"special characters (Missing: {count})")
         err = "The Password has less than the required limit(s) of: "
         for test in self.failed_tests:
-            print(test)
             err += f"\n- {test}"
         err += "."
+        self.failed_tests.clean_similar(self.failed_tests.base_list)
         raise ValidationError(err)

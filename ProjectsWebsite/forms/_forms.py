@@ -441,6 +441,7 @@ class AccountManegementForms:
                 Length(
                     min=8, max=99, message="length should be between 8-99 characters"
                 ),
+                ValidatePasswordStrength(),
             ],
             render_kw={
                 "placeholder": "Edit password...",

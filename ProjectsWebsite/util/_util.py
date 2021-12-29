@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 from collections import UserDict, namedtuple
 from collections.abc import Iterable, Iterator
-from functools import partialmethod, wraps
+from functools import partial, partialmethod, wraps
 from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 from flask import abort, current_app, g, request, session, url_for
@@ -11,14 +11,9 @@ from flask_security import RoleMixin as _role_mixin
 from flask_sqlalchemy import Pagination
 from flask_wtf import FlaskForm
 
-try:
-    from ProjectsWebsite.modules import guard, login_manager, mail
-    from ProjectsWebsite.util.helpers import OperationError, date_re, reversed_date_re
-    from ProjectsWebsite.util.mail import automatedMail
-except ModuleNotFoundError:
-    from ..modules import guard, login_manager, mail
-    from .helpers import OperationError, date_re, reversed_date_re
-    from .mail import automatedMail
+from ProjectsWebsite.modules import guard, login_manager, mail
+from ProjectsWebsite.util.helpers import OperationError, date_re, reversed_date_re
+from ProjectsWebsite.util.mail import automatedMail
 
 try:
     from werkzeug import LocalProxy
@@ -43,8 +38,10 @@ from time import sleep
 import pendulum
 import schedule
 from flask_praetorian.user_mixins import SQLAlchemyUserMixin
+from fuzzywuzzy import fuzz, process
 from googletrans import Translator
 from itsdangerous import SignatureExpired
+from password_strength import PasswordPolicy
 from pendulum.datetime import DateTime
 from polib import detect_encoding, pofile
 from sqlalchemy.exc import InvalidRequestError
@@ -78,6 +75,8 @@ __all__ = [
     "create_password",
     "verify_password",
     "UserMixin",
+    "NonDuplicateList",
+    "PasswordTestManager",
 ]
 
 _pagination_args = namedtuple(
@@ -276,6 +275,8 @@ class PoFileAutoTranslator:
         if percent_translated == 100:
             return
         for entry in self.pfile:
+            if self.translator.detect(entry).lang == self.locale:
+                continue
             translated = self.translator.translate(entry.msgid, dest=self.locale)
             entry.msgstr = translated.text
         self.pfile.save()
@@ -322,12 +323,11 @@ class unverfiedLogUtil:
         """
         with open(self.filepath, **self.openKwargs) as f:
             lines = f.readlines()
-            print(lines)
             for line in lines:
                 potential_email = line[line.find("(") + 1 : line.rfind(")")]
                 if potential_email == content_identifier:
                     lines.remove(line)
-                    print(lines)
+
                     if lines == []:
                         f.truncate(0)
                         f.close()
@@ -973,3 +973,129 @@ class UserMixin(SQLAlchemyUserMixin):
 
     def __repr__(self):
         return self.name
+
+
+class NonDuplicateList:
+    """
+    List that removes duplicate items
+    """
+
+    base_list = []
+
+    def __init__(self, items=[], *, delete_duplicates: bool = True):
+        self.delete_duplicates = delete_duplicates
+        if items:
+            self._make_list(*items)
+
+    @staticmethod
+    def _loop_ratiolist(ratio_list, args):
+        for ratio in ratio_list:
+            if ratio[1] >= 90:
+                args.remove(ratio[0])
+
+    @classmethod
+    def _loop_ratio_args(cls, args, _arg):
+        extract = partial(process.extract, choices=args, scorer=fuzz.ratio, limit=10)
+        if _arg:
+            ratio_list = extract(_arg)
+            cls._loop_ratiolist(ratio_list, args)
+        else:
+            for arg in args[:]:
+                ratio_list = extract(arg)
+                cls._loop_ratiolist(ratio_list, args)
+        return args
+
+    def _make_list(self, args):
+        if self.delete_duplicates:
+            args = self.clean_duplicates(args)
+        args = self.clean_similar(args)
+        self.extend(*args)
+
+    @classmethod
+    def clean_similar(
+        cls, args: List[Any], arg: Optional[Any] = None, return_cls: bool = False
+    ) -> Union[Callable[..., Any], List[Any]]:
+        """
+        removes similar items in lit
+        """
+        args = cls._loop_ratio_args(args, arg)
+        if return_cls:
+            return cls(*args)
+        return args
+
+    @classmethod
+    def clean_duplicates(
+        cls, args: List[Any], delete_similar: bool = False, return_cls: bool = False
+    ) -> Union[Callable[..., Any], List[Any]]:
+        """
+        removes duplicates from list
+        """
+        for arg in args[:]:
+            count = args.count(arg)
+            if count > 1:
+                while count != 1:
+                    args.remove(arg)
+                    count = args.count(arg)
+        if delete_similar:
+            args = cls.clean_similar(args)
+        if return_cls:
+            return cls(*args, delete_duplicates=False)
+        return args
+
+    def append(self, item, delete_similar: bool = False):
+        """
+        appends item into the list, and checks for duplicates.
+        Does not append duplicate items
+        """
+        if item not in self.base_list:
+            if delete_similar:
+                self.clean_similar(self.baselist, item)
+            self.base_list.append(item)
+
+    def __getitem__(self, index) -> Any:
+        return self.base_list[index]
+
+    def __iter__(self):
+        yield from self.base_list
+
+    pop = base_list.pop
+    index = base_list.index
+    count = base_list.count
+    remove = base_list.remove
+    extend = base_list.extend
+
+
+class PasswordTestManager(PasswordPolicy):
+    """
+    Extension for password_strength.PasswordPolicy that adds find methods
+    for finding the total number of characters of a specific test to meet
+    test requirements
+    """
+
+    def test(self, pwd):
+        self.pwd = self.password(pwd)
+        return super(PasswordTestManager, self).test(pwd)
+
+    def find_missing_upper_characters(self, test) -> int:
+        """
+        Finds the total number of uppercase characters needed to fulfill the test requirement
+        """
+        required_char_count = test.count
+        char_count = self.pwd.letters_uppercase
+        return required_char_count - char_count
+
+    def find_missing_number_characters(self, test) -> int:
+        """
+        Finds the total number of number characters needed to fulfill the test requirement
+        """
+        required_char_count = test.count
+        char_count = self.pwd.numbers
+        return required_char_count - char_count
+
+    def find_missing_special_characters(self, test) -> int:
+        """
+        Finds the total number of special characters needed to fulfill the test requirement
+        """
+        required_char_count = test.count
+        char_count = self.pwd.special_characters
+        return required_char_count - char_count

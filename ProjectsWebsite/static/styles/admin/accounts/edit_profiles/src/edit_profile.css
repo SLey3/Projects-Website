@@ -40,7 +40,8 @@
 }
 
 #username-edit-btn,
-#name-edit-btn {
+#name-edit-btn,
+#password-edit-btn {
     cursor: pointer;
 }
 

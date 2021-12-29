@@ -303,6 +303,7 @@ def adminAccountsUserManagement(args):
             salt, pwd = create_password(info_forms.password.data)
             user_info.hashed_password = pwd
             user_info.user_salt = salt
+            user_info.commit()
         elif info_forms.active.data:
             if info_forms.active.data == "False":
                 data = False
@@ -310,7 +311,7 @@ def adminAccountsUserManagement(args):
             else:
                 data = True
             user_info.active = data
-            db.session.commit()
+            user_info.commit()
         elif role_form.delete_all.data:
             for role in user_info.iter_roles():
                 if role not in ("admin", "verified", "unverified"):

@@ -41,6 +41,7 @@ flask-session==0.4.0      # via -r requirements.in
 flask-sqlalchemy==2.5.1   # via -r requirements.in, flask-migrate
 flask-wtf==0.14.3         # via -r requirements.in, flask-security
 flask==1.1.2              # via -r requirements.in, flask-assets, flask-babelex, flask-buzz, flask-cors, flask-debugtoolbar, flask-login, flask-mail, flask-migrate, flask-monitoringdashboard, flask-praetorian, flask-principal, flask-reuploaded, flask-security, flask-session, flask-sqlalchemy, flask-wtf
+fuzzywuzzy[speedup]==0.18.0  # via -r requirements.in
 googletrans==4.0.0-rc1    # via -r requirements.in
 greenlet==1.1.0           # via sqlalchemy
 h11==0.9.0                # via httpcore
@@ -84,6 +85,7 @@ pyparsing==2.4.7          # via packaging
 pytest==6.2.4             # via -r requirements.in
 python-dateutil==2.8.1    # via alembic, pendulum
 python-editor==1.0.4      # via alembic
+python-levenshtein==0.12.2  # via fuzzywuzzy
 pytz==2021.1              # via apscheduler, babel, flask-monitoringdashboard, tzlocal
 pytzdata==2020.1          # via pendulum
 requests==2.25.1          # via -r requirements.in

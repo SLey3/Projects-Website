@@ -57,7 +57,7 @@
                                 <th scope="row">Password: </th>
                                 <td class="text-truncate" style="max-width: 200px;">{{ user.password }}</td>
                                 <td>
-                                    <div id="password-edit-btn">
+                                    <div id="password-edit-btn" onclick="editPasswordEditForm()">
                                         <i id="acc-info-syml" class="fa fa-pencil-square-o" aria-hidden="true"></i>
                                     </div>
                                 </td>
@@ -263,6 +263,9 @@
     let username_input_field = `{{ render_field(info_forms.email) }}`;
     let username_sbmt_field = `{{ info_forms.email_sbmt }}`;
 
+    let pwd_input_field = `{{ render_field(info_forms.password) }}`;
+    let pwd_sbmt_field = `{{ info_forms.password_sbmt }}`;
+
     $(document).ready(function() {
         $("#name-edit-btn").click(function() {
             $.confirm({
@@ -291,7 +294,6 @@
                         keys: ['enter'],
                         action: async() => {
                             const validationResult = async(oldname, newname) => {
-                                console.log(oldname, " ", newname);
                                 let url = "{{ url_for('admin.adminAccountsValidateUserManagementProcessName') }}"
                                 try {
                                     const res = await axios.post(url, {
@@ -357,7 +359,13 @@
 
     function editUsernameEditForm() {
         $(document).ready(function() {
-            $("#username-edit-btn > i").replaceWith(`<form id='acc-info-edit-form'  method='POST' action=${page_url}>${username_input_field}${username_sbmt_field}</form>`);
+            $("#username-edit-btn > i").replaceWith(`<form id='acc-info-edit-usrnm-form'  method='POST' action=${page_url}>${username_input_field}${username_sbmt_field}</form>`);
+        })
+    }
+
+    function editPasswordEditForm() {
+        $(document).ready(function() {
+            $("#password-edit-btn > i").replaceWith(`<form id='acc-info-edit-pwd-form'  method='POST' action=${page_url}>${pwd_input_field}${pwd_sbmt_field}</form>`);
         })
     }
 </script>
