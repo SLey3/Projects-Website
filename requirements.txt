@@ -32,7 +32,7 @@ flask-debugtoolbar==0.11.0  # via -r requirements.in
 flask-login==0.5.0        # via -r requirements.in, flask-security
 flask-mail==0.9.1         # via -r requirements.in, flask-praetorian, flask-security
 flask-migrate==3.0.1      # via -r requirements.in
-flask-monitoringdashboard==3.1.0  # via -r requirements.in
+flask-monitoringdashboard==3.1.1  # via -r requirements.in
 flask-praetorian==1.2.0   # via -r requirements.in
 flask-principal==0.4.0    # via -r requirements.in, flask-security
 flask-reuploaded==0.3.2   # via -r requirements.in
