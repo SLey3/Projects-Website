@@ -26,6 +26,7 @@ import inspect
 import os.path as _path
 import re
 import signal
+import tempfile
 import threading
 import uuid
 import warnings
@@ -77,6 +78,7 @@ __all__ = [
     "UserMixin",
     "NonDuplicateList",
     "PasswordTestManager",
+    "generate_temp_pdf_file",
 ]
 
 _pagination_args = namedtuple(
@@ -863,10 +865,8 @@ def verify_password(salt, pw_hash, input_pw) -> bool:
     """
     verifies inputed password from the existing password hash
     """
-    input_pw = input_pw.encode()
-    if not isinstance(input_pw, bytes):
-        input_pw = bytes(input_pw)
-    salt = salt.encode()
+    input_pw = input_pw if isinstance(input_pw, bytes) else input_pw.encode()
+    salt = salt if isinstance(salt, bytes) else salt.encode()
     return hmac.compare_digest(
         pw_hash, hashlib.pbkdf2_hmac("sha256", input_pw, salt, 200000)
     )
@@ -1065,6 +1065,37 @@ class NonDuplicateList:
     extend = base_list.extend
 
 
+class __PasswordTestManagerIsInstanceCases:
+    def __init__(self, test_result_obj):
+        self.test_result = test_result_obj
+
+    def _check_condition(self, condition):
+        if condition in str(self.test_result).lower():
+            return True
+        return False
+
+    @property
+    def is_uppercase(self):
+        """
+        checks if the test result obj is uppercase
+        """
+        return self._check_condition("upper")
+
+    @property
+    def is_numbers(self):
+        """
+        check if the test result obj is numbers
+        """
+        return self._check_condition("numbers")
+
+    @property
+    def is_special(self):
+        """
+        check if the test result obj is special
+        """
+        return self._check_condition("special")
+
+
 class PasswordTestManager(PasswordPolicy):
     """
     Extension for password_strength.PasswordPolicy that adds find methods
@@ -1073,8 +1104,14 @@ class PasswordTestManager(PasswordPolicy):
     """
 
     def test(self, pwd):
-        self.pwd = self.password(pwd)
-        return super(PasswordTestManager, self).test(pwd)
+        self.pwd = self.password(pwd)  # password Statistics function
+        test_list = super(PasswordTestManager, self).test(pwd)
+        for test_obj in test_list:
+            isistancecases = __PasswordTestManagerIsInstanceCases(pwd)
+            test_obj.is_uppercase = isistancecases.is_uppercase
+            test_obj.is_numbers = isistancecases.is_numbers
+            test_obj.is_special = isistancecases.is_special
+        return test_list
 
     def find_missing_upper_characters(self, test) -> int:
         """
@@ -1099,3 +1136,14 @@ class PasswordTestManager(PasswordPolicy):
         required_char_count = test.count
         char_count = self.pwd.special_characters
         return required_char_count - char_count
+
+
+def generate_temp_pdf_file(file_name: str, file_ext: str, _data: Union[bytes, Any]):
+    tmp_file_path = current_app.config["PDF_TEMP_DIR"]
+    tmp = tempfile.NamedTemporaryFile(
+        prefix=file_name, suffix=file_ext, dir=tmp_file_path
+    )
+    data = _data if isinstance(_data, bytes) else _data.encode()
+    tmp.write(data)
+    setattr(tmp, "file_dir", _path.join(tmp_file_path, f"{file_name}.{file_ext}"))
+    return tmp

@@ -1,0 +1,1 @@
+TEMP FILE DIR for storing temporary article pdfs when either downloading or adding them into the database

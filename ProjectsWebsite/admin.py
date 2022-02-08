@@ -233,7 +233,6 @@ def adminAccountsUserManagementDelRole():
 @parser.use_args(AccountUserManagementWebArgs(), location="querystring")
 @token_auth_required
 def adminAccountsUserManagement(args):
-    print(args)
     page = args["page"]
     action = args["actions"]["action"]
     item_id = args["actions"]["item_id"]

@@ -3,7 +3,6 @@ from typing import Optional as optional
 
 import phonenumbers
 from flask_wtf.file import FileAllowed, FileField
-from password_strength.tests import Numbers, Special, Uppercase
 from wtforms import ValidationError
 from wtforms.validators import (
     DataRequired,
@@ -113,13 +112,13 @@ class ValidatePasswordStrength(object):
         if result == []:
             return
         for test in result:
-            if isinstance(test, Uppercase) and not isinstance(test, (Numbers, Special)):
+            if test.is_uppercase:
                 count = policy.find_missing_upper_characters(test)
                 self.failed_tests.append(f"uppercase letters (Missing: {count})")
-            elif isinstance(test, Numbers) and not isinstance(test, (Special)):
+            elif test.is_numbers:
                 count = policy.find_missing_number_characters(test)
                 self.failed_tests.append(f"numbers (Missing: {count})")
-            elif isinstance(test, Special) and not isinstance(test, (Numbers)):
+            elif test.is_special:
                 count = policy.find_missing_special_characters(test)
                 self.failed_tests.append(f"special characters (Missing: {count})")
         err = "The Password has less than the required limit(s) of: "

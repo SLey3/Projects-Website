@@ -84,8 +84,6 @@ class AlertUtil(object):
         alertMsg = self.alert_dict["message"]
         self.alert_dict.update(type="", message="")
         if alertType == "error":
-            if isinstance(alertMsg, int):
-                raise TypeError("type int is not allowed")
             for code in alert_codes_list:
                 if code != alertMsg:
                     continue

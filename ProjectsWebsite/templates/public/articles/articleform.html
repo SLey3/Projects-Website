@@ -10,13 +10,13 @@
             <label>Title:</label> {{ render_field(form.title, novalidate=True) }}
         </div>
         <div class="txtb">
-            <label>Author:</label> {{ render_field(form.author, novalidate=True) }}
+            <label>Author:</label> {{ current_user.name }}
         </div>
         <div class="txtb">
-            <label>Short Description:</label> {{ render_field(form.short_desc) }}
+            <label>Short Description:</label> {{ render_field(form.short_desc, novalidate=True) }}
         </div>
         <div class="txtb">
-            <label>Title_Image:</label> {{ render_field(form.front_image) }}
+            <label>Title_Image:</label> {{ render_field(form.front_image, novalidate=True) }}
         </div>
         <div class="txtb">
             <label>Body:</label>
@@ -25,14 +25,13 @@
         <div class="submit-btn">
             <input type="submit" value="Submit Article" />
         </div>
-        <div class="submit-btn">
-            <button id="back-btn" formnovalidate href="{{ url_for('main_app.article_home') }}">Back</button> </div>
     </form>
 </div>
 {% endblock %} {% block js %}
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
+<script src="{{ current_app.static_url_path }}/js/ext/summernote/plugin/plugin.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         $('#summernote').summernote({
@@ -42,7 +41,7 @@
                 ['color', ['color']],
                 ['para', ['ul', 'ol', 'paragraph']],
                 ['table', ['table']],
-                ['insert', ['link', 'picture', 'video']],
+                ['insert', ['link', 'picture', 'videoUpload']],
                 ['misc', ['undo', 'redo']],
                 ['view', ['fullscreen', 'codeview', 'help']],
             ],
@@ -50,10 +49,5 @@
             dialogsInBody: true
         });
     });
-</script>
-<script type="text/javascript">
-    $("#back-btn").click(function() {
-        document.getElementById("article-form").removeAttribute("method");
-    })
 </script>
 {% endblock %}

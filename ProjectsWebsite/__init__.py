@@ -6,7 +6,6 @@ del sys
 import logging
 import os
 import ssl
-from http.client import HTTPConnection as reqlogConnection
 from json import load
 from pathlib import Path
 
@@ -47,19 +46,6 @@ from ProjectsWebsite.util.utilmodule import alert
 path = Path(os.path.dirname(os.path.abspath(__file__)))
 
 sql_sess = SQLSession(autoflush=False)
-
-# ------------------ Production Status ------------------
-# set true if website is in production, else set false if website is in development
-PRODUCTION = False
-
-# ------------------ Loggers ------------------
-requests_logger = logging.getLogger("urllib3")
-requests_logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-requests_logger.addHandler(ch)
-reqlogConnection.debuglevel = 1
-
 
 # ------------------ SSL ------------------
 context = ssl.SSLContext()
@@ -118,7 +104,7 @@ cors.init_app(app)
 
 sess.init_app(app)
 
-if not PRODUCTION:
+if app.env == "developement":
     toolbar = DebugToolbarExtension(app)
 
 try:
@@ -140,9 +126,9 @@ app.register_blueprint(main_app)
 
 # ------------------ template globals ------------------
 app.add_template_global(current_user, "current_user")
+app.add_template_global(app, "current_app")
 app.add_template_global(request, "request")
 app.add_template_global(redirect, "redirect")
-
 
 # ------------------ before first request ------------------
 @app.before_first_request

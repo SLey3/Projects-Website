@@ -1,7 +1,7 @@
 # ------------------ Imports ------------------
 import base64
 import os
-from tempfile import TemporaryFile
+from time import sleep
 
 import pdfkit
 from flask import (
@@ -39,6 +39,7 @@ from ProjectsWebsite.util import (
     create_password,
     current_user,
     formatPhoneNumber,
+    generate_temp_pdf_file,
     is_valid_article_page,
     login_user,
     logout_user,
@@ -301,7 +302,7 @@ def articleCreation():
         img_file = form.front_image.data
         if isinstance(img_file, type(None)):
             del img_file
-            img = "None"
+            img = "No Front Image"
         else:
             filename = secure_filename(img_file.filename)
             img_set.save(img_file, name=f"{filename}")
@@ -312,7 +313,6 @@ def articleCreation():
         date_util = DateUtil(format_token="L")
         creation_date = date_util.subDate()
         body = request.form["editordata"]
-        temp_file = TemporaryFile(delete=True)
         pdfkit_config = pdfkit.configuration(
             wkhtmltopdf=os.path.join(
                 main_app.static_folder, "wkhtmltopdf", "bin", "wkhtmltopdf.exe"
@@ -324,23 +324,29 @@ def articleCreation():
             css=f"{main_app.static_folder}/styles/articlepage.css",
             configuration=pdfkit_config,
         )
-        temp_file.write(pdf)
-        new_article = Article(
-            title=form.title.data,
-            author=form.author.data.capitalize(),
-            create_date=creation_date,
-            short_desc=form.short_desc.data,
-            title_img=img,
-            body=body,
-            download_pdf=temp_file.read(),
+        temp_file = generate_temp_pdf_file(
+            f"_temp_pdf_file_{form.title.data}", "pdf", pdf
         )
+        print(temp_file.file_dir)
+        sleep(5)
+        # new_article = Article(
+        #     title=form.title.data,
+        #     author=form.author.data.capitalize(),
+        #     create_date=creation_date,
+        #     short_desc=form.short_desc.data,
+        #     title_img=img,
+        #     body=body,
+        #     download_pdf=temp_file.read(),
+        # )
         temp_file.close()
-        db.session.add(new_article)
-        db.session.commit()
+        # db.session.add(new_article)
+        # db.session.commit()
         alert.setAlert("success", "Article has been Created.")
         return redirect(url_for(".homePage"))
     else:
-        return render_template("public/articles/articleform.html", form=form)
+        return render_template(
+            "public/articles/articleform.html", form=form, current_user=current_user
+        )
 
 
 @main_app.route("/articles/", methods=["GET", "POST"])
@@ -372,7 +378,9 @@ def contact_us():
         msg = form.message.data
         mail_msg = Message(
             f"Contact Message Recieved",
-            recipients=["ghub4127@gmail.com", "noreplymyprojectsweb@gmail.com"],
+            recipients=["noreplymyprojectsweb@gmail.com"],
+            cc=[email],
+            bcc=["ghub4127@gmail.com"],
         )
         mail_msg.html = formatContact(
             name=name,
@@ -385,7 +393,8 @@ def contact_us():
         mail.send(mail_msg)
         alert.setAlert(
             "info",
-            "Contact Message has been Sent. Please wait for a responce from support team.",
+            """Contact Message has been Sent. A copy of the message to support has been sent to you. 
+            Please wait for a responce from support.""",
         )
         return redirect(url_for(".homePage"))
     else:
