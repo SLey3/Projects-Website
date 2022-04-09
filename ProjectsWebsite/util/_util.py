@@ -848,6 +848,13 @@ del form_field
 del form_ignore
 
 
+def _pwd_pepper():
+    """
+    returns pepper for password
+    """
+    return "0782KncD"
+
+
 def create_password(original: str):
     """
     Creates an encrypted password with salt. Returns two values in the following order:
@@ -1070,6 +1077,7 @@ class __PasswordTestManagerIsInstanceCases:
         self.test_result = test_result_obj
 
     def _check_condition(self, condition):
+        print(str(self.test_result).lower())
         if condition in str(self.test_result).lower():
             return True
         return False

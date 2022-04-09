@@ -124,18 +124,41 @@
                 });
             };
 
-            // Upload video url with jquery Ajax method
-            this.uploadVideoUrl = function(url) {};
+            // Upload video url with iframe elememt with youtube embed url created from code provided
+            this.uploadVideoUrl = function(url) {
+                let base_url = "https://www.youtube.com/embed/";
+                let in_url = url.includes(base_url);
+                let ab_channel = url.includes("&ab_channel=")
+                if (in_url) {
+                    if (ab_channel) {
+                        url = url.split("&ab_channel=")[0];
+                    }
+                    let $ytembed = $(`<iframe width="1707" height="802" src="${url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+                    self.insertData($ytembed);
+                } else {
+                    url = url.split("?v=")[1];
+                    if (ab_channel) {
+                        url = url.split("&ab_channel=")[0];
+                    }
+                    let embedurl = base_url + url;
+                    let $ytembed = $(`<iframe width="1707" height="802" src="${embedurl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+                }
+            };
+
+            this.insertData = function(data) {};
 
             // Upload video from file path
             this.uploadVideoFile = function(data) {};
 
             // Shows Plugin Dialog
-            this.show = function() {
+            this.show = function() {;
                 context.invoke('editor.saveRange');
                 this.showvideoUploadDialog().then(function(editorInfo) {
-                    ui.hideDialog(self.self.$dialog);
+                    ui.hideDialog(self.$dialog);
                     context.invoke('editor.restoreRange');
+                    if (typeof editorInfo === 'string') { // youtube url
+                        self.uploadVideoUrl(editorInfo);
+                    }
                 }).fail(function() {
                     context.invoke('editor.restoreRange');
                 });
@@ -145,8 +168,8 @@
             this.showvideoUploadDialog = function() {
                 return $.Deferred(function(deferred) {
                     let $pluginBtn = self.$dialog.find('.note-videoUpload-btn');
-                    let $pluginFileInput = self.$dialog.find('note-file-input');
-                    let $pluginUrlInput = self.$dialog.find('note-video-url')
+                    let $pluginFileInput = self.$dialog.find('.note-file-input');
+                    let $pluginUrlInput = self.$dialog.find('.note-video-url')
 
                     ui.onDialogShown(self.$dialog, function() {
                         context.triggerEvent('dialog.shown');
@@ -154,11 +177,16 @@
                             e.preventDefault();
                             deferred.resolve($pluginUrlInput.val());
                         });
+                        $pluginUrlInput.on("keyup paste", function() {
+                            let url = $pluginUrlInput.val();
+                            ui.toggleBtn($pluginFileInput, url);
+                        }).val('');
                         self.bindEnterKey($pluginUrlInput, $pluginBtn);
                         self.bindLabels();
                     });
 
                     ui.onDialogHidden(self.$dialog, function() {
+                        $pluginUrlInput.off('keyup paste keypress');
                         $pluginBtn.off('click');
 
                         if (deferred.state() === 'pending')
