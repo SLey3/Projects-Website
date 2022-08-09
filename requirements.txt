@@ -50,7 +50,7 @@ hpack==3.0.0              # via h2
 hstspreload==2021.7.5     # via httpx
 html5lib==1.1             # via -r requirements.in
 httpcore==0.9.1           # via httpx
-httpx==0.13.3             # via googletrans
+httpx==0.23.0             # via googletrans
 hyperframe==5.2.0         # via h2
 idna==2.10                # via -r requirements.in, email-validator, httpx, requests
 inflection==0.3.1         # via py-buzz
