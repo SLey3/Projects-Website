@@ -1,9 +1,9 @@
 repos:
   - repo:  https://github.com/psf/black
-    rev: 21.8b0
+    rev: 22.6.0
     hooks:
       - id: black
-        args: ["ProjectsWebsite"]
+        args: ["ProjectsWebsite", "--target-version", "py310"]
         language_version: python3
   - repo: https://github.com/pycqa/isort
     rev: 5.9.3
@@ -18,7 +18,7 @@ repos:
       - id: check-merge-conflict
       - id: check-docstring-first
   - repo: https://github.com/hadialqattan/pycln
-    rev: v1.0.3
+    rev: v1.1.0
     hooks:
       - id: pycln
         args: [--config=pycln-config.yaml]

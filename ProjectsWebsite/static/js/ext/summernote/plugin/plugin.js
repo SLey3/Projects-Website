@@ -1,8 +1,3 @@
-/**
- *
- * copyright 2022 Sergio Ley.
- * license: MIT
- */
 (function(factory) {
     /* Global define */
     if (typeof define === 'function' && define.amd) {
@@ -28,7 +23,8 @@
                 uploadFromFile: "Video file",
                 uploadFromUrl: "Youtube Video url",
                 okButton: "Upload",
-                tooltip: 'VideoUpload Plugin'
+                tooltip: "VideoUpload Plugin",
+                unsupportedFileTypeError: "Filetype does not match one of a video (e.g. .mp4, .webm)"
             }
         }
     });
@@ -124,7 +120,21 @@
                 });
             };
 
-            // Upload video url with iframe elememt with youtube embed url created from code provided
+            this.iterfileasDataUrl = function(file) {
+                return $.Deferred(function(deferred) {
+                    $.extend(new FileReader(), {
+                        onload: function(e) {
+                            let dataUrl = e.target.result;
+                            deferred.resolve(dataURL);
+                        },
+                        onerror: function(er) {
+                            deferred.reject(er);
+                        }
+                    }).readAsDataURl(file);
+                }).promise();
+            }
+
+            // Upload video url with iframe element with youtube embed url created from code provided
             this.uploadVideoUrl = function(url) {
                 let base_url = "https://www.youtube.com/embed/";
                 let in_url = url.includes(base_url);
@@ -133,7 +143,7 @@
                     if (ab_channel) {
                         url = url.split("&ab_channel=")[0];
                     }
-                    let $ytembed = $(`<iframe width="1707" height="802" src="${url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+                    let $ytembed = $(`<iframe width="500" height="350" src="${url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
                     self.insertData($ytembed);
                 } else {
                     url = url.split("?v=")[1];
@@ -141,14 +151,43 @@
                         url = url.split("&ab_channel=")[0];
                     }
                     let embedurl = base_url + url;
-                    let $ytembed = $(`<iframe width="1707" height="802" src="${embedurl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+                    let $ytembed = $(`<iframe width="500" height="350" src="${embedurl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+                    self.insertData($ytembed);
                 }
             };
 
-            this.insertData = function(data) {};
-
             // Upload video from file path
-            this.uploadVideoFile = function(data) {};
+            this.uploadVideoFile = function(data) {
+                // TODO: Fix broken function
+                let fname = data.name;
+                let videoRegExp = /^.+.(mp4|ogv|webm)$/;
+                let videoBase64RegExp = /^data:(video\/mpeg|video\/mp4|video\/ogv|video\/webm).+$/;
+                let $file;
+
+                self.iterfileasDataUrl(data).then(function(dataUrl) {
+                    $file = dataUrl;
+                    if (data.match(videoRegExp) || data.match(videoBase64RegExp)) {
+                        $file = $("<video controls>").attr('src', data);
+                        $file.addClass('note-file-clip');
+                        self.insertData($file);
+                    } else {
+                        context.triggerEvent('videoUpload.upload.error', lang.videoUpload.unsupportedFileTypeError);
+                        return false
+                    }
+                })
+            };
+
+            // insert either iframe or file data into the editor
+            this.insertData = function(data) {
+                $file = data;
+
+                context.invoke('videoUpload.beforeCommand');
+
+                $file.show();
+                context.invoke('editor.insertNode', $file[0]);
+
+                context.invoke('editor.afterCommand');
+            };
 
             // Shows Plugin Dialog
             this.show = function() {;
@@ -158,6 +197,8 @@
                     context.invoke('editor.restoreRange');
                     if (typeof editorInfo === 'string') { // youtube url
                         self.uploadVideoUrl(editorInfo);
+                    } else {
+                        self.uploadVideoFile(editorInfo);
                     }
                 }).fail(function() {
                     context.invoke('editor.restoreRange');
@@ -173,6 +214,11 @@
 
                     ui.onDialogShown(self.$dialog, function() {
                         context.triggerEvent('dialog.shown');
+
+                        $pluginFileInput.replaceWith($pluginFileInput.clone().on('change', function(event) {
+                            deferred.resolve(event.target.files || event.target.value);
+                        }).val(''));
+
                         $pluginBtn.click(function(e) {
                             e.preventDefault();
                             deferred.resolve($pluginUrlInput.val());

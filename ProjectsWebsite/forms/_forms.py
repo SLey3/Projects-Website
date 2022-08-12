@@ -387,7 +387,7 @@ class AccountManegementForms:
 
     class adminUserInfoForm(FlaskForm):
         """
-        Creates Info Ediit form Inputs
+        Creates Profile Info Edit form Inputs
         """
 
         name = StringField(

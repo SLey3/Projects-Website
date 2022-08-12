@@ -215,6 +215,43 @@ def adminAccountsValidateUserManagementProcessName():
     return jsonify(status=result, field_errs=field.errors)
 
 
+@admin.route(
+    "management/accounts/edit_user/api/process/username", methods=["GET", "POST"]
+)
+def adminAccountsUserManagementProcessUsername():
+    if request.method == "GET":
+        source_code = inspect.getsource(adminAccountsUserManagementProcessUsername)
+        return render_template_string(source_code)
+    old_username, new_username = (
+        request.form["oldusername"],
+        request.form["newusername"],
+    )
+    user = User.lookup_by_name(old_username)
+    user.username = new_username
+    user.commit()
+    return jsonify({"old_name": old_username, "new_name": new_username})
+
+
+@admin.route(
+    "management/accounts/edit_user/api/process/username/presend",
+    methods=["GET", "POST"],
+)
+def adminAccountsValidateUserManagementProcessUsername():
+    if request.method == "GET":
+        source_code = inspect.getsource(
+            adminAccountsValidateUserManagementProcessUsername
+        )
+        return render_template_string(source_code)
+    form = AccountManegementForms.adminUserInfoForm()
+    field = form.email
+    data = request.get_json()
+    old_username = data.get("oldusername")
+    new_username = data.get("newusername")
+    field.process_data(new_username)
+    result = field.validate(form)
+    return jsonify(status=result, field_errs=field.errors)
+
+
 @admin.route("management/accounts/edit_user/api/delrole", methods=["GET", "POST"])
 def adminAccountsUserManagementDelRole():
     if request.method == "GET":

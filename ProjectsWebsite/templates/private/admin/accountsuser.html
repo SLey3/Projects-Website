@@ -48,7 +48,7 @@
                                 <th scope="row">Username: </th>
                                 <td>{{ user.username }}</td>
                                 <td>
-                                    <div id="username-edit-btn" onclick="editUsernameEditForm()">
+                                    <div id="username-edit-btn">
                                         <i name="acc-info-syml" class="fa fa-pencil-square-o"></i>
                                     </div>
                                 </td>
@@ -256,112 +256,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.4/jquery-confirm.min.js" integrity="sha512-zP5W8791v1A6FToy+viyoyUUyjCzx+4K8XZCKzW28AnCoepPNIXecxh9mvGuy3Rt78OzEsU+VCvcObwAMvBAww==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js" integrity="sha512-u9akINsQsAkG9xjc1cnGF4zw5TFDwkxuc9vUp5dltDWYCSmyd0meygbvgXrlc/z7/o4a19Fb5V0OUE58J7dcyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% assets "edit_prof_main_js" %}
+<script src="{{ ASSET_URL }}"></script>
+{% endassets %}
 <script type="text/javascript">
     // html elements variable definitions
     let page_url = '{{ request.url }}'
 
+    let name_input_field = `{{ render_field(info_forms.name) }}`;
+    let name_validate_url = "{{ url_for('admin.adminAccountsValidateUserManagementProcessName') }}";
+    let name_process_url = "{{ url_for('admin.adminAccountsUserManagementProcessName') }}";
+
     let username_input_field = `{{ render_field(info_forms.email) }}`;
-    let username_sbmt_field = `{{ info_forms.email_sbmt }}`;
+    let username_validate_url = "{{ url_for('admin.adminAccountsValidateUserManagementProcessUsername') }}";
+    let username_process_url = "{{ url_for('admin.adminAccountsUserManagementProcessUsername') }}";
 
     let pwd_input_field = `{{ render_field(info_forms.password) }}`;
     let pwd_sbmt_field = `{{ info_forms.password_sbmt }}`;
 
-    $(document).ready(function() {
-        $("#name-edit-btn").click(function() {
-            $.confirm({
-                title: 'Edit Name',
-                theme: 'supervan',
-                autoClose: 'cancel|16500',
-                draggable: false,
-                columnClass: 'medium',
-                animation: 'rotateYR',
-                closeAnimation: 'rotateXR',
-                animationSpeed: 1500,
-                content: '' +
-                    '<form id="edit-name-form" method="POST" action="{{ url_for("admin.adminAccountsUserManagement") }}?user={{ user.name }}">' +
-                    '<div class="form-group">' +
-                    '<label> New Name:</label>' +
-                    '{{ info_forms.name }}' +
-                    '<input id="hidden-inpt" type="hidden" />' +
-                    '</div>' +
-                    '</div>' +
-                    '</form>',
-                buttons: {
-                    cancel: function() {},
-                    formSubmit: {
-                        text: 'Submit',
-                        btnClass: 'btn-blue',
-                        keys: ['enter'],
-                        action: async() => {
-                            const validationResult = async(oldname, newname) => {
-                                let url = "{{ url_for('admin.adminAccountsValidateUserManagementProcessName') }}"
-                                try {
-                                    const res = await axios.post(url, {
-                                        oldname: oldname,
-                                        newname: newname
-                                    });
-                                    return res.data;
-                                } catch (error) {
-                                    return false;
-                                }
-                            }
-
-                            let result = await validationResult("{{ user.name }}", $("#edit-name-input").val());
-
-                            if (typeof result === 'boolean' || typeof result === 'undefined') {
-                                $.alert({
-                                    content: "Something went wrong",
-                                    title: "ERROR",
-                                    type: "red"
-                                })
-                                return false;
-                            }
-
-                            if (!result.status) {
-                                let errs = result.field_errs;
-                                let content = "The name did not meet the following requirements:";
-                                for (let err of errs) {
-                                    content += `\n - ${err}`;
-                                }
-                                $.alert({
-                                    title: "Form Validation",
-                                    content: content,
-                                    type: "red"
-                                })
-                                return false;
-                            } else {
-                                $.ajax({
-                                    method: 'POST',
-                                    url: "{{ url_for('admin.adminAccountsUserManagementProcessName') }}",
-                                    data: {
-                                        oldname: "{{ user.name }}",
-                                        newname: $("#edit-name-input").val()
-                                    }
-                                }).done(
-                                    setTimeout(function() {
-                                        location.reload(true);
-                                    }, 1500));
-                            }
-                        }
-                    }
-                },
-                onContentReady: function() {
-                    let jc = this;
-                    this.$content.find('form').on('submit', function(e) {
-                        e.preventDefault();
-                        jc.$$formSubmit.trigger('click');
-                    });
-                }
-            });
-        });
-    });
-
-
-    function editUsernameEditForm() {
-        $(document).ready(function() {
-            $("#username-edit-btn > i").replaceWith(`<form id='acc-info-edit-usrnm-form'  method='POST' action=${page_url}>${username_input_field}${username_sbmt_field}</form>`);
-        })
-    }
+    initEditProfMenu('{{ user.name }}', page_url, name_input_field, name_validate_url,
+        name_process_url, username_input_field, username_validate_url,
+        username_process_url);
 
     function editPasswordEditForm() {
         $(document).ready(function() {
@@ -627,6 +542,4 @@
         });
     });
 </script>
-{% assets "edit_prof_main_js" %}
-<script src="{{ ASSET_URL }}"></script>
-{% endassets %} {% endblock %}
+{% endblock %}

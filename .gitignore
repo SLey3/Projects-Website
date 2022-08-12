@@ -3,8 +3,11 @@
 # js/ts related folders
 node_modules/
 dist/
+
+# TODO txt file
+TODO.txt
+
 # python related files/folders
-ideas.txt
 __pycache__/
 *.py[cod]
 *$py.class
@@ -29,9 +32,6 @@ MANIFEST
 # Website Caches folders
 sess/
 .webassets-cache/
-
-# requirements.in
-*.in
 
 # env
 .env

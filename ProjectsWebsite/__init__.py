@@ -9,7 +9,10 @@ import ssl
 from json import load
 from pathlib import Path
 
-import flask_monitoringdashboard as MonitorDashboard
+try:
+    import flask_monitoringdashboard as MonitorDashboard
+except ImportError:
+    MonitorDashboard = None
 import pendulum
 from flask import (
     Flask,
@@ -72,10 +75,13 @@ app.env = "development"
 app.config["TESTING"] = False
 
 if not app.config["TESTING"]:
-    MonitorDashboard.config.init_from(
-        file=path.parent / "monitor_config.cfg", log_verbose=True
-    )
-    MonitorDashboard.bind(app)
+    if MonitorDashboard:
+        MonitorDashboard.config.init_from(
+            file=path.parent / "monitor_config.cfg", log_verbose=True
+        )
+        MonitorDashboard.bind(app)
+    else:
+        app.add_template_global(MonitorDashboard, "__monitordashboard")
 
 db.init_app(app)
 

@@ -7,10 +7,8 @@ from sqlalchemy import text
 from ProjectsWebsite.modules import db
 from ProjectsWebsite.util import AnonymousUserMixin, DateUtil, RoleMixin, UserMixin
 
+
 # ------------------ SQL classes  ------------------
-dt = DateUtil(format_token="L LTS zzZ z")
-
-
 class Role(db.Model, RoleMixin):
     """
     Role model for all roles in this website
@@ -109,6 +107,7 @@ class Blacklist(db.Model):
         """
         adds a person to the Blacklist database (e.g. Ban)
         """
+        dt = DateUtil(format_token="L LTS zzZ z")
         date = dt.subDate()
         kwargs.setdefault("date_blacklisted", date)
         return cls(**kwargs)

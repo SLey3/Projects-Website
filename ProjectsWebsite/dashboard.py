@@ -25,7 +25,7 @@ def dashboard():
     """
     redirects to dashboard home
     """
-    return redirect(url_for("dashboard.dashboardHome"))
+    return redirect(url_for("dboard.dashboardHome"))
 
 
 @dash.route("/home")

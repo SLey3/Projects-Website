@@ -384,8 +384,14 @@ class DateUtil:
     DateUtil for Correcting and Validating Date
     """
 
+    _reversed_date = False  # When basic web settings for client dashboard is avail and a method to only save the
+    # changes made to be shown to the user only is found
+
     def __init__(
-        self, date: Optional[Union[Type[DateTime], str]] = None, format_token: str = ""
+        self,
+        date: Optional[Union[Type[DateTime], str]] = None,
+        format_token: str = "",
+        reversed_date: bool = False,
     ):
         if not date:
             date = pendulum.now()
@@ -398,6 +404,8 @@ class DateUtil:
             self.token = format_token
         else:
             self.token = None
+
+        self._reversed_date = reversed_date
 
     def _subDate(self, reversed_sub: bool):
         """
@@ -424,9 +432,7 @@ class DateUtil:
             self.date = new_date
             return new_date
 
-    subDate = partialmethod(_subDate, reversed_sub=False)
-
-    reversedSubDate = partialmethod(_subDate, reversed_sub=True)
+    subDate = partialmethod(_subDate, reversed_sub=_reversed_date)
 
     def validateDate(self, reversed: bool = False):
         """
@@ -1077,7 +1083,6 @@ class __PasswordTestManagerIsInstanceCases:
         self.test_result = test_result_obj
 
     def _check_condition(self, condition):
-        print(str(self.test_result).lower())
         if condition in str(self.test_result).lower():
             return True
         return False

@@ -315,7 +315,11 @@ def articleCreation():
         body = request.form["editordata"]
         pdfkit_config = pdfkit.configuration(
             wkhtmltopdf=os.path.join(
-                main_app.static_folder, "wkhtmltopdf", "bin", "wkhtmltopdf.exe"
+                main_app.static_folder,
+                "assets",
+                "wkhtmltopdf",
+                "bin",
+                "wkhtmltopdf.exe",
             )
         )
         pdf = pdfkit.from_string(
@@ -329,18 +333,18 @@ def articleCreation():
         )
         print(temp_file.file_dir)
         sleep(5)
-        # new_article = Article(
-        #     title=form.title.data,
-        #     author=form.author.data.capitalize(),
-        #     create_date=creation_date,
-        #     short_desc=form.short_desc.data,
-        #     title_img=img,
-        #     body=body,
-        #     download_pdf=temp_file.read(),
-        # )
+        new_article = Article(
+            title=form.title.data,
+            author=form.author.data.capitalize(),
+            create_date=creation_date,
+            short_desc=form.short_desc.data,
+            title_img=img,
+            body=body,
+            download_pdf=temp_file.read(),
+        )
         temp_file.close()
-        # db.session.add(new_article)
-        # db.session.commit()
+        db.session.add(new_article)
+        db.session.commit()
         alert.setAlert("success", "Article has been Created.")
         return redirect(url_for(".homePage"))
     else:

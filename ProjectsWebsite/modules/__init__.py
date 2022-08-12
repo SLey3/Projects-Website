@@ -43,6 +43,7 @@ js_main_bundle = Bundle(
 
 edit_profile_js_bundle = Bundle(
     "js/ext/admin/accounts/edit_profile/src/element.js",
+    "js/ext/admin/accounts/edit_profile/src/menu.js",
     "js/ext/admin/main/navalign.js",
     filters="jsmin",
     output="js/ext/admin/accounts/edit_profile/dist/index.min.js",
