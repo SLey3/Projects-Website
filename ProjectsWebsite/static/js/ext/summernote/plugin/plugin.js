@@ -123,14 +123,22 @@
             this.iterfileasDataUrl = function(file) {
                 return $.Deferred(function(deferred) {
                     $.extend(new FileReader(), {
-                        onload: function(e) {
-                            let dataUrl = e.target.result;
-                            deferred.resolve(dataURL);
+                        onload: function(evt) {
+                            console.log("onload");
+                            let videoBuffer = evt.target.result;
+
+                            let _blob = new Blob([new Uint8Array(videoBuffer), { type: 'video/mkv' }]); // preset to mkv currently until I create method to find the extension of the file
+
+                            let videoUrl = window.URL.createObjectURL(_blob);
+
+                            deferred.resolve(video);
                         },
                         onerror: function(er) {
-                            deferred.reject(er);
+                            console.log("Error:  ", er.message);
+                            throw er.message;
+                            //deferred.reject(er);
                         }
-                    }).readAsDataURl(file);
+                    }).readAsArrayBuffer(file);
                 }).promise();
             }
 
@@ -159,22 +167,48 @@
             // Upload video from file path
             this.uploadVideoFile = function(data) {
                 // TODO: Fix broken function
-                let fname = data.name;
-                let videoRegExp = /^.+.(mp4|ogv|webm)$/;
-                let videoBase64RegExp = /^data:(video\/mpeg|video\/mp4|video\/ogv|video\/webm).+$/;
-                let $file;
+                $.each(data, function(idx, file) {
+                    let fname = file.name;
+                    console.log(fname);
+                    console.log(file);
+                    console.log(typeof file);
+                    let videoRegExp = /^.+.(mp4|ogv|webm|x-matroska)$/;
+                    let videoBase64RegExp = /^data:(video\/mpeg|video\/mp4|video\/ogv|video\/webm).+$/;
+                    let $file;
 
-                self.iterfileasDataUrl(data).then(function(dataUrl) {
-                    $file = dataUrl;
-                    if (data.match(videoRegExp) || data.match(videoBase64RegExp)) {
-                        $file = $("<video controls>").attr('src', data);
-                        $file.addClass('note-file-clip');
-                        self.insertData($file);
-                    } else {
-                        context.triggerEvent('videoUpload.upload.error', lang.videoUpload.unsupportedFileTypeError);
-                        return false
+
+                    const reader = new FileReader();
+
+                    reader.onload = function(evt) {
+                        console.log("onload");
+                        let videoBuffer = evt.target.result;
+
+                        let _blob = new Blob([new Uint8Array(videoBuffer), { type: 'video/mp4' }]); // preset to mkv currently until I create method to find the extension of the file
+
+                        let videoUrl = window.URL.createObjectURL(_blob);
+
+                        $file = videoUrl;
+
+                        if (videoUrl.match(videoRegExp) || videoUrl.match(videoBase64RegExp)) {
+                            console.log("matched");
+                            $file = $("<video controls>").attr('src', videoUrl);
+                            $file.addClass('note-file-clip');
+
+                            context.invoke('editor.beforeCommand');
+
+                            if (typeof fname === 'string') {
+                                $file.attr('data-filename', fname);
+                            }
+
+                            $file.show();
+                            context.invoke('editor.insertNode', $file[0]);
+
+                            context.invoke('editor.afterCommand');
+                        }
                     }
-                })
+
+                    reader.readAsArrayBuffer(file);
+                });
             };
 
             // insert either iframe or file data into the editor

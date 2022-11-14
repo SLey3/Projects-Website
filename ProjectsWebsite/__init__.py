@@ -51,7 +51,7 @@ path = Path(os.path.dirname(os.path.abspath(__file__)))
 sql_sess = SQLSession(autoflush=False)
 
 # ------------------ SSL ------------------
-context = ssl.SSLContext()
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 context.load_cert_chain("cert/server.cert", "cert/server.key")
 
 # ------------------ App Setup ------------------
@@ -81,6 +81,9 @@ if not app.config["TESTING"]:
         )
         MonitorDashboard.bind(app)
     else:
+        rprint(
+            "[red]MonitorDashboard is unavailable and thus marked as Inop. Check for future versions that support py310[/red]"
+        )
         app.add_template_global(MonitorDashboard, "__monitordashboard")
 
 db.init_app(app)
@@ -217,4 +220,4 @@ if __name__ == "__main__":
         "[black][CONNECTING][/black] [bold green]Connecting to website...[/bold green]"
     )
     with appExitHandler():
-        app.run()
+        app.run(ssl_context=context)

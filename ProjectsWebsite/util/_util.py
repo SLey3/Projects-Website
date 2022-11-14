@@ -858,19 +858,27 @@ def _pwd_pepper():
     """
     returns pepper for password
     """
-    return "0782KncD"
+    return "0782$KncD".encode()
+
+
+def _hashpwd(salt, pwd):
+    sha256_encrypt = hashlib.pbkdf2_hmac("sha256", pwd, salt, 200000)
+    md5_encrypt = hashlib.md5(pwd).hexdigest().encode()
+    sha512_encrypt = hashlib.sha512(pwd).hexdigest().encode()
+    pepper = _pwd_pepper()
+    return sha256_encrypt + md5_encrypt + sha512_encrypt + pepper
 
 
 def create_password(original: str):
     """
-    Creates an encrypted password with salt. Returns two values in the following order:
+    Creates an encrypted password with salt and pepper. Returns two values in the following order:
     salt - the randomly created salt implemented into the password
     password - the encrypted password with salt
     """
     _salt = uuid.uuid4().hex
     salt = _salt.encode()
     original = original.encode()
-    encrypt = hashlib.pbkdf2_hmac("sha256", original, salt, 200000)
+    encrypt = _hashpwd(salt, original)
     return _salt, encrypt
 
 
@@ -880,9 +888,8 @@ def verify_password(salt, pw_hash, input_pw) -> bool:
     """
     input_pw = input_pw if isinstance(input_pw, bytes) else input_pw.encode()
     salt = salt if isinstance(salt, bytes) else salt.encode()
-    return hmac.compare_digest(
-        pw_hash, hashlib.pbkdf2_hmac("sha256", input_pw, salt, 200000)
-    )
+
+    return hmac.compare_digest(pw_hash, _hashpwd(salt, input_pw))
 
 
 class UserMixin(SQLAlchemyUserMixin):
