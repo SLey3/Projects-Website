@@ -12,7 +12,7 @@ def letterFilter(template: List[str]) -> List[str]:
     """
     filter_character = ["\n"]
     new_template = deepcopy(template)
-    for i, char in enumurate(new_template[:]):
+    for i, char in enumerate(new_template[:]):
         if char not in filter_character:
             if any([x in char for x in filter_character]):
                 new_template[i] = char.strip()
