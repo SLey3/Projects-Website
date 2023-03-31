@@ -18,8 +18,7 @@ __all__ = [
 def _insert_content(
     letter: List[str], recipient: str, content: str, sender: Optional[str] = None
 ) -> List[str]:
-    for char in letter[:]:
-        i = letter.index(char)
+    for i, char in enumerate(letter[:]):
         if char == r"{name}":
             char = char.replace(r"{name}", recipient)
             letter[i] = char
